@@ -24,6 +24,12 @@ extension Double {
     }
 }
 
+extension Collection {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 extension Int {
     var durationString: String {
         if self >= 60 {

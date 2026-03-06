@@ -6,6 +6,17 @@ struct BrainAssessmentView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = BrainAssessmentViewModel()
 
+    private var assessmentProgress: Double {
+        switch viewModel.phase {
+        case .intro: return 0
+        case .digitInstructions, .digitShow, .digitInput: return 0.1 + Double(viewModel.digitRound) * 0.05
+        case .reactionInstructions, .reactionWait, .reactionGo, .reactionTooEarly, .reactionResult:
+            return 0.4 + Double(viewModel.reactionRound) * 0.05
+        case .visualInstructions, .visualShow, .visualInput: return 0.7 + Double(viewModel.visualRound) * 0.04
+        case .calculating, .results: return 1.0
+        }
+    }
+
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
@@ -43,7 +54,30 @@ struct BrainAssessmentView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top) {
+            if viewModel.phase != .intro && viewModel.phase != .results && viewModel.phase != .calculating {
+                VStack(spacing: 4) {
+                    HStack(spacing: 16) {
+                        assessmentStepLabel("MEM", active: assessmentProgress >= 0.1 && assessmentProgress < 0.4)
+                        assessmentStepLabel("SPD", active: assessmentProgress >= 0.4 && assessmentProgress < 0.7)
+                        assessmentStepLabel("VIS", active: assessmentProgress >= 0.7)
+                    }
+                    .font(.caption2.weight(.bold))
+
+                    ProgressView(value: assessmentProgress)
+                        .tint(AppColors.accent)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+        }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+    }
+
+    private func assessmentStepLabel(_ text: String, active: Bool) -> some View {
+        Text(text)
+            .foregroundStyle(active ? AppColors.accent : .secondary)
+            .frame(maxWidth: .infinity)
     }
 
     private var backgroundColor: Color {
@@ -349,6 +383,36 @@ struct BrainAssessmentView: View {
     private func saveAndDismiss() {
         let result = viewModel.createResult()
         modelContext.insert(result)
+
+        // Also save as an exercise for streak/session tracking
+        let exercise = Exercise(
+            type: .activeRecall,
+            difficulty: 3,
+            score: Double(viewModel.brainScore) / 1000.0,
+            durationSeconds: viewModel.durationSeconds
+        )
+        modelContext.insert(exercise)
+
+        let descriptor = FetchDescriptor<DailySession>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        let allSessions = (try? modelContext.fetch(descriptor)) ?? []
+        let session: DailySession
+        if let existing = allSessions.first(where: { Calendar.current.isDateInToday($0.date) }) {
+            session = existing
+        } else {
+            session = DailySession()
+            modelContext.insert(session)
+        }
+        session.addExercise(exercise)
+
+        let users = (try? modelContext.fetch(FetchDescriptor<User>())) ?? []
+        users.first?.updateStreak()
+        NotificationService.shared.cancelStreakRisk()
+        if let streak = users.first?.currentStreak {
+            NotificationService.shared.scheduleMilestone(streak: streak)
+        }
+
         dismiss()
     }
 }

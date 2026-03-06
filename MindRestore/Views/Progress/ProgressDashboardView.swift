@@ -6,6 +6,7 @@ struct ProgressDashboardView: View {
     @Environment(StoreService.self) private var storeService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
+    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
 
     @State private var viewModel = ProgressViewModel()
     @State private var showingPaywall = false
@@ -17,6 +18,9 @@ struct ProgressDashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    if let latestScore = brainScores.first {
+                        brainScoreProgressCard(latestScore)
+                    }
                     streakSection
                     calendarHeatmap
                     basicStats
@@ -170,6 +174,51 @@ struct ProgressDashboardView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .appCard()
+    }
+
+    // MARK: - Brain Score Progress
+
+    private func brainScoreProgressCard(_ score: BrainScoreResult) -> some View {
+        VStack(spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Brain Score")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("\(score.brainScore)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.accent)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: score.brainType.icon)
+                        Text(score.brainType.displayName)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.accent)
+
+                    Text("Brain Age: \(score.brainAge)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if brainScores.count > 1 {
+                HStack(spacing: 4) {
+                    let previous = brainScores[1].brainScore
+                    let diff = score.brainScore - previous
+                    Image(systemName: diff >= 0 ? "arrow.up.right" : "arrow.down.right")
+                        .font(.caption2)
+                    Text("\(abs(diff)) points \(diff >= 0 ? "improvement" : "decrease") from last test")
+                        .font(.caption)
+                }
+                .foregroundStyle(score.brainScore >= (brainScores[safe: 1]?.brainScore ?? 0) ? AppColors.accent : .orange)
+            }
+        }
         .appCard()
     }
 

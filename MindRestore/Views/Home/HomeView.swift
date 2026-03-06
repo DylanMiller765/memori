@@ -331,7 +331,17 @@ struct HomeView: View {
 
     private var learnSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Learn")
+            HStack {
+                SectionHeader(title: "Learn")
+                Spacer()
+                NavigationLink {
+                    EducationFeedView()
+                } label: {
+                    Text("See All")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppColors.accent)
+                }
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {

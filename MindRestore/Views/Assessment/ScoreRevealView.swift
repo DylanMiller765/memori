@@ -5,6 +5,7 @@ struct ScoreRevealView: View {
     let onDone: () -> Void
 
     @State private var displayedScore: Int = 0
+    @State private var shareImage: UIImage?
     @State private var showScore = false
     @State private var showAge = false
     @State private var showType = false
@@ -120,12 +121,25 @@ struct ScoreRevealView: View {
                     // Actions
                     if showActions {
                         VStack(spacing: 12) {
-                            ShareLink(item: shareText) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Share Your Score")
+                            if let shareImage {
+                                ShareLink(
+                                    item: Image(uiImage: shareImage),
+                                    preview: SharePreview("Brain Score: \(viewModel.brainScore)", image: Image(uiImage: shareImage))
+                                ) {
+                                    HStack {
+                                        Image(systemName: "square.and.arrow.up")
+                                        Text("Share Your Score")
+                                    }
+                                    .accentButton()
                                 }
-                                .accentButton()
+                            } else {
+                                ShareLink(item: shareText) {
+                                    HStack {
+                                        Image(systemName: "square.and.arrow.up")
+                                        Text("Share Your Score")
+                                    }
+                                    .accentButton()
+                                }
                             }
 
                             Button(action: onDone) {
@@ -218,6 +232,18 @@ struct ScoreRevealView: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.3) {
             withAnimation(.easeIn(duration: 0.4)) { showBreakdown = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+            let card = ShareCardView(
+                brainScore: viewModel.brainScore,
+                brainAge: viewModel.brainAge,
+                brainType: viewModel.brainType,
+                percentile: viewModel.percentile,
+                digitScore: viewModel.digitScore,
+                reactionScore: viewModel.reactionScore,
+                visualScore: viewModel.visualScore
+            )
+            shareImage = card.renderImage()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.8) {
             withAnimation(.easeIn(duration: 0.3)) { showActions = true }

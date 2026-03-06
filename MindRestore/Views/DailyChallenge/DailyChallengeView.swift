@@ -1,8 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct DailyChallengeView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var users: [User]
     @State private var viewModel = DailyChallengeViewModel()
+
+    private var user: User? { users.first }
 
     var body: some View {
         ZStack {
@@ -250,6 +255,7 @@ struct DailyChallengeView: View {
                 }
 
                 Button {
+                    saveExercise()
                     dismiss()
                 } label: {
                     Text("Done")
@@ -259,6 +265,34 @@ struct DailyChallengeView: View {
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
+        }
+    }
+
+    private func saveExercise() {
+        let exercise = Exercise(
+            type: .activeRecall,
+            difficulty: 2,
+            score: Double(viewModel.score) / 1000.0,
+            durationSeconds: 40
+        )
+        modelContext.insert(exercise)
+
+        let descriptor = FetchDescriptor<DailySession>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        let allSessions = (try? modelContext.fetch(descriptor)) ?? []
+        let session: DailySession
+        if let existing = allSessions.first(where: { Calendar.current.isDateInToday($0.date) }) {
+            session = existing
+        } else {
+            session = DailySession()
+            modelContext.insert(session)
+        }
+        session.addExercise(exercise)
+        user?.updateStreak()
+        NotificationService.shared.cancelStreakRisk()
+        if let streak = user?.currentStreak {
+            NotificationService.shared.scheduleMilestone(streak: streak)
         }
     }
 }

@@ -100,6 +100,27 @@ struct TrainingView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
 
+                    SectionHeader(title: "Learn")
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+
+                    NavigationLink {
+                        EducationFeedView()
+                    } label: {
+                        ExerciseCard(
+                            title: "Psychoeducation",
+                            subtitle: "\(EducationContent.cards.count) articles",
+                            icon: "book.fill",
+                            isLocked: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+
+                    SectionHeader(title: "Categories")
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+
                     ForEach(CardCategory.allCases) { category in
                         if category.isPro && !isProUser {
                             Button {

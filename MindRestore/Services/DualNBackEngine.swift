@@ -39,12 +39,15 @@ final class DualNBackEngine {
         return max(0, Double(soundHits - soundFalseAlarms) / Double(total))
     }
 
+    var isDual: Bool = false
+
     var overallScore: Double {
-        (positionScore + soundScore) / 2.0
+        isDual ? (positionScore + soundScore) / 2.0 : positionScore
     }
 
-    func startGame(n: Int, isDual: Bool) {
+    func startGame(n: Int, isDual dual: Bool) {
         currentN = n
+        isDual = dual
         totalTrials = 20 + n
         trialIndex = 0
         isRunning = true
@@ -63,7 +66,7 @@ final class DualNBackEngine {
         soundMisses = 0
         soundFalseAlarms = 0
 
-        generateSequence(isDual: isDual)
+        generateSequence(isDual: dual)
         presentTrial()
     }
 
