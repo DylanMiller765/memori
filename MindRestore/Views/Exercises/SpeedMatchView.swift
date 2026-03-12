@@ -19,6 +19,8 @@ final class SpeedMatchViewModel {
     var responseTimes: [Double] = []
     var roundStartTime: Date?
     var falsePositives = 0
+    var lastWrongPreviousSymbol: String = ""
+    var lastWrongWasMatch: Bool = false
     var misses = 0
     var currentStreak = 0
     var bestStreak = 0
@@ -98,6 +100,7 @@ final class SpeedMatchViewModel {
 
     func showNextCard() {
         previousSymbol = currentSymbol
+        lastWrongPreviousSymbol = ""
         currentRound += 1
 
         if currentRound == 1 {
@@ -138,6 +141,8 @@ final class SpeedMatchViewModel {
             bestStreak = max(bestStreak, currentStreak)
         } else {
             currentStreak = 0
+            lastWrongPreviousSymbol = previousSymbol
+            lastWrongWasMatch = isMatch
             if yes && !isMatch {
                 falsePositives += 1
             } else if !yes && isMatch {
@@ -153,7 +158,8 @@ final class SpeedMatchViewModel {
 
         phase = .feedback
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + feedbackDelay) { [weak self] in
+        let delay = correct ? feedbackDelay : max(feedbackDelay, 0.7)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             if self.currentRound >= self.totalRounds {
                 self.phase = .finished
@@ -397,11 +403,43 @@ struct SpeedMatchView: View {
 
                 // Feedback overlay
                 if viewModel.phase == .feedback, let correct = viewModel.lastAnswerCorrect {
-                    Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(correct ? AppColors.teal : AppColors.coral)
+                    if correct {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(AppColors.teal)
+                            .transition(.scale.combined(with: .opacity))
+                            .offset(x: 50, y: -50)
+                    } else {
+                        // Wrong: show previous vs current comparison
+                        VStack(spacing: 8) {
+                            HStack(spacing: 24) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: viewModel.lastWrongPreviousSymbol.isEmpty ? "questionmark" : viewModel.lastWrongPreviousSymbol)
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(.secondary)
+                                    Text("Previous")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(AppColors.textTertiary)
+                                }
+                                VStack(spacing: 4) {
+                                    Image(systemName: viewModel.currentSymbol)
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(.secondary)
+                                    Text("Current")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(AppColors.textTertiary)
+                                }
+                            }
+                            Text(viewModel.lastWrongWasMatch ? "They matched!" : "They're different")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(AppColors.coral)
+                        }
+                        .padding(12)
+                        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.coral.opacity(0.3), lineWidth: 1))
                         .transition(.scale.combined(with: .opacity))
-                        .offset(x: 50, y: -50)
+                        .offset(y: 80)
+                    }
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: viewModel.lastAnswerCorrect)

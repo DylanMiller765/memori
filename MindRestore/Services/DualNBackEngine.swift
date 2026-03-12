@@ -155,4 +155,16 @@ final class DualNBackEngine {
         }
         return currentN
     }
+
+    /// Returns the position that was N steps back from current trial, or nil if too early
+    func nBackPosition() -> Int? {
+        guard trialIndex >= currentN else { return nil }
+        return positions[trialIndex - currentN]
+    }
+
+    /// Returns the letter that was N steps back from current trial, or nil if too early
+    func nBackLetter() -> String? {
+        guard trialIndex >= currentN, isDual else { return nil }
+        return letters[trialIndex - currentN]
+    }
 }

@@ -738,6 +738,14 @@ struct SettingsView: View {
                 }
                 Divider().padding(.leading, 52)
             }
+            if isProUser {
+                aboutRow(icon: "xmark.circle.fill", color: .gray, title: "How to Cancel", isLink: true) {
+                    if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Divider().padding(.leading, 52)
+            }
             aboutRow(icon: "arrow.clockwise", color: .teal, title: "Restore Purchases", isLink: true) {
                 Task { await storeService.restorePurchases() }
             }

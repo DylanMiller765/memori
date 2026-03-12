@@ -292,6 +292,37 @@ struct DualNBackView: View {
             }
             .font(.headline)
             .padding(.horizontal)
+
+            // Wrong answer N-back hint
+            if viewModel.wrongPositionNBack != nil || viewModel.wrongLetterNBack != nil {
+                HStack(spacing: 16) {
+                    if let pos = viewModel.wrongPositionNBack {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.grid.3x3")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.coral)
+                            Text("N-back was cell \(pos + 1)")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppColors.coral)
+                        }
+                    }
+                    if let letter = viewModel.wrongLetterNBack {
+                        HStack(spacing: 6) {
+                            Image(systemName: "textformat")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.coral)
+                            Text("N-back was \"\(letter)\"")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppColors.coral)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppColors.coral.opacity(0.08), in: Capsule())
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .animation(.easeInOut(duration: 0.2), value: viewModel.wrongPositionNBack)
+            }
         }
         .padding(.vertical, 24)
     }

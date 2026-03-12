@@ -21,6 +21,7 @@ final class ColorMatchViewModel {
     var correctAnswer: String = ""
     var feedbackColor: Color? = nil
     var showFeedback = false
+    var lastWrongCorrectAnswer: String? = nil
 
     let colorOptions: [(name: String, color: Color)] = [
         ("Red", Color(red: 0.98, green: 0.42, blue: 0.35)),
@@ -105,6 +106,7 @@ final class ColorMatchViewModel {
         displayColor = colorOptions[inkIndex].color
         correctAnswer = colorOptions[inkIndex].name
 
+        lastWrongCorrectAnswer = nil
         showFeedback = false
         feedbackColor = nil
         roundStartTime = Date.now
@@ -125,13 +127,15 @@ final class ColorMatchViewModel {
         } else {
             feedbackColor = Color(red: 0.98, green: 0.42, blue: 0.35)
             HapticService.wrong()
+            lastWrongCorrectAnswer = correctAnswer
         }
 
         showFeedback = true
         currentRound += 1
 
         // Brief feedback flash then advance
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
+        let delay: Double = isCorrect ? 0.45 : 0.8
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             if self.currentRound >= self.totalRounds {
                 self.phase = .finished
@@ -307,6 +311,15 @@ struct ColorMatchView: View {
                     .font(.system(size: 64, weight: .bold))
                     .foregroundStyle(viewModel.displayColor)
                     .accessibilityLabel("The word \(viewModel.displayWord) displayed in \(viewModel.correctAnswer) ink")
+
+                // Show correct answer when wrong
+                if viewModel.showFeedback, let correctColor = viewModel.lastWrongCorrectAnswer {
+                    Text("Correct: \(correctColor)")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(viewModel.colorOptions.first(where: { $0.name == correctColor })?.color ?? .white)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .offset(y: 50)
+                }
             }
             .frame(height: 160)
             .animation(.easeInOut(duration: 0.15), value: viewModel.displayWord)

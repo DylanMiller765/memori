@@ -61,6 +61,7 @@ struct SegmentedScoreRing: View {
 struct BrainScoreCard: View {
     let score: BrainScoreResult
     var compact: Bool = false
+    @State private var showingExplainer = false
 
     var body: some View {
         if compact {
@@ -152,6 +153,20 @@ struct BrainScoreCard: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Brain Score \(score.brainScore) out of 1000, \(score.brainType.displayName), brain age \(score.brainAge), top \(100 - score.percentile) percent")
+        .overlay(alignment: .topTrailing) {
+            Button {
+                showingExplainer = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(AppColors.textTertiary)
+                    .padding(12)
+            }
+            .accessibilityLabel("How brain score works")
+        }
+        .sheet(isPresented: $showingExplainer) {
+            BrainScoreExplainerSheet()
+        }
     }
 
     // MARK: - Compact Layout (Profile)
@@ -204,6 +219,20 @@ struct BrainScoreCard: View {
             }
 
             Spacer(minLength: 0)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                showingExplainer = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(AppColors.textTertiary)
+                    .padding(8)
+            }
+            .accessibilityLabel("How brain score works")
+        }
+        .sheet(isPresented: $showingExplainer) {
+            BrainScoreExplainerSheet()
         }
     }
 

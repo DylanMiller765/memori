@@ -9,6 +9,8 @@ final class DualNBackViewModel {
     var startTime = Date()
     var isDual = true
     private var trialTimer: Timer?
+    var wrongPositionNBack: Int? = nil
+    var wrongLetterNBack: String? = nil
 
     var currentN: Int { engine.currentN }
     var trialIndex: Int { engine.trialIndex }
@@ -56,8 +58,13 @@ final class DualNBackViewModel {
         engine.respondPosition()
         if engine.positionHits > prevHits {
             HapticService.correct()
+            wrongPositionNBack = nil
         } else {
             HapticService.wrong()
+            wrongPositionNBack = engine.nBackPosition()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.wrongPositionNBack = nil
+            }
         }
     }
 
@@ -66,8 +73,13 @@ final class DualNBackViewModel {
         engine.respondSound()
         if engine.soundHits > prevHits {
             HapticService.correct()
+            wrongLetterNBack = nil
         } else {
             HapticService.wrong()
+            wrongLetterNBack = engine.nBackLetter()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.wrongLetterNBack = nil
+            }
         }
     }
 
