@@ -46,6 +46,13 @@ enum BrainType: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - Brain Score Source
+
+enum BrainScoreSource: String, Codable {
+    case assessment
+    case workout
+}
+
 // MARK: - Brain Score Result
 
 @Model
@@ -62,6 +69,12 @@ final class BrainScoreResult {
     var reactionTimeAvgMs: Int = 0
     var visualMemoryMax: Int = 0
     var percentile: Int = 50
+    var sourceRaw: String = BrainScoreSource.assessment.rawValue
+
+    var source: BrainScoreSource {
+        get { BrainScoreSource(rawValue: sourceRaw) ?? .assessment }
+        set { sourceRaw = newValue.rawValue }
+    }
 
     init() {}
 
