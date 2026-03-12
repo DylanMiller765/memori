@@ -18,6 +18,13 @@ struct HomeView: View {
     @State private var showingAssessment = false
     @State private var brainScoreShareImage: UIImage?
     @State private var showingFreezeInfo = false
+    @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
+
+    private var hasDoneDailyChallenge: Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return dailyChallengeCompletedDate == formatter.string(from: Date.now)
+    }
 
     private var user: User? { users.first }
     private var latestBrainScore: BrainScoreResult? { brainScores.first }
@@ -117,6 +124,8 @@ struct HomeView: View {
                 .padding(.horizontal)
                 .padding(.top, 8)
                 .padding(.bottom, 32)
+                .responsiveContent()
+                .frame(maxWidth: .infinity)
             }
             .pageBackground()
             .navigationTitle("Memori")
@@ -777,34 +786,58 @@ struct HomeView: View {
     // MARK: - Daily Challenge Card
 
     private var dailyChallengeCard: some View {
-        NavigationLink {
-            DailyChallengeView()
-        } label: {
-            HStack(spacing: 14) {
-                ColoredIconBadge(icon: "trophy.fill", color: .orange)
+        Group {
+            if hasDoneDailyChallenge {
+                HStack(spacing: 14) {
+                    ColoredIconBadge(icon: "checkmark.circle.fill", color: AppColors.teal)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Daily Challenge")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Same challenge for everyone \u{2014} Compete!")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Daily Challenge")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Completed! Come back tomorrow")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
                 }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.teal.opacity(0.08))
+                        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+                )
+            } else {
+                NavigationLink {
+                    DailyChallengeView()
+                } label: {
+                    HStack(spacing: 14) {
+                        ColoredIconBadge(icon: "trophy.fill", color: .orange)
 
-                Spacer()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Daily Challenge")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Same challenge for everyone \u{2014} Compete!")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
 
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.orange.opacity(0.08))
+                            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.orange.opacity(0.08))
-                    .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
-            )
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder

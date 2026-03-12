@@ -125,6 +125,11 @@ extension View {
     func heroCard(color: Color) -> some View {
         modifier(HeroCardModifier(color: color))
     }
+
+    /// Constrains content to a readable max width on iPad while staying full-width on iPhone.
+    func responsiveContent(maxWidth: CGFloat = 680) -> some View {
+        self.frame(maxWidth: maxWidth)
+    }
 }
 
 struct GlowingCardModifier: ViewModifier {

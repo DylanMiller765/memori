@@ -39,6 +39,8 @@ struct SettingsView: View {
                 .padding(.horizontal)
                 .padding(.top, 8)
                 .padding(.bottom, 32)
+                .responsiveContent()
+                .frame(maxWidth: .infinity)
             }
             .pageBackground()
             .navigationTitle("Profile")
@@ -701,7 +703,7 @@ struct SettingsView: View {
             VStack(spacing: 12) {
                 privacyRow(icon: "internaldrive.fill", color: .green, title: "Your Data", detail: "All data stays on your device. No cloud, no accounts.")
                 Divider().padding(.leading, 44)
-                privacyRow(icon: "hand.raised.fill", color: .purple, title: "No Tracking", detail: "Zero analytics, no third-party SDKs.")
+                privacyRow(icon: "hand.raised.fill", color: .purple, title: "Privacy First", detail: "No personal data collected.")
             }
         }
         .appCard()

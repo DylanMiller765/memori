@@ -90,6 +90,8 @@ struct OnboardingView: View {
             continueButton { currentPage = 1 }
         }
         .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Name Entry Page
@@ -174,6 +176,8 @@ struct OnboardingView: View {
                 }
             }
             .padding(.bottom, 16)
+            .responsiveContent(maxWidth: 500)
+            .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
         .onAppear { nameFieldFocused = true }
@@ -218,6 +222,8 @@ struct OnboardingView: View {
                 .opacity(selectedGoals.isEmpty ? 0.4 : 1)
         }
         .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
         .onAppear { nameFieldFocused = false }
     }
 
@@ -290,6 +296,8 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
         }
         .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Privacy Page
@@ -328,6 +336,8 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
         }
         .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
     }
 
     private func continueButton(action: @escaping () -> Void) -> some View {

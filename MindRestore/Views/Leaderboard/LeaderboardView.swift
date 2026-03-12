@@ -157,6 +157,8 @@ struct LeaderboardView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 32)
             }
+            .responsiveContent()
+            .frame(maxWidth: .infinity)
         }
     }
 

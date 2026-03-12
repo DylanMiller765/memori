@@ -18,6 +18,8 @@ struct ContentView: View {
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
+    // TODO: Re-add WorkoutEngine after adding file to Xcode project
+    // @State private var workoutEngine = WorkoutEngine()
 
     // Toast state
     @State private var showingXPToast = false
@@ -53,6 +55,7 @@ struct ContentView: View {
         .environment(trainingManager)
         .environment(gameCenterService)
         .environment(deepLinkRouter)
+        // TODO: .environment(workoutEngine)
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
@@ -356,6 +359,7 @@ struct TrainingView: View {
     @Query private var users: [User]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToMixedTraining = false
@@ -380,10 +384,10 @@ struct TrainingView: View {
         return "\(days / 7)w ago"
     }
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    private var columns: [GridItem] {
+        let count = horizontalSizeClass == .regular ? 3 : 2
+        return Array(repeating: GridItem(.flexible(), spacing: 12), count: count)
+    }
 
     /// The fun, game-like exercises worth featuring
     private static let featuredGames: [(type: ExerciseType, title: String, icon: String, color: Color, subtitle: String)] = [
@@ -499,6 +503,8 @@ struct TrainingView: View {
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 32)
+                .responsiveContent()
+                .frame(maxWidth: .infinity)
             }
             .pageBackground()
             .navigationTitle("Train")

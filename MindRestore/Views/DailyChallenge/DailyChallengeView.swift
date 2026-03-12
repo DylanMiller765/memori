@@ -461,6 +461,8 @@ struct DailyChallengeView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 16)
             }
+            .responsiveContent()
+            .frame(maxWidth: .infinity)
         }
     }
 

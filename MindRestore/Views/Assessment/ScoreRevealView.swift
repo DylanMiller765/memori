@@ -268,6 +268,8 @@ struct ScoreRevealView: View {
                     }
                 }
                 .safeAreaPadding(.bottom, 24)
+                .responsiveContent()
+                .frame(maxWidth: .infinity)
             }
 
             if showConfetti {

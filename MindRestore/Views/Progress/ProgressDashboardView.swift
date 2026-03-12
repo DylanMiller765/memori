@@ -83,6 +83,8 @@ struct ProgressDashboardView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
                     .padding(.bottom, 32)
+                    .responsiveContent()
+                    .frame(maxWidth: .infinity)
                 }
             }
             .pageBackground()
