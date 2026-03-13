@@ -441,6 +441,8 @@ struct TrainingView: View {
         (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber, "Mental math"),
         (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky, "Working memory"),
         (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose, "Group & remember"),
+        (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
+        (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
     ]
 
     var body: some View {
@@ -620,6 +622,10 @@ struct TrainingView: View {
             SpeedMatchView()
         case .visualMemory:
             VisualMemoryView()
+        case .wordScramble:
+            WordScrambleView()
+        case .memoryChain:
+            MemoryChainView()
         }
     }
 
@@ -841,6 +847,33 @@ struct TrainingTile: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
                                 .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        }
+                    }
+                }
+
+            case .wordScramble:
+                ZStack {
+                    color.opacity(0.06)
+                    HStack(spacing: 3) {
+                        ForEach(["B", "R", "A", "I", "N"], id: \.self) { letter in
+                            Text(letter)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(color)
+                                .frame(width: 18, height: 22)
+                                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                        }
+                    }
+                }
+
+            case .memoryChain:
+                // 4x4 mini grid with some cells highlighted
+                ZStack {
+                    color.opacity(0.06)
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(16), spacing: 3), count: 4), spacing: 3) {
+                        ForEach(0..<16, id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill([1, 5, 9, 13].contains(i) ? color : color.opacity(0.12))
+                                .frame(height: 16)
                         }
                     }
                 }

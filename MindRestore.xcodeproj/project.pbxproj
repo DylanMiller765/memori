@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WSCR0002000000000000WS01 /* WordScrambleView.swift */; };
+		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
 		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
 		0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */; };
@@ -205,6 +207,8 @@
 		CC000002000000000000CC03 /* DuelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuelView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
 		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
+		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
+		MCHN0002000000000000MC01 /* MemoryChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryChainView.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveDifficultyEngine.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD02 /* StrategyTipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyTipService.swift; sourceTree = "<group>"; };
@@ -469,6 +473,8 @@
 				C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */,
 				7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */,
 				D50EFACDD30017932D713E7A /* ColorMatchView.swift */,
+				WSCR0002000000000000WS01 /* WordScrambleView.swift */,
+				MCHN0002000000000000MC01 /* MemoryChainView.swift */,
 			);
 			path = Exercises;
 			sourceTree = "<group>";
@@ -773,6 +779,8 @@
 				5E6F9CE7047B08D03664CD1F /* VisualMemoryView.swift in Sources */,
 				0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */,
 				B10B3396842B4C6C456D4A98 /* ColorMatchView.swift in Sources */,
+				WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */,
+				MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,6 +11,8 @@ enum SubscriptionStatus: String, Codable {
 enum ExerciseType: String, Codable, CaseIterable, Identifiable {
     case spacedRepetition, dualNBack, activeRecall, chunkingTraining, prospectiveMemory
     case memoryPalace, reactionTime, sequentialMemory, mathSpeed, speedMatch, visualMemory, colorMatch
+    case wordScramble
+    case memoryChain
     var id: String { rawValue }
 
     var displayName: String {
@@ -27,6 +29,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .speedMatch: return "Speed Match"
         case .visualMemory: return "Visual Memory"
         case .colorMatch: return "Color Match"
+        case .wordScramble: return "Word Scramble"
+        case .memoryChain: return "Memory Chain"
         }
     }
 
@@ -44,6 +48,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .speedMatch: return "bolt.square.fill"
         case .visualMemory: return "square.grid.3x3.fill"
         case .colorMatch: return "paintpalette.fill"
+        case .wordScramble: return "textformat.abc.dottedunderline"
+        case .memoryChain: return "link.circle.fill"
         }
     }
 
@@ -61,6 +67,8 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .speedMatch: return "Match symbols as fast as you can"
         case .visualMemory: return "Remember the pattern of highlighted tiles"
         case .colorMatch: return "Stroop effect color-word challenge"
+        case .wordScramble: return "Unscramble words against the clock"
+        case .memoryChain: return "Remember growing sequences of items"
         }
     }
 }
