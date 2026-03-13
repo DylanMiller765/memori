@@ -210,7 +210,7 @@ struct TikTokBrainScoreCard: View {
 
                 Spacer()
 
-                Text("Can you beat me?")
+                Text("What's your Brain Age?")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -298,7 +298,7 @@ struct TikTokChallengeCard: View {
 
                 Spacer()
 
-                Text("Accept the Challenge")
+                Text("Think you're faster?")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
@@ -392,7 +392,7 @@ struct TikTokDuelResultCard: View {
 
                 Spacer()
 
-                Text("Think you can do better?")
+                Text("Who's next?")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -528,7 +528,7 @@ struct ReactionTimeShareCard: View {
 
                 Spacer()
 
-                Text("How fast are you?")
+                Text("Think you're faster?")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -671,6 +671,6 @@ struct ExerciseShareCard: View {
             ("Avg Response", "842 ms"),
             ("Score", "92%")
         ],
-        ctaText: "Test your focus"
+        ctaText: "Think you're faster?"
     )
 }

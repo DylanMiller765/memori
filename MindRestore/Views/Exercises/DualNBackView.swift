@@ -62,7 +62,7 @@ struct DualNBackView: View {
                         ("Overall", viewModel.overallScore.percentString),
                         ("Trials", "\(viewModel.totalTrials)")
                     ],
-                    ctaText: "Can you match this?"
+                    ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
                 if viewModel.nextN > viewModel.currentN {

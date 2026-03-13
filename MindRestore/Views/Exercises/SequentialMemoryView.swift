@@ -185,7 +185,7 @@ struct SequentialMemoryView: View {
                         ("Rounds Passed", "\(viewModel.roundResults.filter(\.correct).count)"),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "How many digits can you remember?"
+                    ctaText: "Beat my memory"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

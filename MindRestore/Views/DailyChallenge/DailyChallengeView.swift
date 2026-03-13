@@ -72,7 +72,7 @@ struct DailyChallengeView: View {
                         (label: "Type", value: viewModel.challengeType.displayName),
                         (label: "Accuracy", value: viewModel.isCorrect ? "100%" : "\(viewModel.score / 10)%")
                     ],
-                    ctaText: "Challenge yours with Memori"
+                    ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640))
             }

@@ -21,12 +21,12 @@ struct BrainScoreMilestoneView: View {
 
     private var milestoneSubtitle: String {
         switch milestone {
-        case 500: return "You've entered the top half. Your brain is warming up."
-        case 600: return "Above average. Your cognitive training is paying off."
-        case 700: return "Top 20%. You're outperforming most players."
-        case 800: return "Top 5%. Your brain is operating at peak performance."
+        case 500: return "Top 50%. Your brain is officially warming up."
+        case 600: return "Above average. Your training is paying off."
+        case 700: return "Top 20%. Most brains never make it here."
+        case 800: return "Top 5%. You're operating at peak performance."
         case 900: return "Top 1%. You have an exceptional mind."
-        case 1000: return "The summit. You've maxed out. Absolute legend."
+        case 1000: return "The summit. Absolute legend."
         default: return "Keep training!"
         }
     }

@@ -233,7 +233,7 @@ struct MathSpeedView: View {
                         ("Avg/Problem", String(format: "%.1fs", viewModel.averageTimePerProblem)),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "Can you solve faster?"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

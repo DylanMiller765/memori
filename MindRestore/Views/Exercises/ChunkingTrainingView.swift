@@ -257,7 +257,7 @@ struct ChunkingTrainingView: View {
                         ("Correct Digits", "\(viewModel.correctDigits) / \(viewModel.totalDigits)"),
                         ("Difficulty", "Level \(viewModel.difficulty)")
                     ],
-                    ctaText: "Can you chunk better?"
+                    ctaText: "Think you're smarter?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

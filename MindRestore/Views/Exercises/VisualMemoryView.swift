@@ -246,7 +246,7 @@ struct VisualMemoryView: View {
                         ("Accuracy", viewModel.accuracy.percentString),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "How far can you get?"
+                    ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

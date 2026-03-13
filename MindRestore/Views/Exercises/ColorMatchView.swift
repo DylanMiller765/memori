@@ -209,7 +209,7 @@ struct ColorMatchView: View {
                         ("Avg Response", "\(viewModel.averageResponseMs) ms"),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "Test your focus"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

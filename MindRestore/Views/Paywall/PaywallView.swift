@@ -532,11 +532,11 @@ struct ExitOfferSheet: View {
             .opacity(appeared ? 1 : 0)
 
             VStack(spacing: 8) {
-                Text("Wait — don't lose\nyour progress!")
+                Text("Don't lose your\nmomentum!")
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
 
-                Text("Pro members improve their Brain Score\n2x faster with unlimited training.")
+                Text("Pro members train unlimited — no daily\nlimits holding you back.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

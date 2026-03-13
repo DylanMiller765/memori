@@ -78,13 +78,9 @@ struct HomeView: View {
     }
 
     private var shouldShowWeeklyReport: Bool {
-        let cal = Calendar.current
-        let weekday = cal.component(.weekday, from: .now)
-        let isMonday = weekday == 2
-        // Show on Monday OR if user hasn't dismissed this week's report yet
-        // But only show if we have data
+        // Show all week until dismissed (report generated each Monday)
         guard !brainScores.isEmpty || !exercises.isEmpty else { return false }
-        if isMonday && lastWeeklyReportDismissed != thisMondayString {
+        if lastWeeklyReportDismissed != thisMondayString {
             return true
         }
         return false
@@ -242,6 +238,7 @@ struct HomeView: View {
                                         .font(.title3)
                                         .foregroundStyle(.secondary)
                                 }
+                                .accessibilityLabel("Close")
                             }
                         }
                 }
@@ -451,6 +448,7 @@ struct HomeView: View {
                         .frame(width: 28, height: 28)
                         .background(AppColors.cardSurface, in: Circle())
                 }
+                .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)

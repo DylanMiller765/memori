@@ -238,7 +238,7 @@ struct SpeedMatchView: View {
                         ("Speed", viewModel.speedRating),
                         ("Best Streak", "\(viewModel.bestStreak)")
                     ],
-                    ctaText: "How fast can you match?"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }

@@ -66,6 +66,7 @@ struct AchievementToast: View {
                         .font(.title3)
                         .foregroundStyle(.tertiary)
                 }
+                .accessibilityLabel("Dismiss")
             }
             .padding(16)
             .background(

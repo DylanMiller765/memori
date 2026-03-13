@@ -20,11 +20,11 @@ struct StreakCelebrationView: View {
 
     private var milestoneSubtitle: String {
         switch streak {
-        case 7: return "You've built a real habit. Most people quit by day 3."
-        case 14: return "Two weeks strong. Your brain is noticeably sharper."
-        case 30: return "A full month of training. You're in the top 5% of users."
-        case 60: return "60 days of dedication. Your neural pathways are strengthening."
-        case 100: return "Triple digits. You are a cognitive legend."
+        case 7: return "You've outlasted 97% of starters. Most quit by day 3."
+        case 14: return "Two weeks strong. Your brain is measurably sharper."
+        case 30: return "A full month of training. You're in the top 5% of Memori players."
+        case 60: return "60 days of dedication. Your neural pathways have literally rewired."
+        case 100: return "Triple digits. You're one of the rarest players on Memori."
         default: return "Incredible consistency. Keep training!"
         }
     }
