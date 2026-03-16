@@ -5,7 +5,7 @@ import SwiftData
 
 @MainActor @Observable
 final class VisualMemoryViewModel {
-    enum Phase { case setup, showing, input, correct, finished }
+    enum Phase { case setup, showing, input, correct, wrongReveal, finished }
 
     var phase: Phase = .setup
     var startTime: Date?
@@ -120,10 +120,16 @@ final class VisualMemoryViewModel {
                 }
             }
         } else {
-            // Wrong — game over
+            // Wrong — show correct answer, then game over
             SoundService.shared.playWrong()
             HapticService.wrong()
-            phase = .finished
+            phase = .wrongReveal
+            showTimer?.invalidate()
+            showTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    self?.phase = .finished
+                }
+            }
         }
     }
 
@@ -174,12 +180,15 @@ struct VisualMemoryView: View {
                 gameView(interactable: true)
             case .correct:
                 correctView
+            case .wrongReveal:
+                wrongRevealView
             case .finished:
                 resultsView
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
@@ -401,6 +410,57 @@ struct VisualMemoryView: View {
             Spacer()
         }
         .padding(.vertical, 24)
+    }
+
+    // MARK: - Wrong Reveal
+
+    private var wrongRevealView: some View {
+        VStack(spacing: 20) {
+            Text("Wrong!")
+                .font(.title.weight(.bold))
+                .foregroundStyle(AppColors.coral)
+
+            Text("The correct pattern was:")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
+            LazyVGrid(columns: columns, spacing: 6) {
+                ForEach(0..<viewModel.totalCells, id: \.self) { index in
+                    let isCorrect = viewModel.highlightedCells.contains(index)
+                    let wasSelected = viewModel.selectedCells.contains(index)
+
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(revealCellColor(isCorrect: isCorrect, wasSelected: wasSelected))
+                        .aspectRatio(1, contentMode: .fit)
+                        .overlay {
+                            if wasSelected && !isCorrect {
+                                Image(systemName: "xmark")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(.white.opacity(0.8))
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, gridPadding)
+
+            Text("Level \(viewModel.levelsCompleted)")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 24)
+    }
+
+    private func revealCellColor(isCorrect: Bool, wasSelected: Bool) -> Color {
+        if isCorrect && wasSelected {
+            return AppColors.mint // got it right
+        } else if isCorrect {
+            return AppColors.accent // missed this one
+        } else if wasSelected {
+            return AppColors.coral.opacity(0.7) // wrong pick
+        } else {
+            return Color.gray.opacity(0.12)
+        }
     }
 
     // MARK: - Results
