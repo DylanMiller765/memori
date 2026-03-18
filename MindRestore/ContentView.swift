@@ -201,6 +201,8 @@ struct ContentView: View {
                 selectedTab = 0
             case .train, .game(_), .dailyChallenge:
                 selectedTab = 1
+            case .challenge:
+                selectedTab = 1  // Train tab
             case .compete:
                 selectedTab = 2
             case .insights:

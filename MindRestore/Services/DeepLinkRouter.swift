@@ -8,11 +8,13 @@ enum DeepLinkDestination: Equatable {
     case insights
     case profile
     case dailyChallenge
+    case challenge(ChallengeLink)
 }
 
 @MainActor @Observable
 final class DeepLinkRouter {
     var pendingDestination: DeepLinkDestination?
+    var pendingChallenge: ChallengeLink?
 
     func handle(_ url: URL) {
         guard url.scheme == "memori" else { return }
@@ -24,6 +26,13 @@ final class DeepLinkRouter {
         case "insights": pendingDestination = .insights
         case "profile": pendingDestination = .profile
         case "challenge": pendingDestination = .dailyChallenge
+        case "duel":
+            if let link = ChallengeLink(url: url) {
+                pendingChallenge = link
+                pendingDestination = .challenge(link)
+            } else {
+                pendingDestination = .train
+            }
         case "game":
             if let typeName = url.pathComponents.dropFirst().first,
                let type = ExerciseType(rawValue: typeName) {
