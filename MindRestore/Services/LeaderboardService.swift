@@ -16,6 +16,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
     case dualNBack = "Dual N-Back"
     case wordScramble = "Word Scramble"
     case memoryChain = "Memory Chain"
+    case dailyChallenge = "Daily Challenge"
 
     var id: String { rawValue }
 
@@ -33,6 +34,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .dualNBack: return "square.grid.3x3"
         case .wordScramble: return "textformat.abc.dottedunderline"
         case .memoryChain: return "link.circle.fill"
+        case .dailyChallenge: return "star.circle.fill"
         }
     }
 
@@ -50,6 +52,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .dualNBack: return "Highest N-back level reached"
         case .wordScramble: return "Most words unscrambled out of 10"
         case .memoryChain: return "Longest sequence chain recalled"
+        case .dailyChallenge: return "Highest daily challenge score"
         }
     }
 }

@@ -23,6 +23,7 @@ final class GameCenterService {
     static let dualNBackLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dualNBack"
     static let wordScrambleLeaderboard = "com.dylanmiller.mindrestore.leaderboard.wordScramble"
     static let memoryChainLeaderboard = "com.dylanmiller.mindrestore.leaderboard.memoryChain"
+    static let dailyChallengeLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dailyChallenge"
 
     // MARK: - Achievement ID Mapping
 
@@ -46,6 +47,7 @@ final class GameCenterService {
         case .dualNBack: return dualNBackLeaderboard
         case .wordScramble: return wordScrambleLeaderboard
         case .memoryChain: return memoryChainLeaderboard
+        case .dailyChallenge: return dailyChallengeLeaderboard
         }
     }
 

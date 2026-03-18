@@ -591,6 +591,8 @@ struct LeaderboardView: View {
             return "\(primary)/10"
         case .memoryChain:
             return "\(score)"
+        case .dailyChallenge:
+            return "\(score)"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)
@@ -742,6 +744,8 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .wordScramble)
         case .memoryChain:
             return PersonalBestTracker.shared.best(for: .memoryChain)
+        case .dailyChallenge:
+            return nil
         }
     }
 }

@@ -12,8 +12,10 @@ struct DailyChallengeView: View {
     @Query private var users: [User]
     @State private var viewModel = DailyChallengeViewModel()
     @State private var showChallenge = false
+    @State private var showLeaderboard = false
     @State private var strategyTip: StrategyTip?
     @State private var shareImage: UIImage?
+    @State private var dailyRank: Int?
     @AppStorage("daily_challenge_completed_date") private var completedDateString: String = ""
 
     private var user: User? { users.first }
@@ -75,6 +77,22 @@ struct DailyChallengeView: View {
                     ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640))
+
+                // Submit score to Game Center
+                gameCenterService.reportScore(viewModel.score, leaderboardID: GameCenterService.dailyChallengeLeaderboard)
+
+                // Fetch today's rank
+                Task {
+                    if gameCenterService.isAuthenticated {
+                        let result = await gameCenterService.loadLeaderboardEntries(
+                            category: .dailyChallenge,
+                            timeFilter: .today
+                        )
+                        if let entry = result.entries.first(where: { $0.isCurrentUser }) {
+                            dailyRank = entry.rank
+                        }
+                    }
+                }
             }
         }
         .sheet(isPresented: $showChallenge) {
@@ -84,6 +102,9 @@ struct DailyChallengeView: View {
                 playerName: "Me",
                 percentile: viewModel.percentile
             )
+        }
+        .sheet(isPresented: $showLeaderboard) {
+            LeaderboardView()
         }
     }
 
@@ -383,6 +404,12 @@ struct DailyChallengeView: View {
                     .background(AppColors.accent.opacity(0.18), in: Capsule())
                     .accessibilityLabel("Better than \(viewModel.percentile) percent of players")
 
+                if let rank = dailyRank {
+                    Text("You placed #\(rank) today")
+                        .font(.headline)
+                        .foregroundStyle(AppColors.accent)
+                }
+
                 if viewModel.isCorrect {
                     Label("Perfect!", systemImage: "sparkles")
                         .font(.subheadline.weight(.semibold))
@@ -423,6 +450,24 @@ struct DailyChallengeView: View {
                             Text("Challenge a Friend")
                         }
                         .gradientButton()
+                    }
+
+                    Button {
+                        showLeaderboard = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "star.circle.fill")
+                            Text("View Leaderboard")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(AppColors.accent.opacity(0.4), lineWidth: 1.5)
+                                .fill(AppColors.cardSurface)
+                        )
+                        .foregroundStyle(AppColors.accent)
                     }
 
                     if let shareImg = shareImage {
