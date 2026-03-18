@@ -27,6 +27,8 @@ final class SequentialMemoryViewModel {
     var maxCorrectLength: Int = 0
     var roundResults: [(length: Int, correct: Bool)] = []
     var startTime: Date?
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var digitTimer: Timer?
 
     var score: Double {
@@ -55,11 +57,21 @@ final class SequentialMemoryViewModel {
         maxCorrectLength = 0
         roundResults = []
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         nextRound()
     }
 
     func nextRound() {
-        currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9) }
+        if var r = rng {
+            currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9, using: &r) }
+            rng = r
+        } else {
+            currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9) }
+        }
         displayDigitIndex = -1
         userInput = ""
         phase = .showing

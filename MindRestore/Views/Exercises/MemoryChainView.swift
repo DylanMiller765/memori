@@ -59,6 +59,9 @@ final class MemoryChainViewModel {
     var chainCompleteText: String = ""
     var celebrationCellScales: [CGFloat] = Array(repeating: 1.0, count: 16)
 
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
+
     private var playbackTask: Task<Void, Never>?
 
     var normalizedScore: Double {
@@ -87,12 +90,22 @@ final class MemoryChainViewModel {
         lastTappedCell = nil
         lastTapCorrect = nil
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
 
-        // Seed with initial sequence of 3 items
+        // Seed with initial sequence of 2 items
         for _ in 0..<2 {
             var newIndex: Int
             repeat {
-                newIndex = Int.random(in: 0..<16)
+                if var r = rng {
+                    newIndex = Int.random(in: 0..<16, using: &r)
+                    rng = r
+                } else {
+                    newIndex = Int.random(in: 0..<16)
+                }
             } while newIndex == sequence.last
             sequence.append(newIndex)
         }
@@ -109,7 +122,12 @@ final class MemoryChainViewModel {
         // Add a new random index to the sequence (avoid repeating the last item)
         var newIndex: Int
         repeat {
-            newIndex = Int.random(in: 0..<16)
+            if var r = rng {
+                newIndex = Int.random(in: 0..<16, using: &r)
+                rng = r
+            } else {
+                newIndex = Int.random(in: 0..<16)
+            }
         } while newIndex == sequence.last
 
         sequence.append(newIndex)

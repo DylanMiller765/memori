@@ -8,6 +8,7 @@ final class DualNBackViewModel {
     var showResults = false
     var startTime = Date()
     var isDual = true
+    var challengeSeed: Int?
     private var trialTimer: Timer?
     var wrongPositionNBack: Int? = nil
     var wrongLetterNBack: String? = nil
@@ -24,6 +25,7 @@ final class DualNBackViewModel {
 
     func startGame(n: Int, dual: Bool) {
         isDual = dual
+        engine.challengeSeed = challengeSeed
         engine.startGame(n: n, isDual: dual)
         isPlaying = true
         showResults = false

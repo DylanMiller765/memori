@@ -23,6 +23,9 @@ final class ColorMatchViewModel {
     var showFeedback = false
     var lastWrongCorrectAnswer: String? = nil
 
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
+
     let colorOptions: [(name: String, color: Color)] = [
         ("Red", Color(red: 0.98, green: 0.42, blue: 0.35)),
         ("Blue", Color(red: 0.30, green: 0.55, blue: 1.0)),
@@ -90,6 +93,11 @@ final class ColorMatchViewModel {
         startTime = Date.now
         feedbackColor = nil
         showFeedback = false
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         generateRound()
     }
 
@@ -100,14 +108,25 @@ final class ColorMatchViewModel {
         }
 
         // Pick a random word (color name)
-        let wordIndex = Int.random(in: 0..<colorOptions.count)
+        let wordIndex: Int
+        if var r = rng {
+            wordIndex = Int.random(in: 0..<colorOptions.count, using: &r)
+            rng = r
+        } else {
+            wordIndex = Int.random(in: 0..<colorOptions.count)
+        }
         displayWord = colorOptions[wordIndex].name.uppercased()
 
         // Pick a DIFFERENT color for the ink
-        var inkIndex = Int.random(in: 0..<colorOptions.count)
-        while inkIndex == wordIndex {
-            inkIndex = Int.random(in: 0..<colorOptions.count)
-        }
+        var inkIndex: Int
+        repeat {
+            if var r = rng {
+                inkIndex = Int.random(in: 0..<colorOptions.count, using: &r)
+                rng = r
+            } else {
+                inkIndex = Int.random(in: 0..<colorOptions.count)
+            }
+        } while inkIndex == wordIndex
         displayColor = colorOptions[inkIndex].color
         correctAnswer = colorOptions[inkIndex].name
 

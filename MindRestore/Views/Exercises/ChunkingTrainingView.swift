@@ -79,6 +79,8 @@ final class ChunkingViewModel {
     private var timer: Timer?
     private var startTime: Date?
     private let hasSeenIntroKey = "chunkingTraining_hasSeenIntro"
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
 
     init() {}
 
@@ -92,12 +94,24 @@ final class ChunkingViewModel {
         totalDigits = params.digitCount + 4
         difficulty = AdaptiveDifficultyEngine.shared.currentLevel(for: .digits)
 
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
+
         // Generate random digit string
-        digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9)) }.joined()
+        if var r = rng {
+            digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9, using: &r)) }.joined()
+            chunkStyle = ChunkingStyle.allCases.randomElement(using: &r) ?? .phoneNumber
+            rng = r
+        } else {
+            digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9)) }.joined()
+            chunkStyle = ChunkingStyle.allCases.randomElement() ?? .phoneNumber
+        }
         userInput = ""
         score = 0.0
         correctDigits = 0
-        chunkStyle = ChunkingStyle.allCases.randomElement() ?? .phoneNumber
 
         // Display time scales with difficulty — more digits, less time per digit
         let baseTime = AdaptiveDifficultyEngine.shared.displayTime(for: .digits, difficulty: difficulty)

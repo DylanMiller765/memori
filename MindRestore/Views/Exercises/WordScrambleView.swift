@@ -23,8 +23,11 @@ final class WordScrambleViewModel {
     var roundActive = false
     var roundResult: RoundResult? = nil
 
+    var challengeSeed: Int?
+
     private var timer: Timer?
     private var usedWords: Set<String> = []
+    private var rng: SeededGenerator?
 
     struct LetterTile: Identifiable, Equatable {
         let id = UUID()
@@ -108,6 +111,11 @@ final class WordScrambleViewModel {
         solvedWords = []
         usedWords = []
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         startRound()
     }
 
@@ -125,7 +133,12 @@ final class WordScrambleViewModel {
         var letters = word.map { String($0) }
         var attempts = 0
         repeat {
-            letters.shuffle()
+            if var r = rng {
+                letters = letters.shuffled(using: &r)
+                rng = r
+            } else {
+                letters.shuffle()
+            }
             attempts += 1
         } while letters.joined() == word && attempts < 20
 
@@ -260,6 +273,11 @@ final class WordScrambleViewModel {
             pool = Self.mediumWords.filter { !usedWords.contains($0) }
         default:
             pool = Self.hardWords.filter { !usedWords.contains($0) }
+        }
+        if var r = rng {
+            let result = pool.randomElement(using: &r) ?? "BRAIN"
+            rng = r
+            return result
         }
         return pool.randomElement() ?? "BRAIN"
     }

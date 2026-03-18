@@ -26,6 +26,8 @@ final class DualNBackEngine {
     private var userSoundResponses: Set<Int> = []
 
     private let availableLetters = ["C", "H", "K", "L", "Q", "R", "S", "T"]
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
 
     var positionScore: Double {
         let total = positionMatches.count
@@ -66,25 +68,41 @@ final class DualNBackEngine {
         soundMisses = 0
         soundFalseAlarms = 0
 
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
+
         generateSequence(isDual: dual)
         presentTrial()
     }
 
     private func generateSequence(isDual: Bool) {
         for i in 0..<totalTrials {
-            if i >= currentN && Double.random(in: 0...1) < 0.3 {
+            let posMatchRoll: Double
+            if var r = rng { posMatchRoll = Double.random(in: 0...1, using: &r); rng = r }
+            else { posMatchRoll = Double.random(in: 0...1) }
+
+            if i >= currentN && posMatchRoll < 0.3 {
                 positions.append(positions[i - currentN])
                 positionMatches.insert(i)
             } else {
-                positions.append(Int.random(in: 0...8))
+                if var r = rng { positions.append(Int.random(in: 0...8, using: &r)); rng = r }
+                else { positions.append(Int.random(in: 0...8)) }
             }
 
             if isDual {
-                if i >= currentN && Double.random(in: 0...1) < 0.3 {
+                let soundMatchRoll: Double
+                if var r = rng { soundMatchRoll = Double.random(in: 0...1, using: &r); rng = r }
+                else { soundMatchRoll = Double.random(in: 0...1) }
+
+                if i >= currentN && soundMatchRoll < 0.3 {
                     letters.append(letters[i - currentN])
                     soundMatches.insert(i)
                 } else {
-                    letters.append(availableLetters.randomElement() ?? "C")
+                    if var r = rng { letters.append(availableLetters.randomElement(using: &r) ?? "C"); rng = r }
+                    else { letters.append(availableLetters.randomElement() ?? "C") }
                 }
             } else {
                 letters.append("")

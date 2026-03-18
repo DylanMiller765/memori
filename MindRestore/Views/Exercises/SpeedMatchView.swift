@@ -24,6 +24,8 @@ final class SpeedMatchViewModel {
     var misses = 0
     var currentStreak = 0
     var bestStreak = 0
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     var difficulty = 1 // 1-3, affects symbol count and speed
 
     // Difficulty 1: 6 symbols, Difficulty 2: 8, Difficulty 3: 10 + similar shapes
@@ -84,7 +86,12 @@ final class SpeedMatchViewModel {
     }
 
     private func nextShouldMatch() -> Bool {
-        Double.random(in: 0...1) < 0.30
+        if var r = rng {
+            let result = Double.random(in: 0...1, using: &r) < 0.30
+            rng = r
+            return result
+        }
+        return Double.random(in: 0...1) < 0.30
     }
 
     func startGame() {
@@ -100,6 +107,11 @@ final class SpeedMatchViewModel {
         previousSymbol = ""
         currentSymbol = ""
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         showNextCard()
     }
 
@@ -109,7 +121,12 @@ final class SpeedMatchViewModel {
         currentRound += 1
 
         if currentRound == 1 {
-            currentSymbol = activeSymbols.randomElement()!
+            if var r = rng {
+                currentSymbol = activeSymbols.randomElement(using: &r)!
+                rng = r
+            } else {
+                currentSymbol = activeSymbols.randomElement()!
+            }
             isMatch = false
         } else {
             let shouldMatch = nextShouldMatch()
@@ -117,9 +134,18 @@ final class SpeedMatchViewModel {
                 currentSymbol = previousSymbol
                 isMatch = true
             } else {
-                var next = activeSymbols.randomElement()!
-                while next == previousSymbol {
+                var next: String
+                if var r = rng {
+                    next = activeSymbols.randomElement(using: &r)!
+                    while next == previousSymbol {
+                        next = activeSymbols.randomElement(using: &r)!
+                    }
+                    rng = r
+                } else {
                     next = activeSymbols.randomElement()!
+                    while next == previousSymbol {
+                        next = activeSymbols.randomElement()!
+                    }
                 }
                 currentSymbol = next
                 isMatch = false

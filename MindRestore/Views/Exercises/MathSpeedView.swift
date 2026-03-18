@@ -64,6 +64,7 @@ final class MathSpeedViewModel {
     var correctCount: Int = 0
     var wrongCount: Int = 0
     var results: [(problem: MathProblem, userAnswer: Int?, correct: Bool)] = []
+    var challengeSeed: Int?
     var startTime: Date?
     var elapsedSeconds: Double = 0
     private var timer: Timer?
@@ -108,11 +109,21 @@ final class MathSpeedViewModel {
 
     func startGame() {
         let range = difficulty.range
-        problems = (0..<totalProblems).map { _ in
-            MathProblem(
-                a: Int.random(in: range),
-                b: Int.random(in: range)
-            )
+        if let seed = challengeSeed {
+            var rng = SeededGenerator(seed: UInt64(seed))
+            problems = (0..<totalProblems).map { _ in
+                MathProblem(
+                    a: Int.random(in: range, using: &rng),
+                    b: Int.random(in: range, using: &rng)
+                )
+            }
+        } else {
+            problems = (0..<totalProblems).map { _ in
+                MathProblem(
+                    a: Int.random(in: range),
+                    b: Int.random(in: range)
+                )
+            }
         }
         currentProblemIndex = 0
         correctCount = 0

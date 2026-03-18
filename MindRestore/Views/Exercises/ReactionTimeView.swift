@@ -23,6 +23,8 @@ final class ReactionTimeViewModel {
     var lastReactionMs: Int = 0
     var reactionStartTime: Date?
     var startTime: Date?
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var waitTimer: Timer?
 
     var averageMs: Int {
@@ -60,12 +62,23 @@ final class ReactionTimeViewModel {
         reactionTimes = []
         currentRound = 0
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         startRound()
     }
 
     func startRound() {
         phase = .waiting
-        let delay = Double.random(in: 1.5...4.0)
+        let delay: Double
+        if var r = rng {
+            delay = Double.random(in: 1.5...4.0, using: &r)
+            rng = r
+        } else {
+            delay = Double.random(in: 1.5...4.0)
+        }
         waitTimer?.invalidate()
         waitTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in

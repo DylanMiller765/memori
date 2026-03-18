@@ -14,6 +14,8 @@ final class VisualMemoryViewModel {
     var selectedCells: Set<Int> = []
     var gridSize: Int = 3
     var highlightCount: Int = 3
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var showTimer: Timer?
     var levelsCompleted = 0
 
@@ -59,6 +61,11 @@ final class VisualMemoryViewModel {
         level = max(1, AdaptiveDifficultyEngine.shared.currentLevel(for: .visualMemory))
         levelsCompleted = 0
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         startLevel()
     }
 
@@ -69,7 +76,12 @@ final class VisualMemoryViewModel {
         // Pick random cells to highlight
         var cells = Set<Int>()
         while cells.count < highlightCount {
-            cells.insert(Int.random(in: 0..<totalCells))
+            if var r = rng {
+                cells.insert(Int.random(in: 0..<totalCells, using: &r))
+                rng = r
+            } else {
+                cells.insert(Int.random(in: 0..<totalCells))
+            }
         }
         highlightedCells = cells
 
