@@ -575,9 +575,16 @@ struct LeaderboardView: View {
         switch selectedCategory {
         case .streak: return "\(score)d"
         case .reactionTime: return "\(score)ms"
-        case .colorMatch, .speedMatch: return "\(score)%"
+        case .colorMatch, .speedMatch:
+            // Composite score: accuracy% × 1000 + timeBonus
+            let primary = score / 1000
+            return "\(primary)%"
         case .visualMemory, .dualNBack: return "Lvl \(score)"
         case .numberMemory: return "\(score) digits"
+        case .mathSpeed:
+            // Composite score: correctCount × 1000 + timeBonus
+            let primary = score / 1000
+            return "\(primary)"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)

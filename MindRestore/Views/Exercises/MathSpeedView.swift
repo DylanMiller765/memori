@@ -101,6 +101,11 @@ final class MathSpeedViewModel {
         Int(elapsedSeconds)
     }
 
+    /// Composite leaderboard score: correct count × 1000 + time bonus (faster = higher)
+    var leaderboardScore: Int {
+        correctCount * 1000 + max(0, 999 - durationSeconds)
+    }
+
     func startGame() {
         let range = difficulty.range
         problems = (0..<totalProblems).map { _ in
@@ -219,7 +224,7 @@ struct MathSpeedView: View {
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
-                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
+                isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .mathSpeed)
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
                 let card = ExerciseShareCard(
                     exerciseName: "Math Speed",
@@ -591,7 +596,7 @@ struct MathSpeedView: View {
                 modelContext: modelContext,
                 gameCenterService: gameCenterService,
                 exerciseType: .mathSpeed,
-                gameScore: viewModel.correctCount
+                gameScore: viewModel.leaderboardScore
             )
         }
     }

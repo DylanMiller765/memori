@@ -5,7 +5,7 @@ import SwiftData
 
 @MainActor @Observable
 final class VisualMemoryViewModel {
-    enum Phase { case setup, showing, input, correct, wrong, finished }
+    enum Phase { case setup, showing, input, correct, wrongReveal, finished }
 
     var phase: Phase = .setup
     var startTime: Date?
@@ -15,29 +15,16 @@ final class VisualMemoryViewModel {
     var gridSize: Int = 3
     var highlightCount: Int = 3
     private var showTimer: Timer?
-    var firstTryLevels = 0
-    private var totalAttempts = 0
-    private var correctAttempts = 0
-    var levelRetries = 0
-    let maxRetries = 2
+    var levelsCompleted = 0
 
     let maxLevel = 10
 
     var score: Double {
-        Double(firstTryLevels) / Double(maxLevel)
+        Double(levelsCompleted) / Double(maxLevel)
     }
 
     var maxLevelReached: Int {
-        firstTryLevels
-    }
-
-    var accuracy: Double {
-        guard totalAttempts > 0 else { return 0 }
-        return Double(correctAttempts) / Double(totalAttempts)
-    }
-
-    var levelsCompleted: Int {
-        level > maxLevel ? maxLevel : level - 1
+        levelsCompleted
     }
 
     var durationSeconds: Int {
@@ -70,10 +57,7 @@ final class VisualMemoryViewModel {
 
     func startGame() {
         level = max(1, AdaptiveDifficultyEngine.shared.currentLevel(for: .visualMemory))
-        firstTryLevels = 0
-        totalAttempts = 0
-        correctAttempts = 0
-        levelRetries = 0
+        levelsCompleted = 0
         startTime = Date.now
         startLevel()
     }
@@ -91,6 +75,7 @@ final class VisualMemoryViewModel {
 
         // Show the pattern
         phase = .showing
+        SoundService.shared.playTap()
 
         showTimer?.invalidate()
         showTimer = Timer.scheduledTimer(withTimeInterval: showDuration, repeats: false) { [weak self] _ in
@@ -107,67 +92,44 @@ final class VisualMemoryViewModel {
         } else {
             selectedCells.insert(index)
         }
-
+        HapticService.tap()
     }
 
     func submit() {
         guard phase == .input else { return }
-        totalAttempts += 1
 
         if selectedCells == highlightedCells {
-            // Correct
-            correctAttempts += 1
-            if levelRetries == 0 {
-                firstTryLevels += 1
-            }
-
-
+            // Correct — advance
+            levelsCompleted = level
+            SoundService.shared.playCorrect()
+            HapticService.correct()
 
             if level >= maxLevel {
-
+                HapticService.complete()
                 phase = .finished
-
+                SoundService.shared.playComplete()
             } else {
                 phase = .correct
                 showTimer?.invalidate()
                 showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
                     Task { @MainActor in
-
-                        self?.levelRetries = 0
+                        HapticService.levelUp()
                         self?.level += 1
                         self?.startLevel()
                     }
                 }
             }
         } else {
-            // Wrong
-            levelRetries += 1
-
-
-
-            if levelRetries > maxRetries {
-                // Max retries reached — skip to next level
-                if level >= maxLevel {
-    
-                    phase = .finished
-    
-                } else {
-                    phase = .wrong
+            // Wrong — show correct answer, then game over
+            SoundService.shared.playWrong()
+            HapticService.wrong()
+            phase = .wrongReveal
+            showTimer?.invalidate()
+            showTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    self?.phase = .finished
                 }
-            } else {
-                phase = .wrong
             }
-        }
-    }
-
-    func retryAfterWrong() {
-        if levelRetries > maxRetries {
-            // Skip to next level
-            levelRetries = 0
-            level += 1
-            startLevel()
-        } else {
-            startLevel()
         }
     }
 
@@ -218,16 +180,16 @@ struct VisualMemoryView: View {
                 gameView(interactable: true)
             case .correct:
                 correctView
-            case .wrong:
-                wrongView
+            case .wrongReveal:
+                wrongRevealView
             case .finished:
                 resultsView
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrong)
-        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: viewModel.phase) { _, newPhase in
@@ -242,11 +204,11 @@ struct VisualMemoryView: View {
                     mainLabel: "Max Level",
                     ratingText: viewModel.ratingText,
                     stats: [
-                        ("Levels Aced", "\(viewModel.firstTryLevels) / \(viewModel.maxLevel)"),
-                        ("Accuracy", viewModel.accuracy.percentString),
-                        ("Score", viewModel.score.percentString)
+                        ("Levels Cleared", "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)"),
+                        ("Score", viewModel.score.percentString),
+                        ("Time", viewModel.durationSeconds.durationString)
                     ],
-                    ctaText: "Think you can beat this?"
+                    ctaText: "How far can you get?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -281,7 +243,7 @@ struct VisualMemoryView: View {
             VStack(alignment: .leading, spacing: 12) {
                 infoRow(icon: "eye.fill", text: "Memorize which squares light up")
                 infoRow(icon: "hand.tap.fill", text: "Tap to recreate the pattern")
-                infoRow(icon: "arrow.up.right", text: "10 levels — how many can you ace?")
+                infoRow(icon: "exclamationmark.triangle.fill", text: "One mistake and it's over!")
             }
             .appCard()
             .padding(.horizontal)
@@ -292,7 +254,7 @@ struct VisualMemoryView: View {
                 viewModel.startGame()
             } label: {
                 Text("Start")
-                    .gradientButton()
+                    .accentButton()
             }
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
@@ -314,41 +276,38 @@ struct VisualMemoryView: View {
     // MARK: - Game View
 
     private func gameView(interactable: Bool) -> some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             // Header
-            Text("Level \(viewModel.level) / \(viewModel.maxLevel)")
+            Text("Level \(viewModel.level)")
                 .font(.headline)
                 .foregroundStyle(AppColors.accent)
                 .padding(.horizontal)
 
-            Text(interactable ? "Tap the squares that were highlighted" : "Remember this pattern")
-                .font(.headline)
-
-            Text(interactable ? "Select \(viewModel.highlightCount) squares" : "\(viewModel.gridSize)x\(viewModel.gridSize) · \(viewModel.highlightCount) squares")
-                .font(.subheadline)
+            // Grid size indicator
+            Text("\(viewModel.gridSize)x\(viewModel.gridSize) Grid")
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+
+            if !interactable {
+                Text("Memorize!")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(AppColors.violet)
+            } else {
+                Text("Tap the squares (\(viewModel.selectedCells.count)/\(viewModel.highlightCount))")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
 
             Spacer()
 
-            // Grid — matches assessment style
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: viewModel.gridSize), spacing: 8) {
+            // Grid
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
+            LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(0..<viewModel.totalCells, id: \.self) { index in
-                    let isHighlighted = viewModel.highlightedCells.contains(index)
-                    let isSelected = viewModel.selectedCells.contains(index)
-
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(cellColor(isHighlighted: isHighlighted, isSelected: isSelected, interactable: interactable))
-                        .aspectRatio(1, contentMode: .fit)
-                        .onTapGesture {
-                            if interactable {
-                                viewModel.toggleCell(index)
-                            }
-                        }
-                        .animation(.easeInOut(duration: 0.15), value: isSelected)
-                        .accessibilityLabel("Cell \(index + 1)\(isSelected ? ", selected" : "")")
+                    gridCell(index: index, interactable: interactable)
                 }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, gridPadding)
 
             Spacer()
 
@@ -357,24 +316,77 @@ struct VisualMemoryView: View {
                     viewModel.submit()
                 } label: {
                     Text("Submit")
-                        .gradientButton()
+                        .accentButton()
                 }
                 .disabled(viewModel.selectedCells.count != viewModel.highlightCount)
-                .opacity(viewModel.selectedCells.count == viewModel.highlightCount ? 1.0 : 0.4)
+                .opacity(viewModel.selectedCells.count == viewModel.highlightCount ? 1.0 : 0.5)
                 .padding(.horizontal, 32)
             }
         }
-        .padding(.bottom, 16)
+        .padding(.vertical, 24)
     }
 
-    private func cellColor(isHighlighted: Bool, isSelected: Bool, interactable: Bool) -> Color {
-        if !interactable && isHighlighted {
-            return AppColors.accent
+    private var gridPadding: CGFloat {
+        switch viewModel.gridSize {
+        case 3: return 40
+        case 4: return 24
+        default: return 16
         }
+    }
+
+    @ViewBuilder
+    private func gridCell(index: Int, interactable: Bool) -> some View {
+        let isHighlighted = viewModel.highlightedCells.contains(index)
+        let isSelected = viewModel.selectedCells.contains(index)
+
+        RoundedRectangle(cornerRadius: 10)
+            .fill(cellFill(isHighlighted: isHighlighted, isSelected: isSelected, interactable: interactable))
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(cellBorder(isSelected: isSelected, interactable: interactable), lineWidth: isSelected ? 2 : 0.5)
+            )
+            .animation(.easeInOut(duration: 0.15), value: isHighlighted)
+            .animation(.easeInOut(duration: 0.15), value: isSelected)
+            .onTapGesture {
+                if interactable {
+                    viewModel.toggleCell(index)
+                }
+            }
+            .accessibilityLabel("Cell \(index + 1)")
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func cellFill(isHighlighted: Bool, isSelected: Bool, interactable: Bool) -> some ShapeStyle {
+        if !interactable && isHighlighted {
+            // Showing phase — highlight with accent
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [AppColors.accent, AppColors.violet],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        } else if interactable && isSelected {
+            // Input phase — player selected
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [AppColors.accent.opacity(0.8), AppColors.violet.opacity(0.8)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        } else {
+            // Default cell
+            return AnyShapeStyle(AppColors.cardSurface)
+        }
+    }
+
+    private func cellBorder(isSelected: Bool, interactable: Bool) -> Color {
         if interactable && isSelected {
             return AppColors.accent
         }
-        return Color.gray.opacity(0.12)
+        return AppColors.cardBorder
     }
 
     // MARK: - Correct
@@ -400,12 +412,10 @@ struct VisualMemoryView: View {
         .padding(.vertical, 24)
     }
 
-    // MARK: - Wrong
+    // MARK: - Wrong Reveal
 
-    private var wrongView: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
+    private var wrongRevealView: some View {
+        VStack(spacing: 20) {
             Text("Wrong!")
                 .font(.title.weight(.bold))
                 .foregroundStyle(AppColors.coral)
@@ -414,14 +424,14 @@ struct VisualMemoryView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            // Show grid with correct answers
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: viewModel.gridSize), spacing: 8) {
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
+            LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(0..<viewModel.totalCells, id: \.self) { index in
                     let isCorrect = viewModel.highlightedCells.contains(index)
                     let wasSelected = viewModel.selectedCells.contains(index)
 
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(wrongCellColor(isCorrect: isCorrect, wasSelected: wasSelected))
+                        .fill(revealCellColor(isCorrect: isCorrect, wasSelected: wasSelected))
                         .aspectRatio(1, contentMode: .fit)
                         .overlay {
                             if wasSelected && !isCorrect {
@@ -432,32 +442,22 @@ struct VisualMemoryView: View {
                         }
                 }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, gridPadding)
 
-            if viewModel.levelRetries <= viewModel.maxRetries {
-                Text("Retries left: \(viewModel.maxRetries - viewModel.levelRetries + 1)")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                viewModel.retryAfterWrong()
-            } label: {
-                Text(viewModel.levelRetries > viewModel.maxRetries ? "Next Level" : "Try Again")
-                    .gradientButton()
-            }
-            .padding(.horizontal, 32)
+            Text("Level \(viewModel.levelsCompleted)")
+                .font(.headline)
+                .foregroundStyle(.secondary)
         }
-        .padding(.bottom, 16)
+        .padding(.vertical, 24)
     }
 
-    private func wrongCellColor(isCorrect: Bool, wasSelected: Bool) -> Color {
-        if isCorrect {
-            return AppColors.mint.opacity(0.7)
+    private func revealCellColor(isCorrect: Bool, wasSelected: Bool) -> Color {
+        if isCorrect && wasSelected {
+            return AppColors.mint // got it right
+        } else if isCorrect {
+            return AppColors.accent // missed this one
         } else if wasSelected {
-            return AppColors.coral.opacity(0.7)
+            return AppColors.coral.opacity(0.7) // wrong pick
         } else {
             return Color.gray.opacity(0.12)
         }
@@ -490,9 +490,7 @@ struct VisualMemoryView: View {
                 }
 
                 VStack(spacing: 12) {
-                    resultRow(label: "Levels Aced", value: "\(viewModel.firstTryLevels) / \(viewModel.maxLevel)")
-                        .accessibilityElement(children: .combine)
-                    resultRow(label: "Accuracy", value: viewModel.accuracy.percentString)
+                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)")
                         .accessibilityElement(children: .combine)
                     Divider()
                     resultRow(label: "Score", value: viewModel.score.percentString)

@@ -67,6 +67,11 @@ final class ColorMatchViewModel {
         return Int(Date.now.timeIntervalSince(start))
     }
 
+    /// Composite leaderboard score: accuracy% × 1000 + time bonus (faster = higher)
+    var leaderboardScore: Int {
+        Int(accuracy * 100) * 1000 + max(0, 999 - durationSeconds)
+    }
+
     var ratingText: String {
         if accuracy >= 0.95 { return "Stroop Master!" }
         if accuracy >= 0.85 { return "Excellent Focus!" }
@@ -493,7 +498,7 @@ struct ColorMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: Int(viewModel.accuracy * 100), for: .colorMatch)
+        PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .colorMatch)
 
         let exercise = Exercise(
             type: .colorMatch,
@@ -530,7 +535,7 @@ struct ColorMatchView: View {
                 modelContext: modelContext,
                 gameCenterService: gameCenterService,
                 exerciseType: .colorMatch,
-                gameScore: Int(viewModel.accuracy * 100)
+                gameScore: viewModel.leaderboardScore
             )
         }
     }

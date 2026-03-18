@@ -265,15 +265,18 @@ final class GameCenterService {
             // Lower is better; Dylan at 288ms
             return ([178, 195, 210, 222, 238, 245, 255, 268, 275, 288, 298, 315, 330, 355, 390], true)
         case .colorMatch:
-            return ([98, 96, 95, 94, 93, 92, 90, 89, 87, 85, 82, 80, 78, 75, 70], false)
+            // Composite: accuracy% × 1000 + timeBonus
+            return ([98974, 96960, 95945, 94930, 93920, 92905, 90890, 89870, 87850, 85830, 82800, 80780, 78750, 75720, 70680], false)
         case .speedMatch:
-            return ([96, 94, 93, 91, 90, 88, 87, 85, 83, 80, 78, 75, 72, 68, 65], false)
+            // Composite: accuracy% × 1000 + timeBonus
+            return ([96970, 94955, 93940, 91920, 90910, 88890, 87875, 85855, 83835, 80810, 78785, 75760, 72730, 68690, 65660], false)
         case .visualMemory:
             return ([12, 11, 10, 9, 9, 8, 8, 7, 7, 7, 6, 6, 6, 5, 5], false)
         case .numberMemory:
             return ([14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 8, 8, 7, 7, 6], false)
         case .mathSpeed:
-            return ([24, 22, 21, 20, 19, 18, 17, 16, 16, 15, 14, 13, 12, 11, 10], false)
+            // Composite: correctCount × 1000 + timeBonus
+            return ([24970, 22955, 21940, 20930, 19920, 18905, 17890, 16880, 16860, 15850, 14835, 13820, 12800, 11780, 10760], false)
         case .dualNBack:
             return ([8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2], false)
         case .weeklyXP:

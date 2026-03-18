@@ -60,6 +60,11 @@ final class SpeedMatchViewModel {
         return Int(Date.now.timeIntervalSince(start))
     }
 
+    /// Composite leaderboard score: accuracy% × 1000 + time bonus (faster = higher)
+    var leaderboardScore: Int {
+        Int(accuracy * 100) * 1000 + max(0, 999 - durationSeconds)
+    }
+
     var ratingText: String {
         let pct = accuracy
         if pct >= 0.95 { return "Lightning Fast!" }
@@ -634,7 +639,7 @@ struct SpeedMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: Int(viewModel.accuracy * 100), for: .speedMatch)
+        PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .speedMatch)
 
         let exercise = Exercise(
             type: .speedMatch,
@@ -671,7 +676,7 @@ struct SpeedMatchView: View {
                 modelContext: modelContext,
                 gameCenterService: gameCenterService,
                 exerciseType: .speedMatch,
-                gameScore: Int(viewModel.accuracy * 100)
+                gameScore: viewModel.leaderboardScore
             )
         }
     }
