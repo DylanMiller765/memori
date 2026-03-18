@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Chunking Phase
 
@@ -621,6 +622,21 @@ struct ChunkingTrainingView: View {
                                 Text("Share Result")
                             }
                             .accentButton()
+                        }
+                    }
+
+                    if let challengeURL = ChallengeLink(
+                        game: .chunkingTraining,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.correctDigits,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
                         }
                     }
 

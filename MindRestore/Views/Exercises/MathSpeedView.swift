@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Difficulty
 
@@ -529,6 +530,21 @@ struct MathSpeedView: View {
                                 Text("Share Result")
                             }
                             .accentButton()
+                        }
+                    }
+
+                    if let challengeURL = ChallengeLink(
+                        game: .mathSpeed,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.leaderboardScore,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
                         }
                     }
 

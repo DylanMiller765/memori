@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 struct DualNBackView: View {
     @Environment(\.modelContext) private var modelContext
@@ -407,6 +408,21 @@ struct DualNBackView: View {
                                 Text("Share Result")
                             }
                             .accentButton()
+                        }
+                    }
+
+                    if let challengeURL = ChallengeLink(
+                        game: .dualNBack,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.currentN,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
                         }
                     }
 

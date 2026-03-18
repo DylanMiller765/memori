@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Game Phase
 
@@ -547,6 +548,21 @@ struct MemoryChainView: View {
                                 Text("Share Result")
                             }
                             .accentButton()
+                        }
+                    }
+
+                    if let challengeURL = ChallengeLink(
+                        game: .memoryChain,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.longestChain,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
                         }
                     }
 
