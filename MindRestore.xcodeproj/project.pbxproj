@@ -74,6 +74,8 @@
 		WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WR01000200000000000000A1 /* WeeklyReportShareCard.swift */; };
 		CC000001000000000000CC02 /* ChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC02 /* ChallengeView.swift */; };
 		CC000001000000000000CC03 /* DuelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC03 /* DuelView.swift */; };
+		CC000001000000000000CC04 /* ChallengeAcceptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC04 /* ChallengeAcceptView.swift */; };
+		CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC05 /* ChallengeResultView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
@@ -218,6 +220,8 @@
 		WR01000200000000000000A1 /* WeeklyReportShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportShareCard.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC02 /* ChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC03 /* DuelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuelView.swift; sourceTree = "<group>"; };
+		CC000002000000000000CC04 /* ChallengeAcceptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeAcceptView.swift; sourceTree = "<group>"; };
+		CC000002000000000000CC05 /* ChallengeResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeResultView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
 		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
 		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
@@ -558,6 +562,8 @@
 			children = (
 				CC000002000000000000CC02 /* ChallengeView.swift */,
 				CC000002000000000000CC03 /* DuelView.swift */,
+				CC000002000000000000CC04 /* ChallengeAcceptView.swift */,
+				CC000002000000000000CC05 /* ChallengeResultView.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -829,6 +835,8 @@
 				WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */,
 				CC000001000000000000CC02 /* ChallengeView.swift in Sources */,
 				CC000001000000000000CC03 /* DuelView.swift in Sources */,
+				CC000001000000000000CC04 /* ChallengeAcceptView.swift in Sources */,
+				CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */,
 				5D898BDABF6807EA6EDFF2F4 /* User.swift in Sources */,
 				EE000001000000000000EE01 /* MemoriWidgetBundle.swift in Sources */,
 				EE000001000000000000EE02 /* WidgetDataService.swift in Sources */,
