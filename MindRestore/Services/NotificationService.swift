@@ -181,15 +181,23 @@ final class NotificationService: Sendable {
         center.removePendingNotificationRequests(withIdentifiers: ["weeklyReport"])
 
         let content = UNMutableNotificationContent()
-        content.title = "Your Weekly Brain Report"
         content.sound = .default
 
         if brainScore == 0 {
-            content.body = "Your weekly Brain Report is ready. Train this week to see your score!"
+            content.title = "Your first Brain Score awaits"
+            content.body = "Play a few games this week and find out how sharp your brain really is."
         } else {
             let delta = brainScore - previousBrainScore
-            let deltaText = delta >= 0 ? "+\(delta)" : "\(delta)"
-            content.body = "Your weekly Brain Report is ready. Brain Score: \(brainScore) (\(deltaText))"
+            if delta > 0 {
+                content.title = "Your brain got sharper!"
+                content.body = "Brain Score: \(brainScore) — up \(delta) points from last week. Keep the momentum going."
+            } else if delta < 0 {
+                content.title = "Your Brain Score dipped"
+                content.body = "Brain Score: \(brainScore) — down \(abs(delta)) points. A quick session can turn it around."
+            } else {
+                content.title = "Weekly Brain Report"
+                content.body = "Brain Score: \(brainScore) — holding steady. Can you push it higher this week?"
+            }
         }
 
         var dateComponents = DateComponents()
