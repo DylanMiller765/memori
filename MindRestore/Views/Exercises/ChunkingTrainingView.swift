@@ -612,6 +612,7 @@ struct ChunkingTrainingView: View {
 
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        saveExercise()
                         viewModel.startChallenge()
                     } label: {
                         Text("Next Challenge")

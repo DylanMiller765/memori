@@ -414,6 +414,7 @@ struct ReactionTimeView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")

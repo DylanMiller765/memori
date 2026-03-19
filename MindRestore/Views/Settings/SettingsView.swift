@@ -797,7 +797,7 @@ struct SettingsView: View {
             }
             Divider().padding(.leading, 52)
             Button {
-                if let url = URL(string: "itms-apps://itunes.apple.com/app/id") {
+                if let url = URL(string: "itms-apps://itunes.apple.com/app/id6760178716") {
                     UIApplication.shared.open(url)
                 }
             } label: {
@@ -1023,6 +1023,10 @@ struct SettingsView: View {
                 user.streakFreezes = 1
                 user.streakFreezeUsedDate = nil
                 user.streakFreezeLastAwardDate = nil
+                user.totalXP = 0
+                user.level = 1
+                user.totalExercises = 0
+                user.totalPerfectScores = 0
             }
             NotificationService.shared.cancelAll()
         } catch {

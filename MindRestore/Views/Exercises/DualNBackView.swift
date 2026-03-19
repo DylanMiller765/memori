@@ -411,6 +411,7 @@ struct DualNBackView: View {
                     }
 
                     Button {
+                        saveExercise()
                         selectedN = viewModel.nextN
                         gameStarted = true
                         viewModel.startGame(n: selectedN, dual: isProUser)

@@ -472,6 +472,7 @@ struct SequentialMemoryView: View {
                     }
 
                     Button {
+                        saveExercise()
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
