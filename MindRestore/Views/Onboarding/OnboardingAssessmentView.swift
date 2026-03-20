@@ -10,6 +10,7 @@ struct OnboardingAssessmentView: View {
 
     @State private var viewModel = BrainAssessmentViewModel()
     @State private var hasSaved = false
+    @State private var showingSkipConfirmation = false
 
     private var assessmentProgress: Double {
         switch viewModel.phase {
@@ -170,7 +171,7 @@ struct OnboardingAssessmentView: View {
                 }
 
                 Button {
-                    onComplete(nil)
+                    showingSkipConfirmation = true
                 } label: {
                     Text("Skip for now")
                         .font(.subheadline.weight(.medium))
@@ -180,6 +181,14 @@ struct OnboardingAssessmentView: View {
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 16)
+        }
+        .alert("Skip Brain Age Test?", isPresented: $showingSkipConfirmation) {
+            Button("Take the Test", role: .cancel) { }
+            Button("Skip", role: .destructive) {
+                onComplete(nil)
+            }
+        } message: {
+            Text("Your Brain Age is what makes Memori fun — it only takes 2 minutes and you can share your score with friends.")
         }
     }
 
