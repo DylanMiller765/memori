@@ -239,6 +239,7 @@ struct ReactionTimeView: View {
                         .foregroundStyle(.white)
                 }
             )
+            .contentShape(Rectangle())
             .onTapGesture {
                 viewModel.tappedDuringWait()
             }
@@ -259,7 +260,9 @@ struct ReactionTimeView: View {
                         .font(.system(size: 48, weight: .bold))
                         .foregroundStyle(.white)
                 }
+                .allowsHitTesting(false)
             )
+            .contentShape(Rectangle())
             .onTapGesture {
                 viewModel.tappedOnGreen()
             }
