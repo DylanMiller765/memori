@@ -96,7 +96,8 @@ struct BrainScoreCard: View {
                 size: 80,
                 lineWidth: 12
             )
-            .padding(.vertical, 10)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
 
             // Brain type badge
             HStack(spacing: 6) {
