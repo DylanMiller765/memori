@@ -172,6 +172,7 @@ struct LeaderboardView: View {
             Spacer()
 
             Image("mascot-podium")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 160)

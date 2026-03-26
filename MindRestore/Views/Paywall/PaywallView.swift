@@ -37,6 +37,7 @@ struct PaywallView: View {
 
                 // Mascot
                 Image("mascot-locked-sad")
+                    .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
                     .frame(height: 120)
@@ -427,6 +428,7 @@ struct ExitOfferSheet: View {
             Spacer()
 
             Image("mascot-locked-sad")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 140)

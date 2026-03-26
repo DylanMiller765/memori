@@ -133,6 +133,7 @@ struct OnboardingAssessmentView: View {
             Spacer()
 
             Image("mascot-lab-coat")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 180)
@@ -226,6 +227,7 @@ struct OnboardingAssessmentView: View {
             Spacer()
 
             Image("mascot-thinking")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 90)
@@ -431,17 +433,16 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
 
-            if interactive {
-                Button {
-                    viewModel.submitVisualAnswer()
-                } label: {
-                    Text("Submit")
-                        .gradientButton()
-                }
-                .padding(.horizontal, 32)
-                .disabled(viewModel.selectedCells.count != viewModel.highlightedCells.count)
-                .opacity(viewModel.selectedCells.count == viewModel.highlightedCells.count ? 1 : 0.4)
+            // Always reserve space for button so grid doesn't shift between phases
+            Button {
+                viewModel.submitVisualAnswer()
+            } label: {
+                Text("Submit")
+                    .gradientButton()
             }
+            .padding(.horizontal, 32)
+            .disabled(!interactive || viewModel.selectedCells.count != viewModel.highlightedCells.count)
+            .opacity(interactive && viewModel.selectedCells.count == viewModel.highlightedCells.count ? 1 : interactive ? 0.4 : 0)
         }
         .padding(.bottom, 16)
     }
@@ -484,6 +485,7 @@ struct OnboardingAssessmentView: View {
             Spacer()
 
             Image("mascot-working-out")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 160)

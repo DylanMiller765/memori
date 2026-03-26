@@ -105,6 +105,7 @@ struct ProgressDashboardView: View {
                 .frame(height: 40)
 
             Image("mascot-bored")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 160)

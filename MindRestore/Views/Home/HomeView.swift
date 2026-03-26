@@ -686,6 +686,7 @@ struct HomeView: View {
                 } label: {
                     VStack(spacing: 20) {
                         Image("mascot-no-score")
+                            .renderingMode(.original)
                             .resizable()
                             .scaledToFit()
                             .frame(height: 150)

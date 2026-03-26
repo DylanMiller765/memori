@@ -338,13 +338,13 @@ struct VisualMemoryView: View {
             Spacer()
 
             // Grid
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
-            LazyVGrid(columns: columns, spacing: 6) {
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: viewModel.gridSize)
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(0..<viewModel.totalCells, id: \.self) { index in
                     gridCell(index: index, interactable: interactable)
                 }
             }
-            .padding(.horizontal, gridPadding)
+            .padding(.horizontal, 32)
 
             Spacer()
 
@@ -362,14 +362,6 @@ struct VisualMemoryView: View {
         .padding(.vertical, 24)
     }
 
-    private var gridPadding: CGFloat {
-        switch viewModel.gridSize {
-        case 3: return 40
-        case 4: return 24
-        default: return 16
-        }
-    }
-
     @ViewBuilder
     private func gridCell(index: Int, interactable: Bool) -> some View {
         let isHighlighted = viewModel.highlightedCells.contains(index)
@@ -378,10 +370,6 @@ struct VisualMemoryView: View {
         RoundedRectangle(cornerRadius: 10)
             .fill(cellFill(isHighlighted: isHighlighted, isSelected: isSelected, interactable: interactable))
             .aspectRatio(1, contentMode: .fit)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(cellBorder(isSelected: isSelected, interactable: interactable), lineWidth: isSelected ? 2 : 0.5)
-            )
             .animation(.easeInOut(duration: 0.15), value: isHighlighted)
             .animation(.easeInOut(duration: 0.15), value: isSelected)
             .onTapGesture {
@@ -395,35 +383,14 @@ struct VisualMemoryView: View {
 
     private func cellFill(isHighlighted: Bool, isSelected: Bool, interactable: Bool) -> some ShapeStyle {
         if !interactable && isHighlighted {
-            // Showing phase — highlight with accent
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppColors.accent, AppColors.violet],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            return AnyShapeStyle(AppColors.accent)
         } else if interactable && isSelected {
-            // Input phase — player selected
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppColors.accent.opacity(0.8), AppColors.violet.opacity(0.8)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            return AnyShapeStyle(AppColors.accent)
         } else {
-            // Default cell
-            return AnyShapeStyle(AppColors.cardSurface)
+            return AnyShapeStyle(Color.gray.opacity(0.12))
         }
     }
 
-    private func cellBorder(isSelected: Bool, interactable: Bool) -> Color {
-        if interactable && isSelected {
-            return AppColors.accent
-        }
-        return AppColors.cardBorder
-    }
 
     // MARK: - Correct
 
@@ -478,7 +445,7 @@ struct VisualMemoryView: View {
                         }
                 }
             }
-            .padding(.horizontal, gridPadding)
+            .padding(.horizontal, 32)
 
             Text("Level \(viewModel.levelsCompleted)")
                 .font(.headline)

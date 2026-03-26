@@ -67,6 +67,7 @@ struct StreakCelebrationView: View {
                     }
 
                     Image("mascot-streak-fire")
+                        .renderingMode(.original)
                         .resizable()
                         .scaledToFit()
                         .frame(height: 140)

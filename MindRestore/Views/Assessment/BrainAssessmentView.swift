@@ -26,7 +26,7 @@ struct BrainAssessmentView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             backgroundColor.ignoresSafeArea()
 
             switch viewModel.phase {
@@ -122,22 +122,23 @@ struct BrainAssessmentView: View {
     // MARK: - Intro
 
     private var introView: some View {
-        VStack(spacing: 32) {
-            Spacer()
-
+        VStack(spacing: 0) {
             Image("mascot-lab-coat")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 180)
+                .padding(.bottom, 20)
 
-            VStack(spacing: 12) {
-                Text("Brain Assessment")
-                    .font(.largeTitle.bold())
-                Text("3 quick tests to measure your\ncognitive performance")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text("Brain Assessment")
+                .font(.largeTitle.bold())
+                .padding(.bottom, 8)
+
+            Text("3 quick tests to measure your\ncognitive performance")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 20)
 
             VStack(alignment: .leading, spacing: 14) {
                 testPreviewRow(icon: "number.circle.fill", title: "Digit Span", subtitle: "Number memory", color: .blue)
@@ -150,12 +151,12 @@ struct BrainAssessmentView: View {
                     .fill(AppColors.cardSurface)
             )
             .padding(.horizontal, 24)
+            .padding(.bottom, 12)
 
             Text("Takes about 2 minutes")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            Spacer()
+                .padding(.bottom, 32)
 
             Button {
                 viewModel.start()
@@ -164,8 +165,8 @@ struct BrainAssessmentView: View {
                     .gradientButton()
             }
             .padding(.horizontal, 32)
-            .padding(.bottom, 16)
         }
+        .padding(.top, 20)
     }
 
     private func testPreviewRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
@@ -200,6 +201,7 @@ struct BrainAssessmentView: View {
             Spacer()
 
             Image("mascot-thinking")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 90)
@@ -478,6 +480,7 @@ struct BrainAssessmentView: View {
             Spacer()
 
             Image("mascot-working-out")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 160)

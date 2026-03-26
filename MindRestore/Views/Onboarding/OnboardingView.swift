@@ -62,6 +62,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 16) {
                 Image("mascot-wave")
+                    .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
                     .frame(height: 160)
@@ -191,6 +192,7 @@ struct OnboardingView: View {
             Spacer()
 
             Image("mascot-goal")
+                .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 150)

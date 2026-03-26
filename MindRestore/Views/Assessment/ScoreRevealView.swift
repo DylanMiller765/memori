@@ -388,6 +388,7 @@ struct ScoreRevealView: View {
                 // Mascot reaction
                 if countUpFinished {
                     Image(viewModel.brainAge <= 30 ? "mascot-crown" : viewModel.brainAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
+                        .renderingMode(.original)
                         .resizable()
                         .scaledToFit()
                         .frame(height: 120)

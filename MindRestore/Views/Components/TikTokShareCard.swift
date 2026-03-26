@@ -145,6 +145,7 @@ struct TikTokBrainScoreCard: View {
                 Spacer().frame(height: 16)
 
                 Image("mascot-cool")
+                    .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
                     .frame(height: 100)
