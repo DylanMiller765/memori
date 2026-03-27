@@ -401,8 +401,6 @@ struct DualNBackView: View {
                 LeaderboardRankCard(
                     exerciseType: .dualNBack,
                     userScore: viewModel.currentN,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

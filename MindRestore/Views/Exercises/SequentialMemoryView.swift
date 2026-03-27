@@ -491,8 +491,6 @@ struct SequentialMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .sequentialMemory,
                     userScore: viewModel.maxCorrectLength,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

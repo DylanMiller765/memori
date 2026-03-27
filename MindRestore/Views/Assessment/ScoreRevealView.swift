@@ -246,8 +246,6 @@ struct ScoreRevealView: View {
                         LeaderboardRankCard(
                             exerciseType: nil,
                             userScore: viewModel.brainScore,
-                            isPro: isProUser,
-                            onUpgradeTap: { showingPaywall = true }
                         )
                         .padding(.horizontal, 20)
                         .transition(.move(edge: .bottom).combined(with: .opacity))

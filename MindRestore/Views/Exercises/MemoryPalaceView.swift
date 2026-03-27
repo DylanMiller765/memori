@@ -1088,8 +1088,6 @@ struct MemoryPalaceView: View {
                 LeaderboardRankCard(
                     exerciseType: .memoryPalace,
                     userScore: Int(viewModel.score * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

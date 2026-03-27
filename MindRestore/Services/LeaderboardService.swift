@@ -48,7 +48,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .speedMatch: return "Highest speed matching accuracy %"
         case .visualMemory: return "Highest grid level completed"
         case .numberMemory: return "Longest digit sequence recalled"
-        case .mathSpeed: return "Most math problems solved in time"
+        case .mathSpeed: return "Correct answers weighted by speed — faster + accurate wins"
         case .dualNBack: return "Highest N-back level reached"
         case .wordScramble: return "Most words unscrambled out of 10"
         case .memoryChain: return "Longest sequence chain recalled"

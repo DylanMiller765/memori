@@ -1148,8 +1148,6 @@ struct MixedTrainingView: View {
                 LeaderboardRankCard(
                     exerciseType: .activeRecall,
                     userScore: Int(vm.overallScore * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

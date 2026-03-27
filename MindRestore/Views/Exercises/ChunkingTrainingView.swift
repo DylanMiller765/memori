@@ -632,8 +632,6 @@ struct ChunkingTrainingView: View {
                 LeaderboardRankCard(
                     exerciseType: .chunkingTraining,
                     userScore: viewModel.correctDigits,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

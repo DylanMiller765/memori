@@ -521,8 +521,6 @@ struct ColorMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .colorMatch,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

@@ -632,8 +632,6 @@ struct SpeedMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .speedMatch,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

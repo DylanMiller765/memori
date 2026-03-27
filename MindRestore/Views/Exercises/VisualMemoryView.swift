@@ -509,8 +509,6 @@ struct VisualMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .visualMemory,
                     userScore: viewModel.maxLevelReached,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

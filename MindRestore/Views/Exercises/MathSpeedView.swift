@@ -103,9 +103,18 @@ final class MathSpeedViewModel {
         Int(elapsedSeconds)
     }
 
-    /// Composite leaderboard score: correct count × 1000 + time bonus (faster = higher)
+    /// Composite leaderboard score: correct × 1000 + speed bonus (faster avg = higher)
+    /// Speed bonus: 999 at ≤1s avg, 0 at ≥10s avg, linear between
     var leaderboardScore: Int {
-        correctCount * 1000 + max(0, 999 - durationSeconds)
+        let speedBonus: Int
+        if averageTimePerProblem <= 1.0 {
+            speedBonus = 999
+        } else if averageTimePerProblem >= 10.0 {
+            speedBonus = 0
+        } else {
+            speedBonus = Int((10.0 - averageTimePerProblem) / 9.0 * 999.0)
+        }
+        return correctCount * 1000 + speedBonus
     }
 
     func startGame() {
@@ -540,8 +549,6 @@ struct MathSpeedView: View {
                 LeaderboardRankCard(
                     exerciseType: .mathSpeed,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

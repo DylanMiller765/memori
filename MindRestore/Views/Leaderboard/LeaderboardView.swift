@@ -7,8 +7,6 @@ struct LeaderboardView: View {
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
     @Environment(GameCenterService.self) private var gameCenterService
-    @Environment(StoreService.self) private var storeService
-    @Environment(PaywallTriggerService.self) private var paywallTrigger
 
     @State private var selectedCategory: LeaderboardCategory = .brainScore
     @State private var selectedFilter: LeaderboardTimeFilter = .allTime
@@ -80,9 +78,7 @@ struct LeaderboardView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 12)
 
-                if !storeService.isProUser {
-                    proGateView
-                } else if !gameCenterService.isAuthenticated {
+                if !gameCenterService.isAuthenticated {
                     gameCenterRequiredView
                 } else if isLoading && entries.isEmpty {
                     skeletonLoadingView
@@ -245,100 +241,6 @@ struct LeaderboardView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Pro Gate
-
-    private var proGateView: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            // Mini podium with metallic avatars
-            VStack(spacing: 0) {
-                // Mini avatar podium
-                HStack(alignment: .bottom, spacing: 8) {
-                    // 2nd
-                    VStack(spacing: 4) {
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(2), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 28, height: 28)
-                            .overlay(Text("2").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(2).opacity(0.25), podiumColor(2).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 36, height: 36)
-                    }
-                    // 1st
-                    VStack(spacing: 4) {
-                        // Trophy centered above 1st
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    RadialGradient(
-                                        colors: [podiumColor(1).opacity(0.15), .clear],
-                                        center: .center,
-                                        startRadius: 10,
-                                        endRadius: 40
-                                    )
-                                )
-                                .frame(width: 64, height: 64)
-
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 32))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 0.93, green: 0.65, blue: 0.0)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .shadow(color: podiumColor(1).opacity(0.4), radius: 8)
-                        }
-
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(1), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 34, height: 34)
-                            .overlay(Text("1").font(.system(size: 13, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(1).opacity(0.30), podiumColor(1).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 40, height: 50)
-                    }
-                    // 3rd
-                    VStack(spacing: 4) {
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(3), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 24, height: 24)
-                            .overlay(Text("3").font(.system(size: 10, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(3).opacity(0.25), podiumColor(3).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 32, height: 28)
-                    }
-                }
-            }
-
-            VStack(spacing: 8) {
-                Text("Compete Globally")
-                    .font(.title2.weight(.bold))
-                Text("Unlock leaderboards to see how you rank\nagainst players worldwide.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button {
-                paywallTrigger.triggerLeaderboard(isProUser: false)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.open.fill")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Unlock Leaderboards")
-                        .font(.headline.weight(.bold))
-                }
-                .gradientButton(AppColors.premiumGradient)
-            }
-            .padding(.horizontal, 32)
 
             Spacer()
         }
@@ -624,9 +526,9 @@ struct LeaderboardView: View {
         case .visualMemory, .dualNBack: return "Lvl \(score)"
         case .numberMemory: return "\(score) digits"
         case .mathSpeed:
-            // Composite score: correctCount × 1000 + timeBonus
+            // Composite score: correctCount × 1000 + speedBonus
             let primary = score / 1000
-            return "\(primary)"
+            return "\(primary)/20"
         case .wordScramble:
             // Composite score: wordsCorrect × 1000 + timeBonus
             let primary = score / 1000

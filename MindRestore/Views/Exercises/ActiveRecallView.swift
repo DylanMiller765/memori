@@ -248,8 +248,6 @@ struct ActiveRecallView: View {
                 LeaderboardRankCard(
                     exerciseType: .activeRecall,
                     userScore: Int(viewModel.score * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

@@ -565,8 +565,6 @@ struct MemoryChainView: View {
                 LeaderboardRankCard(
                     exerciseType: .memoryChain,
                     userScore: viewModel.longestChain,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

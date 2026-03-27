@@ -703,14 +703,16 @@ struct TrainingTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
-                if let lastPlayed = lastPlayedText {
-                    Text(lastPlayed)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(AppColors.textTertiary)
-                } else if !isLocked {
-                    Text("New")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(AppColors.accent.opacity(0.7))
+                if !isLocked {
+                    if let lastPlayed = lastPlayedText {
+                        Text(lastPlayed)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(AppColors.textTertiary)
+                    } else {
+                        Text("New")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(AppColors.accent.opacity(0.7))
+                    }
                 }
             }
             .padding(.horizontal, 8)
@@ -725,32 +727,26 @@ struct TrainingTile: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(color.opacity(0.2), lineWidth: 1)
         )
+        .overlay {
+            if isLocked {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.black.opacity(0.55))
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(color.opacity(0.7))
+                        .padding(8)
+                        .background(color.opacity(0.15), in: Circle())
+                }
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityLabel("\(title)\(isLocked ? ", locked" : "")")
     }
 
     @ViewBuilder
     private var miniPreview: some View {
-        if isLocked {
-            ZStack {
-                // Keep the game's color identity but muted
-                color.opacity(0.06)
-
-                // Blurred version of the game icon as background
-                Image(systemName: type.icon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(color.opacity(0.12))
-
-                // Lock badge
-                VStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(color.opacity(0.6))
-                        .padding(8)
-                        .background(color.opacity(0.1), in: Circle())
-                }
-            }
-        } else {
+        ZStack {
             switch type {
             case .reactionTime:
                 // Lightning bolt target
@@ -943,6 +939,7 @@ struct TrainingTile: View {
                         .foregroundStyle(color)
                 }
             }
+
         }
     }
 }

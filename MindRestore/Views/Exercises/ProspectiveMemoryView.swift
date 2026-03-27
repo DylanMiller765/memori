@@ -922,8 +922,6 @@ struct ProspectiveMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .prospectiveMemory,
                     userScore: Int(viewModel.overallScore * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

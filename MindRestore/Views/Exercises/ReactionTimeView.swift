@@ -429,8 +429,6 @@ struct ReactionTimeView: View {
                 LeaderboardRankCard(
                     exerciseType: .reactionTime,
                     userScore: viewModel.averageMs,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

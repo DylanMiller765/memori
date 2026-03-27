@@ -7,8 +7,6 @@ import GameKit
 struct LeaderboardRankCard: View {
     let exerciseType: ExerciseType?  // nil for brain score
     let userScore: Int
-    let isPro: Bool
-    var onUpgradeTap: (() -> Void)?
 
     @Environment(GameCenterService.self) private var gameCenterService
 
@@ -71,10 +69,8 @@ struct LeaderboardRankCard: View {
             } else if totalPlayers <= 1 {
                 // Not enough players for meaningful ranking
                 EmptyView()
-            } else if isPro {
-                proRankView
             } else {
-                freeTeaseView
+                proRankView
             }
         }
         .opacity(animateIn ? 1 : 0)
@@ -148,58 +144,6 @@ struct LeaderboardRankCard: View {
         )
     }
 
-    // MARK: - Free User: Blurred Tease
-
-    private var freeTeaseView: some View {
-        HStack(spacing: 12) {
-            // Blurred rank
-            ZStack {
-                Text("#\(userRank)")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundStyle(accentColor)
-                    .blur(radius: 6)
-                    .allowsHitTesting(false)
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppColors.amber)
-            }
-            .frame(width: 56)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("You placed \(percentileBracket)")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Button {
-                    onUpgradeTap?()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 9, weight: .bold))
-                        Text("See Your Exact Rank")
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.amber)
-                    )
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .appCard(padding: 0)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(AppColors.amber.opacity(0.3), lineWidth: 1)
-        )
-    }
-
     // MARK: - Subviews
 
     private var rankBar: some View {
@@ -270,15 +214,6 @@ struct LeaderboardRankCard: View {
         return "Top \(pct)%"
     }
 
-    private var percentileBracket: String {
-        guard totalPlayers > 0, userRank > 0 else { return "in the top half" }
-        let pct = ceil(Double(userRank) / Double(totalPlayers) * 100)
-        if pct <= 10 { return "in the Top 10%" }
-        if pct <= 25 { return "in the Top 25%" }
-        if pct <= 50 { return "in the Top 50%" }
-        return "in the Top 75%"
-    }
-
     private var nearbyEntries: [LeaderboardEntryData] {
         guard let userIndex = entries.firstIndex(where: { $0.isCurrentUser }) else { return [] }
         let start = max(0, userIndex - 1)
@@ -346,22 +281,10 @@ struct LeaderboardRankCard: View {
 
 // MARK: - Preview
 
-#Preview("Pro User") {
+#Preview {
     LeaderboardRankCard(
         exerciseType: .reactionTime,
-        userScore: 245,
-        isPro: true
-    )
-    .padding()
-    .environment(GameCenterService())
-}
-
-#Preview("Free User") {
-    LeaderboardRankCard(
-        exerciseType: .reactionTime,
-        userScore: 245,
-        isPro: false,
-        onUpgradeTap: {}
+        userScore: 245
     )
     .padding()
     .environment(GameCenterService())

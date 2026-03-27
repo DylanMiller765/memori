@@ -686,8 +686,6 @@ struct WordScrambleView: View {
                 LeaderboardRankCard(
                     exerciseType: .wordScramble,
                     userScore: viewModel.wordsCorrect,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
