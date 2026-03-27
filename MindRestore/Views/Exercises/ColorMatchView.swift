@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - ViewModel
 
@@ -23,6 +24,9 @@ final class ColorMatchViewModel {
     var showFeedback = false
     var lastWrongCorrectAnswer: String? = nil
     private var roundTimer: Timer?
+
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
 
     let colorOptions: [(name: String, color: Color)] = [
         ("Red", Color(red: 0.98, green: 0.42, blue: 0.35)),
@@ -91,6 +95,11 @@ final class ColorMatchViewModel {
         startTime = Date.now
         feedbackColor = nil
         showFeedback = false
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         generateRound()
     }
 
@@ -101,14 +110,25 @@ final class ColorMatchViewModel {
         }
 
         // Pick a random word (color name)
-        let wordIndex = Int.random(in: 0..<colorOptions.count)
+        let wordIndex: Int
+        if var r = rng {
+            wordIndex = Int.random(in: 0..<colorOptions.count, using: &r)
+            rng = r
+        } else {
+            wordIndex = Int.random(in: 0..<colorOptions.count)
+        }
         displayWord = colorOptions[wordIndex].name.uppercased()
 
         // Pick a DIFFERENT color for the ink
-        var inkIndex = Int.random(in: 0..<colorOptions.count)
-        while inkIndex == wordIndex {
-            inkIndex = Int.random(in: 0..<colorOptions.count)
-        }
+        var inkIndex: Int
+        repeat {
+            if var r = rng {
+                inkIndex = Int.random(in: 0..<colorOptions.count, using: &r)
+                rng = r
+            } else {
+                inkIndex = Int.random(in: 0..<colorOptions.count)
+            }
+        } while inkIndex == wordIndex
         displayColor = colorOptions[inkIndex].color
         correctAnswer = colorOptions[inkIndex].name
 
@@ -210,11 +230,14 @@ struct ColorMatchView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ColorMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -234,9 +257,31 @@ struct ColorMatchView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.leaderboardScore,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Color Match")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 let card = ExerciseShareCard(
@@ -251,7 +296,7 @@ struct ColorMatchView: View {
                         ("Avg Response", "\(viewModel.averageResponseMs) ms"),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "Test your focus"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -295,6 +340,7 @@ struct ColorMatchView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.colorMatch.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -475,8 +521,6 @@ struct ColorMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .colorMatch,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -492,7 +536,39 @@ struct ColorMatchView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.colorMatch.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .colorMatch,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.leaderboardScore,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()
@@ -536,7 +612,9 @@ struct ColorMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .colorMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch)
+        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .colorMatch) {
+            Analytics.personalBest(game: ExerciseType.colorMatch.rawValue, score: viewModel.correctCount)
+        }
 
         let exercise = Exercise(
             type: .colorMatch,

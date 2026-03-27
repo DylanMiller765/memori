@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 struct DualNBackView: View {
     @Environment(\.modelContext) private var modelContext
@@ -9,6 +10,7 @@ struct DualNBackView: View {
     @Environment(TrainingSessionManager.self) private var trainingManager
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = DualNBackViewModel()
@@ -17,6 +19,8 @@ struct DualNBackView: View {
     @State private var strategyTip: StrategyTip?
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -36,9 +40,31 @@ struct DualNBackView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.currentN,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Dual N-Back")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onDisappear {
             viewModel.cleanup()
         }
@@ -46,7 +72,9 @@ struct DualNBackView: View {
             if showingResults {
                 let correctCount = Int(round(viewModel.overallScore * Double(viewModel.totalTrials)))
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .nBack, correct: correctCount, total: viewModel.totalTrials)
-                PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack)
+                if PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack) {
+                    Analytics.personalBest(game: ExerciseType.dualNBack.rawValue, score: viewModel.currentN)
+                }
                 strategyTip = StrategyTipService.shared.freshTip(for: .nBack)
                 SoundService.shared.playComplete()
                 HapticService.complete()
@@ -62,7 +90,7 @@ struct DualNBackView: View {
                         ("Overall", viewModel.overallScore.percentString),
                         ("Trials", "\(viewModel.totalTrials)")
                     ],
-                    ctaText: "Can you match this?"
+                    ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
                 if viewModel.nextN > viewModel.currentN {
@@ -152,6 +180,7 @@ struct DualNBackView: View {
             .padding(.horizontal)
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
                 gameStarted = true
                 viewModel.startGame(n: selectedN, dual: true)
             } label: {
@@ -192,7 +221,10 @@ struct DualNBackView: View {
                             : LinearGradient(colors: [Color.gray.opacity(0.08), Color.gray.opacity(0.05)], startPoint: .top, endPoint: .bottom)
                         )
                         .aspectRatio(1, contentMode: .fit)
+                        .scaleEffect(viewModel.trialFlash && index == viewModel.currentPosition ? 0.85 : 1.0)
+                        .opacity(viewModel.trialFlash && index == viewModel.currentPosition ? 0.4 : 1.0)
                         .animation(.easeInOut(duration: 0.15), value: viewModel.currentPosition)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: viewModel.trialFlash)
                         .accessibilityLabel("Grid cell \(index + 1)\(index == viewModel.currentPosition ? ", active" : "")")
                 }
             }
@@ -202,6 +234,9 @@ struct DualNBackView: View {
                 Text(viewModel.currentLetter)
                     .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(.secondary)
+                    .scaleEffect(viewModel.trialFlash ? 0.7 : 1.0)
+                    .opacity(viewModel.trialFlash ? 0.3 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: viewModel.trialFlash)
             }
 
             Spacer()
@@ -374,8 +409,6 @@ struct DualNBackView: View {
                 LeaderboardRankCard(
                     exerciseType: .dualNBack,
                     userScore: viewModel.currentN,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -391,7 +424,39 @@ struct DualNBackView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .dualNBack,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.currentN,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()

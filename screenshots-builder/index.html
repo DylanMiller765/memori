@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800;900&display=swap');
+
+  body {
+    background: #1a1a1a;
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .screenshot {
+    width: 1290px;
+    height: 2796px;
+    background: #F8F6F3;
+    border-radius: 40px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .headline {
+    text-align: center;
+    padding: 120px 60px 40px;
+    z-index: 2;
+  }
+
+  .headline h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 130px;
+    line-height: 1.05;
+    color: #1A1A1A;
+  }
+
+  .headline .accent {
+    color: #3885F5;
+  }
+
+  .headline .coral {
+    color: #FA6B59;
+  }
+
+  .headline .teal {
+    color: #00D19E;
+  }
+
+  .headline .violet {
+    color: #9457EB;
+  }
+
+  .phone-area {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    position: relative;
+    padding: 0 100px 0;
+  }
+
+  .phone-placeholder {
+    width: 900px;
+    height: 1900px;
+    background: #E8E5E0;
+    border-radius: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 48px;
+    color: #999;
+    font-weight: 800;
+  }
+
+  .mascot {
+    position: absolute;
+    z-index: 10;
+    width: 500px;
+    height: 500px;
+  }
+
+  .mascot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Mascot positions */
+  .mascot.bottom-right {
+    bottom: 60px;
+    right: 60px;
+  }
+
+  .mascot.bottom-left {
+    bottom: 60px;
+    left: 60px;
+  }
+
+  .mascot.top-right {
+    top: 380px;
+    right: 40px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Screenshot 1: Brain Age -->
+<div class="screenshot" id="ss1">
+  <div class="headline">
+    <h1>What's Your<br><span class="accent">Brain Age?</span></h1>
+  </div>
+  <div class="phone-area">
+    <div class="phone-placeholder">Brain Age Screen</div>
+    <div class="mascot bottom-right">
+      <img src="great-score-crown.png" alt="crown mascot">
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot 2: Compete -->
+<div class="screenshot" id="ss2">
+  <div class="headline">
+    <h1><span class="accent">Compete</span><br>Globally</h1>
+  </div>
+  <div class="phone-area">
+    <div class="phone-placeholder">Leaderboard Screen</div>
+    <div class="mascot bottom-left">
+      <img src="podium-leaderboard.png" alt="podium mascot">
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot 3: Games -->
+<div class="screenshot" id="ss3">
+  <div class="headline">
+    <h1>8 <span class="coral">Brain</span><br>Games</h1>
+  </div>
+  <div class="phone-area">
+    <div class="phone-placeholder">Train Tab Screen</div>
+    <div class="mascot bottom-right">
+      <img src="thinking.png" alt="thinking mascot">
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot 4: Train Daily -->
+<div class="screenshot" id="ss4">
+  <div class="headline">
+    <h1><span class="violet">Train</span> Your<br>Brain Daily</h1>
+  </div>
+  <div class="phone-area">
+    <div class="phone-placeholder">Home Screen</div>
+    <div class="mascot bottom-left">
+      <img src="sunglasses.png" alt="sunglasses mascot">
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot 5: Track Progress -->
+<div class="screenshot" id="ss5">
+  <div class="headline">
+    <h1>Track Your<br><span class="teal">Progress</span></h1>
+  </div>
+  <div class="phone-area">
+    <div class="phone-placeholder">Insights Screen</div>
+    <div class="mascot bottom-right">
+      <img src="streak.png" alt="streak mascot">
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

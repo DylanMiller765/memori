@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEED0001000000000000SE00 /* SeededGenerator.swift */; };
+		WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WSCR0002000000000000WS01 /* WordScrambleView.swift */; };
+		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
 		0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */; };
 		0AD448A5B7BF0DD161A14AB7 /* ScoreRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9457F97CB6183CCD1926B63E /* ScoreRevealView.swift */; };
@@ -16,6 +19,7 @@
 		1836CEF9329F3657D53366E4 /* SpacedRepetitionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */; };
 		19739734781F9B63810F13CB /* SpacedRepetitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */; };
 		1A4B6B9F04F88F338CA588E5 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5587C281892FC851EF36036 /* Enums.swift */; };
+		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		2A12EA7DE45D1531ECFC0EB1 /* PsychoEducationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDDEEF4FB05119281748996 /* PsychoEducationCard.swift */; };
 		2BCE4DCBC49958359A20156C /* DailySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F2956C980BEE531AF763D7 /* DailySession.swift */; };
 		2DAFF90C022C4973C51BF82E /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2163242F05F27F1F0A59324 /* Exercise.swift */; };
@@ -67,8 +71,11 @@
 		CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */; };
 		CBAD16576947D46F18E8C64F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A09FC1A19873D8978A18CF2 /* Constants.swift */; };
 		CC000001000000000000CC01 /* TikTokShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC01 /* TikTokShareCard.swift */; };
+		WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WR01000200000000000000A1 /* WeeklyReportShareCard.swift */; };
 		CC000001000000000000CC02 /* ChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC02 /* ChallengeView.swift */; };
 		CC000001000000000000CC03 /* DuelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC03 /* DuelView.swift */; };
+		CC000001000000000000CC04 /* ChallengeAcceptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC04 /* ChallengeAcceptView.swift */; };
+		CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC05 /* ChallengeResultView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
@@ -106,7 +113,15 @@
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
 		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
 		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
+		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
+		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
+		WK000001000000000000WK02 /* WorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK02 /* WorkoutCard.swift */; };
+		WK000001000000000000WK03 /* WorkoutCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK03 /* WorkoutCompleteView.swift */; };
+		WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK04 /* WorkoutShareCard.swift */; };
+		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
+		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
+		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +131,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = FF00000300000000000000C1;
 			remoteInfo = MemoriWidgetExtension;
+		};
+		TEST0008000000000000TS01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CBA069A4B0E4D5A961D22D8A;
+			remoteInfo = MindRestore;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -172,6 +194,7 @@
 		A2163242F05F27F1F0A59324 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		A2AA6B711819E89512C58132 /* MindRestore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindRestore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5587C281892FC851EF36036 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		CL00000001CL00000001CL00 /* ChallengeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLink.swift; sourceTree = "<group>"; };
 		A648264315FD88A128F688AA /* DualNBackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackEngine.swift; sourceTree = "<group>"; };
 		A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackViewModel.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA01 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
@@ -194,10 +217,15 @@
 		C5A3CC3BEDF53B26935A2659 /* BrainAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentView.swift; sourceTree = "<group>"; };
 		C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualMemoryView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC01 /* TikTokShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TikTokShareCard.swift; sourceTree = "<group>"; };
+		WR01000200000000000000A1 /* WeeklyReportShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportShareCard.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC02 /* ChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeView.swift; sourceTree = "<group>"; };
 		CC000002000000000000CC03 /* DuelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuelView.swift; sourceTree = "<group>"; };
+		CC000002000000000000CC04 /* ChallengeAcceptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeAcceptView.swift; sourceTree = "<group>"; };
+		CC000002000000000000CC05 /* ChallengeResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeResultView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
 		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
+		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
+		MCHN0002000000000000MC01 /* MemoryChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryChainView.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveDifficultyEngine.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD02 /* StrategyTipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyTipService.swift; sourceTree = "<group>"; };
@@ -234,7 +262,17 @@
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
+		BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreMilestoneView.swift; sourceTree = "<group>"; };
 		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
+		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
+		SEED0001000000000000SE00 /* SeededGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGenerator.swift; sourceTree = "<group>"; };
+		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
+		WK000002000000000000WK03 /* WorkoutCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteView.swift; sourceTree = "<group>"; };
+		WK000002000000000000WK04 /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS00 /* ChallengeLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS01 /* SeededGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGeneratorTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
+		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -254,6 +292,13 @@
 			files = (
 				FF00000100000000000000A4 /* WidgetKit.framework in Frameworks */,
 				FF00000100000000000000A6 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		TEST0004000000000000TS02 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,10 +358,21 @@
 			children = (
 				717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */,
 				0285AB95C99394B065850C8E /* MindRestore */,
+				TEST0003000000000000TS01 /* MindRestoreTests */,
 				FF00000300000000000000D1 /* MemoriWidget */,
 				18FB5A40D6375556F647905B /* Products */,
 				FF00000300000000000000D2 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		TEST0003000000000000TS01 /* MindRestoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				TEST0001000000000000TS00 /* ChallengeLinkTests.swift */,
+				TEST0001000000000000TS01 /* SeededGeneratorTests.swift */,
+				TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */,
+			);
+			path = MindRestoreTests;
 			sourceTree = "<group>";
 		};
 		18FB5A40D6375556F647905B /* Products */ = {
@@ -324,6 +380,7 @@
 			children = (
 				A2AA6B711819E89512C58132 /* MindRestore.app */,
 				FF00000200000000000000A9 /* MemoriWidgetExtension.appex */,
+				TEST0001000000000000TS03 /* MindRestoreTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -341,6 +398,7 @@
 			children = (
 				AA000002000000000000AA01 /* Achievement.swift */,
 				05276B66D71D60017E61FBAC /* BrainScore.swift */,
+				CL00000001CL00000001CL00 /* ChallengeLink.swift */,
 				28F2956C980BEE531AF763D7 /* DailySession.swift */,
 				A5587C281892FC851EF36036 /* Enums.swift */,
 				A2163242F05F27F1F0A59324 /* Exercise.swift */,
@@ -356,6 +414,8 @@
 			isa = PBXGroup;
 			children = (
 				2DC8E99CC02B442CECAD45D0 /* HomeView.swift */,
+				WK000002000000000000WK02 /* WorkoutCard.swift */,
+				WK000002000000000000WK03 /* WorkoutCompleteView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -381,6 +441,8 @@
 				II000002000000000000II02 /* ReviewPromptService.swift */,
 				DD000002000000000000DD02 /* StrategyTipService.swift */,
 				DD000002000000000000DD04 /* TrainingSessionManager.swift */,
+				WK000002000000000000WK01 /* WorkoutEngine.swift */,
+				SEED0001000000000000SE00 /* SeededGenerator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -454,6 +516,8 @@
 				C82AB950FF4CA0A93FEAFF73 /* VisualMemoryView.swift */,
 				7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */,
 				D50EFACDD30017932D713E7A /* ColorMatchView.swift */,
+				WSCR0002000000000000WS01 /* WordScrambleView.swift */,
+				MCHN0002000000000000MC01 /* MemoryChainView.swift */,
 			);
 			path = Exercises;
 			sourceTree = "<group>";
@@ -471,10 +535,13 @@
 				43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */,
 				HH000002000000000000HH01 /* LeaderboardRankCard.swift */,
 				B0EF9610B969A47D9CF45857 /* ProgressRing.swift */,
+				BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */,
 				AA000002000000000000AA06 /* ShareableCard.swift */,
 				4B93885923C4848ACCA6ADDA /* StreakBadge.swift */,
 				II000002000000000000II03 /* StreakCelebrationView.swift */,
 				CC000002000000000000CC01 /* TikTokShareCard.swift */,
+				WR01000200000000000000A1 /* WeeklyReportShareCard.swift */,
+				WK000002000000000000WK04 /* WorkoutShareCard.swift */,
 				DD000002000000000000DD05 /* TrainingLimitBanner.swift */,
 			);
 			path = Components;
@@ -495,6 +562,8 @@
 			children = (
 				CC000002000000000000CC02 /* ChallengeView.swift */,
 				CC000002000000000000CC03 /* DuelView.swift */,
+				CC000002000000000000CC04 /* ChallengeAcceptView.swift */,
+				CC000002000000000000CC05 /* ChallengeResultView.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -603,6 +672,23 @@
 			productReference = FF00000200000000000000A9 /* MemoriWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		TEST0005000000000000TS01 /* MindRestoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = TEST0007000000000000TS01 /* Build configuration list for PBXNativeTarget "MindRestoreTests" */;
+			buildPhases = (
+				TEST0004000000000000TS01 /* Sources */,
+				TEST0004000000000000TS02 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				TEST0008000000000000TS02 /* PBXTargetDependency */,
+			);
+			name = MindRestoreTests;
+			productName = MindRestoreTests;
+			productReference = TEST0001000000000000TS03 /* MindRestoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -632,6 +718,7 @@
 			targets = (
 				CBA069A4B0E4D5A961D22D8A /* MindRestore */,
 				FF00000300000000000000C1 /* MemoriWidgetExtension */,
+				TEST0005000000000000TS01 /* MindRestoreTests */,
 			);
 		};
 /* End PBXProject section */
@@ -690,6 +777,7 @@
 				A15B03DE954A1622830984B7 /* EducationDetailView.swift in Sources */,
 				711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */,
 				B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */,
+				CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */,
 				1A4B6B9F04F88F338CA588E5 /* Enums.swift in Sources */,
 				AA000001000000000000AA02 /* LeaderboardEntry.swift in Sources */,
 				AA000001000000000000AA04 /* LeaderboardService.swift in Sources */,
@@ -709,6 +797,7 @@
 				HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */,
 				HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */,
 				II000001000000000000II03 /* StreakCelebrationView.swift in Sources */,
+				BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */,
 				DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */,
 				DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */,
 				DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */,
@@ -736,10 +825,18 @@
 				4DCBF2D8C5CFA9FC4654591B /* SpacedRepetitionView.swift in Sources */,
 				9D6CE991CC7E9F424AAB8463 /* SpacedRepetitionViewModel.swift in Sources */,
 				6F33F73B24342351802ACB19 /* StoreService.swift in Sources */,
+				WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */,
+				SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */,
+				WK000001000000000000WK02 /* WorkoutCard.swift in Sources */,
+				WK000001000000000000WK03 /* WorkoutCompleteView.swift in Sources */,
+				WK000001000000000000WK04 /* WorkoutShareCard.swift in Sources */,
 				A33BC116471F3B0282CF3629 /* StreakBadge.swift in Sources */,
 				CC000001000000000000CC01 /* TikTokShareCard.swift in Sources */,
+				WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */,
 				CC000001000000000000CC02 /* ChallengeView.swift in Sources */,
 				CC000001000000000000CC03 /* DuelView.swift in Sources */,
+				CC000001000000000000CC04 /* ChallengeAcceptView.swift in Sources */,
+				CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */,
 				5D898BDABF6807EA6EDFF2F4 /* User.swift in Sources */,
 				EE000001000000000000EE01 /* MemoriWidgetBundle.swift in Sources */,
 				EE000001000000000000EE02 /* WidgetDataService.swift in Sources */,
@@ -749,6 +846,8 @@
 				5E6F9CE7047B08D03664CD1F /* VisualMemoryView.swift in Sources */,
 				0A743EDD6276264D6C417CEE /* SpeedMatchView.swift in Sources */,
 				B10B3396842B4C6C456D4A98 /* ColorMatchView.swift in Sources */,
+				WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */,
+				MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -762,6 +861,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		TEST0004000000000000TS01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */,
+				TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */,
+				TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -769,6 +878,11 @@
 			isa = PBXTargetDependency;
 			target = FF00000300000000000000C1 /* MemoriWidgetExtension */;
 			targetProxy = FF00000300000000000000B1 /* PBXContainerItemProxy */;
+		};
+		TEST0008000000000000TS02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CBA069A4B0E4D5A961D22D8A /* MindRestore */;
+			targetProxy = TEST0008000000000000TS01 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -786,7 +900,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -832,7 +946,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 14;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -847,9 +961,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.1.7;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -874,7 +988,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -920,7 +1034,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 14;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -941,9 +1055,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Memori;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.1.7;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -961,7 +1075,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoriWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 73668242TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MemoriWidget/Info.plist;
@@ -972,7 +1086,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -988,7 +1102,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoriWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 73668242TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MemoriWidget/Info.plist;
@@ -999,7 +1113,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -1007,6 +1121,40 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		TEST0006000000000000TS01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 73668242TN;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MindRestore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MindRestore";
+			};
+			name = Debug;
+		};
+		TEST0006000000000000TS02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 73668242TN;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MindRestore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MindRestore";
 			};
 			name = Release;
 		};
@@ -1036,6 +1184,15 @@
 			buildConfigurations = (
 				FF00000300000000000000F2 /* Debug */,
 				FF00000300000000000000F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		TEST0007000000000000TS01 /* Build configuration list for PBXNativeTarget "MindRestoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				TEST0006000000000000TS01 /* Debug */,
+				TEST0006000000000000TS02 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

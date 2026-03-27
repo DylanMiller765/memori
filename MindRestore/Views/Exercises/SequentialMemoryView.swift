@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Game Phase
 
@@ -27,6 +28,8 @@ final class SequentialMemoryViewModel {
     var maxCorrectLength: Int = 0
     var roundResults: [(length: Int, correct: Bool)] = []
     var startTime: Date?
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var digitTimer: Timer?
 
     var score: Double {
@@ -55,11 +58,21 @@ final class SequentialMemoryViewModel {
         maxCorrectLength = 0
         roundResults = []
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         nextRound()
     }
 
     func nextRound() {
-        currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9) }
+        if var r = rng {
+            currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9, using: &r) }
+            rng = r
+        } else {
+            currentDigits = (0..<currentLength).map { _ in Int.random(in: 0...9) }
+        }
         displayDigitIndex = -1
         userInput = ""
         phase = .showing
@@ -140,12 +153,15 @@ struct SequentialMemoryView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = SequentialMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -166,13 +182,36 @@ struct SequentialMemoryView: View {
                 resultsView
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.maxCorrectLength,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Number Memory")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
                 let card = ExerciseShareCard(
                     exerciseName: "Number Memory",
@@ -185,7 +224,7 @@ struct SequentialMemoryView: View {
                         ("Rounds Passed", "\(viewModel.roundResults.filter(\.correct).count)"),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "How many digits can you remember?"
+                    ctaText: "Beat my memory"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -227,6 +266,7 @@ struct SequentialMemoryView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -271,12 +311,26 @@ struct SequentialMemoryView: View {
             Spacer()
 
             if viewModel.isShowingDigit {
-                Text(viewModel.currentDisplayDigit)
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(AppColors.accent)
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                    .animation(.easeOut(duration: 0.15), value: viewModel.displayDigitIndex)
-                    .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+                VStack(spacing: 16) {
+                    Text(viewModel.currentDisplayDigit)
+                        .font(.system(size: 96, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppColors.accent)
+                        .id("digit-\(viewModel.displayDigitIndex)")
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                        .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+
+                    // Dot indicator showing position in sequence
+                    HStack(spacing: 6) {
+                        ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                            Circle()
+                                .fill(i == viewModel.displayDigitIndex ? AppColors.accent : AppColors.accent.opacity(0.2))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(i == viewModel.displayDigitIndex ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: viewModel.displayDigitIndex)
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
             } else {
                 Text("...")
                     .font(.system(size: 48, weight: .bold))
@@ -323,23 +377,24 @@ struct SequentialMemoryView: View {
                             .stroke(AppColors.teal.opacity(0.3), lineWidth: 1.5)
                     )
                     .padding(.horizontal, 40)
+                    .onSubmit { viewModel.submitAnswer() }
 
                 Text("\(viewModel.userInput.count) / \(viewModel.currentLength) digits")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                Button {
+                    viewModel.submitAnswer()
+                } label: {
+                    Text("Submit")
+                        .accentButton()
+                }
+                .padding(.horizontal, 32)
+                .disabled(viewModel.userInput.isEmpty)
+                .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
             }
 
             Spacer()
-
-            Button {
-                viewModel.submitAnswer()
-            } label: {
-                Text("Submit")
-                    .accentButton()
-            }
-            .padding(.horizontal, 32)
-            .disabled(viewModel.userInput.isEmpty)
-            .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
         }
         .padding(.vertical, 24)
         .onAppear { inputFocused = true }
@@ -452,8 +507,6 @@ struct SequentialMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .sequentialMemory,
                     userScore: viewModel.maxCorrectLength,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -469,7 +522,39 @@ struct SequentialMemoryView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .sequentialMemory,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.maxCorrectLength,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()

@@ -2,7 +2,6 @@ import Foundation
 import TelemetryDeck
 
 enum Analytics {
-    // Replace with your actual TelemetryDeck App ID
     static let appID = "07CABBEB-051B-4AC3-937F-FD0A276D09C7"
 
     static func configure() {
@@ -19,8 +18,10 @@ enum Analytics {
         ])
     }
 
-    static func onboardingSkippedAssessment() {
-        TelemetryDeck.signal("onboarding.skippedAssessment")
+    static func onboardingStep(step: String) {
+        TelemetryDeck.signal("onboarding.step", parameters: [
+            "step": step
+        ])
     }
 
     // MARK: - Exercises
@@ -39,9 +40,10 @@ enum Analytics {
         ])
     }
 
-    static func exerciseAbandoned(game: String) {
-        TelemetryDeck.signal("exercise.abandoned", parameters: [
-            "game": game
+    static func personalBest(game: String, score: Int) {
+        TelemetryDeck.signal("exercise.personalBest", parameters: [
+            "game": game,
+            "score": "\(score)"
         ])
     }
 
@@ -68,33 +70,37 @@ enum Analytics {
         ])
     }
 
-    static func paywallDismissed() {
-        TelemetryDeck.signal("paywall.dismissed")
+    static func paywallDismissed(trigger: String = "unknown") {
+        TelemetryDeck.signal("paywall.dismissed", parameters: [
+            "trigger": trigger
+        ])
     }
 
     // MARK: - Sharing
 
-    static func shareTapped(type: String) {
+    static func shareTapped(game: String) {
         TelemetryDeck.signal("share.tapped", parameters: [
-            "type": type
+            "game": game
         ])
     }
 
     // MARK: - Engagement
 
-    static func streakUpdated(streak: Int) {
-        TelemetryDeck.signal("streak.updated", parameters: [
+    static func streakMilestone(streak: Int) {
+        TelemetryDeck.signal("streak.milestone", parameters: [
             "streak": "\(streak)"
         ])
     }
 
-    static func dailyChallengeCompleted() {
-        TelemetryDeck.signal("dailyChallenge.completed")
+    static func achievementUnlocked(achievement: String) {
+        TelemetryDeck.signal("achievement.unlocked", parameters: [
+            "achievement": achievement
+        ])
     }
 
-    static func tabViewed(tab: String) {
-        TelemetryDeck.signal("tab.viewed", parameters: [
-            "tab": tab
+    static func leaderboardViewed(category: String) {
+        TelemetryDeck.signal("leaderboard.viewed", parameters: [
+            "category": category
         ])
     }
 }

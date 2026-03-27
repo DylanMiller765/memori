@@ -207,6 +207,16 @@ struct AchievementsView: View {
                 Text(achievement.unlockedAt.formatted(.dateTime.month(.abbreviated).day()))
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(type.color)
+            } else if !isUnlocked && type.targetValue > 1 {
+                let current = min(type.currentProgress(user: user), type.targetValue)
+                let progress = Double(current) / Double(type.targetValue)
+                VStack(spacing: 3) {
+                    ProgressView(value: progress)
+                        .tint(type.color)
+                    Text("\(current) / \(type.targetValue)")
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .padding(12)

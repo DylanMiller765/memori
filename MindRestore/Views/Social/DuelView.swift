@@ -507,6 +507,7 @@ struct DuelView: View {
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityLabel("Close")
             }
         }
         .onDisappear {

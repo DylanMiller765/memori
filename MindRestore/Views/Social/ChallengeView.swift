@@ -69,6 +69,7 @@ struct ChallengeView: View {
                             .font(.title3)
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Close")
                 }
             }
         }

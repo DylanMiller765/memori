@@ -26,7 +26,7 @@ struct BrainAssessmentView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             backgroundColor.ignoresSafeArea()
 
             switch viewModel.phase {
@@ -57,7 +57,7 @@ struct BrainAssessmentView: View {
             case .calculating:
                 calculatingView
             case .results:
-                ScoreRevealView(viewModel: viewModel, previousScore: previousScore) {
+                ScoreRevealView(viewModel: viewModel, previousScore: previousScore, userAge: users.first?.userAge ?? 0) {
                     // Trigger paywall AFTER the reveal is done, not before
                     let isProUser = storeService.isProUser
                     paywallTrigger.triggerAfterAssessment(isProUser: isProUser)
@@ -122,30 +122,23 @@ struct BrainAssessmentView: View {
     // MARK: - Intro
 
     private var introView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        VStack(spacing: 0) {
+            Image("mascot-lab-coat")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
+                .padding(.bottom, 20)
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.accent.opacity(0.15))
-                    .frame(width: 140, height: 140)
-                Circle()
-                    .fill(AppColors.accent.opacity(0.04))
-                    .frame(width: 180, height: 180)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-                    .symbolEffect(.pulse)
-            }
+            Text("Brain Assessment")
+                .font(.largeTitle.bold())
+                .padding(.bottom, 8)
 
-            VStack(spacing: 12) {
-                Text("Brain Assessment")
-                    .font(.largeTitle.bold())
-                Text("3 quick tests to measure your\ncognitive performance")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text("3 quick tests to measure your\ncognitive performance")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 20)
 
             VStack(alignment: .leading, spacing: 14) {
                 testPreviewRow(icon: "number.circle.fill", title: "Digit Span", subtitle: "Number memory", color: .blue)
@@ -158,12 +151,12 @@ struct BrainAssessmentView: View {
                     .fill(AppColors.cardSurface)
             )
             .padding(.horizontal, 24)
+            .padding(.bottom, 12)
 
             Text("Takes about 2 minutes")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            Spacer()
+                .padding(.bottom, 32)
 
             Button {
                 viewModel.start()
@@ -172,8 +165,8 @@ struct BrainAssessmentView: View {
                     .gradientButton()
             }
             .padding(.horizontal, 32)
-            .padding(.bottom, 16)
         }
+        .padding(.top, 20)
     }
 
     private func testPreviewRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
@@ -207,8 +200,12 @@ struct BrainAssessmentView: View {
 
             Spacer()
 
-            ProgressView()
-                .tint(color)
+            Image("mascot-thinking")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 90)
+                .opacity(0.8)
                 .padding(.bottom, 40)
         }
         .transition(.opacity)
@@ -482,10 +479,11 @@ struct BrainAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 64))
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.pulse)
+            Image("mascot-working-out")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
 
             Text("Analyzing your results...")
                 .font(.title3.weight(.semibold))

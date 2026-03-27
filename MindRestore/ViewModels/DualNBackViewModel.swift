@@ -8,9 +8,11 @@ final class DualNBackViewModel {
     var showResults = false
     var startTime = Date()
     var isDual = true
+    var challengeSeed: Int?
     private var trialTimer: Timer?
     var wrongPositionNBack: Int? = nil
     var wrongLetterNBack: String? = nil
+    var trialFlash = false
 
     var currentN: Int { engine.currentN }
     var trialIndex: Int { engine.trialIndex }
@@ -24,6 +26,7 @@ final class DualNBackViewModel {
 
     func startGame(n: Int, dual: Bool) {
         isDual = dual
+        engine.challengeSeed = challengeSeed
         engine.startGame(n: n, isDual: dual)
         isPlaying = true
         showResults = false
@@ -42,6 +45,12 @@ final class DualNBackViewModel {
     }
 
     private func advanceTrial() {
+        // Brief flash to signal new trial (even if stimuli don't change)
+        trialFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.trialFlash = false
+        }
+
         engine.advanceToNextTrial()
 
         if engine.isComplete {

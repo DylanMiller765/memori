@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "lottiefiles": {
+      "command": "npx",
+      "args": ["@junmer/mcp-server-lottiefiles@latest"]
+    }
+  }
+}

@@ -1,5 +1,13 @@
 # Memori — Brain Training App
 
+## UI/Design Guidelines
+
+Before coding anything, describe exactly what this will look like — colors (with hex values), layout, icon choices, and what each visual element represents. I'll approve before you implement.
+
+## Bug Prevention
+
+After implementing interactive features (buttons, gestures, detection logic), mentally trace the full user flow from trigger to completion and verify each state transition works. Pay special attention to features that depend on app lifecycle state (e.g., skip buttons during active phases, alarm re-firing).
+
 ## Project Context
 
 This is an iOS app project using Swift/SwiftUI. Claude cannot modify `.xcodeproj` files or add SPM packages directly. Flag these manual steps clearly for the user with step-by-step Xcode UI instructions. Don't attempt CLI workarounds for Xcode-specific tasks.
@@ -7,6 +15,15 @@ This is an iOS app project using Swift/SwiftUI. Claude cannot modify `.xcodeproj
 ## Verify Changes (REQUIRED)
 
 After **every** code change, run the `/verify-changes` skill: build via Xcode MCP, render a preview screenshot if available, show it to the user, and explain what changed. Never skip this step.
+
+## QA Before Every Commit
+
+Before committing any changes, run a full QA cycle:
+1. Build with `xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Debug -destination 'id=00008130-000A214E11E2001C' -allowProvisioningUpdates` — fix any compiler errors iteratively until it succeeds.
+2. Install on device with `xcrun devicectl device install app --device 00008130-000A214E11E2001C` + the build output path.
+3. For each modified view, verify it handles both light and dark mode by checking color assets and conditional styling.
+4. Check for common iOS issues: retain cycles, force unwraps, main-thread UI violations.
+5. Only after build succeeds and is installed on device, commit and push.
 
 ## Commands
 
@@ -89,7 +106,7 @@ xcodebuild -exportArchive -archivePath build/MindRestore.xcarchive -exportPath b
 - PersonalBestTracker for high scores, AdaptiveDifficultyEngine for difficulty
 - Composite leaderboard scores for capped games: `primaryScore * 1000 + max(0, 999 - durationSeconds)`
 
-## Current State (v1.1.2 live, v1.2 on test)
+## Current State (v1.1.4 live, v1.2 on test)
 
 - 8 games live: Reaction Time, Color Match, Speed Match, Visual Memory, Number Memory, Math Speed, Dual N-Back, Chunking
 - v1.2 adds: Word Scramble, Memory Chain, async friend challenges, daily challenge leaderboard

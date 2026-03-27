@@ -11,9 +11,11 @@ struct DailyChallengeView: View {
     @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @State private var viewModel = DailyChallengeViewModel()
-    @State private var showChallenge = false
+    // @State private var showChallenge = false
+    @State private var showLeaderboard = false
     @State private var strategyTip: StrategyTip?
     @State private var shareImage: UIImage?
+    @State private var dailyRank: Int?
     @AppStorage("daily_challenge_completed_date") private var completedDateString: String = ""
 
     private var user: User? { users.first }
@@ -63,7 +65,7 @@ struct DailyChallengeView: View {
                 let card = ExerciseShareCard(
                     exerciseName: "Daily Challenge",
                     exerciseIcon: "trophy.fill",
-                    accentColor: .orange,
+                    accentColor: AppColors.amber,
                     mainValue: "\(viewModel.score)",
                     mainLabel: "out of 1000",
                     ratingText: ratingText,
@@ -72,11 +74,28 @@ struct DailyChallengeView: View {
                         (label: "Type", value: viewModel.challengeType.displayName),
                         (label: "Accuracy", value: viewModel.isCorrect ? "100%" : "\(viewModel.score / 10)%")
                     ],
-                    ctaText: "Challenge yours with Memori"
+                    ctaText: "Think you can beat this?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640))
+
+                // Submit score to Game Center
+                gameCenterService.reportScore(viewModel.score, leaderboardID: GameCenterService.dailyChallengeLeaderboard)
+
+                // Fetch today's rank
+                Task {
+                    if gameCenterService.isAuthenticated {
+                        let result = await gameCenterService.loadLeaderboardEntries(
+                            category: .dailyChallenge,
+                            timeFilter: .today
+                        )
+                        if let entry = result.entries.first(where: { $0.isCurrentUser }) {
+                            dailyRank = entry.rank
+                        }
+                    }
+                }
             }
         }
+        /*
         .sheet(isPresented: $showChallenge) {
             ChallengeView(
                 challengeType: .dailyChallenge(challengeName: viewModel.challengeType.displayName),
@@ -84,6 +103,10 @@ struct DailyChallengeView: View {
                 playerName: "Me",
                 percentile: viewModel.percentile
             )
+        }
+        */
+        .sheet(isPresented: $showLeaderboard) {
+            LeaderboardView()
         }
     }
 
@@ -127,7 +150,7 @@ struct DailyChallengeView: View {
                 VStack(spacing: 4) {
                     Image(systemName: "timer")
                         .font(.body)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AppColors.amber)
                     Text("10s + 30s")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -209,17 +232,17 @@ struct DailyChallengeView: View {
             HStack {
                 Text("RECALL")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppColors.amber)
                 Spacer()
                 Text(String(format: "%.0fs", max(0, viewModel.recallTimeRemaining)))
                     .font(.headline.monospacedDigit())
-                    .foregroundStyle(viewModel.recallTimeRemaining <= 5 ? AppColors.error : .orange)
+                    .foregroundStyle(viewModel.recallTimeRemaining <= 5 ? AppColors.error : AppColors.amber)
                     .accessibilityLabel("\(Int(max(0, viewModel.recallTimeRemaining))) seconds remaining")
             }
             .padding(.horizontal)
 
             ProgressView(value: max(0, viewModel.recallTimeRemaining), total: 30)
-                .tint(.orange)
+                .tint(AppColors.amber)
                 .padding(.horizontal)
 
             if viewModel.challengeType == .speedPattern {
@@ -383,6 +406,12 @@ struct DailyChallengeView: View {
                     .background(AppColors.accent.opacity(0.18), in: Capsule())
                     .accessibilityLabel("Better than \(viewModel.percentile) percent of players")
 
+                if let rank = dailyRank {
+                    Text("You placed #\(rank) today")
+                        .font(.headline)
+                        .foregroundStyle(AppColors.accent)
+                }
+
                 if viewModel.isCorrect {
                     Label("Perfect!", systemImage: "sparkles")
                         .font(.subheadline.weight(.semibold))
@@ -415,6 +444,7 @@ struct DailyChallengeView: View {
                 }
 
                 VStack(spacing: 12) {
+                    /*
                     Button {
                         showChallenge = true
                     } label: {
@@ -423,6 +453,25 @@ struct DailyChallengeView: View {
                             Text("Challenge a Friend")
                         }
                         .gradientButton()
+                    }
+                    */
+
+                    Button {
+                        showLeaderboard = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "star.circle.fill")
+                            Text("View Leaderboard")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(AppColors.accent.opacity(0.4), lineWidth: 1.5)
+                                .fill(AppColors.cardSurface)
+                        )
+                        .foregroundStyle(AppColors.accent)
                     }
 
                     if let shareImg = shareImage {
@@ -447,6 +496,7 @@ struct DailyChallengeView: View {
                             )
                             .foregroundStyle(AppColors.accent)
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: "dailyChallenge") })
                     }
 
                     Button {
@@ -609,8 +659,16 @@ struct DailyChallengeView: View {
     private func saveExercise() {
         trainingManager.addTrainingTime(40)
 
+        let exerciseType: ExerciseType = {
+            switch viewModel.challengeType {
+            case .speedNumbers: return .sequentialMemory
+            case .speedWords: return .activeRecall
+            case .speedPattern: return .visualMemory
+            case .faceNamePairs: return .activeRecall
+            }
+        }()
         let exercise = Exercise(
-            type: .activeRecall,
+            type: exerciseType,
             difficulty: 2,
             score: Double(viewModel.score) / 1000.0,
             durationSeconds: 40

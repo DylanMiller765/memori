@@ -26,6 +26,8 @@ enum ExerciseDomain: String, CaseIterable, Codable {
     case colorMatch
     case speedMatch
     case sequentialMemory
+    case wordScramble
+    case memoryChain
 }
 
 // MARK: - Difficulty Parameters
@@ -112,7 +114,9 @@ final class AdaptiveDifficultyEngine {
         .mathSpeed:      1...5,
         .colorMatch:     1...8,
         .speedMatch:     1...8,
-        .sequentialMemory: 1...10
+        .sequentialMemory: 1...10,
+        .wordScramble:   1...10,
+        .memoryChain:    1...10
     ]
 
     /// Starting difficulty for each domain (maps to level 1 in the range)
@@ -129,7 +133,9 @@ final class AdaptiveDifficultyEngine {
         .mathSpeed:      2,   // start at medium
         .colorMatch:     1,   // round count/speed scaling
         .speedMatch:     1,   // round count/speed scaling
-        .sequentialMemory: 1  // starts at 4 digits
+        .sequentialMemory: 1, // starts at 4 digits
+        .wordScramble:     1, // starting difficulty
+        .memoryChain:      1  // starting sequence length
     ]
 
     // MARK: - Threshold Constants (Wilson et al. 2019 — 85% Rule)
@@ -275,6 +281,14 @@ final class AdaptiveDifficultyEngine {
         case .sequentialMemory:
             // Per-digit show time: decreases with difficulty
             return max(1.0 - Double(difficulty) * 0.04, 0.5)
+
+        case .wordScramble:
+            // Time per word: decreases with difficulty
+            return max(30.0 - Double(difficulty) * 2.0, 10.0)
+
+        case .memoryChain:
+            // Sequence display time: decreases with difficulty
+            return max(1.5 - Double(difficulty) * 0.08, 0.5)
         }
     }
 

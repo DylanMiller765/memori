@@ -130,7 +130,7 @@ struct BrainScoreChart: View {
                     y: .value("Score", score.brainScore)
                 )
                 .foregroundStyle(AppColors.accent)
-                .symbolSize(index == chartScores.count - 1 ? 80 : 30)
+                .symbolSize(index == chartScores.count - 1 ? 50 : 20)
             }
         }
         .chartYScale(domain: yAxisDomain)
@@ -160,6 +160,9 @@ struct BrainScoreChart: View {
                 AxisMarks { _ in }
             }
         }
+        .chartPlotStyle { plotArea in
+            plotArea.frame(height: height - 32)
+        }
         .frame(height: height)
         .clipped()
     }
@@ -170,9 +173,9 @@ struct BrainScoreChart: View {
         let allScores = chartScores.map(\.brainScore)
         let rawMin = allScores.min() ?? 0
         let rawMax = allScores.max() ?? 1000
+        // Always give at least 50pt headroom above and below, or 40% of span
         let span = max(rawMax - rawMin, 1)
-        // Use 20% padding to make the line fill more of the chart
-        let padding = max(20, span / 5)
+        let padding = max(50, span * 2 / 5)
         let minScore = max(0, rawMin - padding)
         let maxScore = min(1000, rawMax + padding)
         return minScore...maxScore

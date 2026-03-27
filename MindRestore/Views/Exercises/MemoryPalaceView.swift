@@ -580,7 +580,7 @@ struct MemoryPalaceView: View {
         .navigationTitle("Memory Palace")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 
@@ -1088,8 +1088,6 @@ struct MemoryPalaceView: View {
                 LeaderboardRankCard(
                     exerciseType: .memoryPalace,
                     userScore: Int(viewModel.score * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 

@@ -17,16 +17,16 @@ final class NotificationService: Sendable {
     // MARK: - Daily Reminder
 
     private static let reminderMessages: [(title: String, body: String)] = [
-        ("Your brain is waiting", "A quick 5-minute session keeps your mind sharp."),
+        ("Your brain's ready", "A quick 5-minute session keeps your mind sharp."),
         ("Memory check-in", "How's your memory today? Let's find out."),
         ("Brain training time", "The best minds train daily. Your turn."),
         ("Don't skip brain day", "You wouldn't skip leg day... right?"),
         ("Quick brain boost", "5 minutes now = sharper thinking all day."),
-        ("Level up your mind", "Your brain has XP waiting to be earned."),
+        ("Beat yesterday's score", "Your brain has XP waiting to be earned."),
         ("Time to train", "Champions train every day. Be a champion."),
-        ("Mental fitness", "Your brain is a muscle. Let's work it out."),
+        ("Mental fitness check", "Your brain is a muscle. Let's work it out."),
         ("Stay sharp", "A few minutes of training goes a long way."),
-        ("Challenge yourself", "Today's daily challenge is waiting for you."),
+        ("Today's challenge is ready", "Can you top your best score?"),
     ]
 
     func scheduleDailyReminder(hour: Int, minute: Int, streak: Int) {
@@ -56,11 +56,11 @@ final class NotificationService: Sendable {
     // MARK: - Streak Risk
 
     private static let streakRiskMessages: [(title: String, body: String)] = [
-        ("Your streak is at risk!", "You haven't trained today. Don't lose your progress!"),
-        ("Don't break the chain!", "Just 5 minutes to keep your streak alive."),
-        ("Streak alert", "Your streak is about to end. Quick session?"),
-        ("Still time!", "The day isn't over yet — save your streak."),
-        ("One more day", "Keep the momentum going. Train now."),
+        ("Your streak is waiting!", "Quick session to keep it alive. Don't let it slip."),
+        ("Don't break the chain!", "Just 5 minutes. Your brain will thank you."),
+        ("Still time today!", "A quick game keeps your streak going."),
+        ("Your brain's ready", "One more day to add to your streak."),
+        ("Keep it going!", "You've come too far to stop now."),
     ]
 
     func scheduleStreakRisk(streak: Int) {
@@ -176,24 +176,33 @@ final class NotificationService: Sendable {
 
     // MARK: - Weekly Brain Report
 
-    func scheduleWeeklyReport(trainedDays: Int, avgScore: Double, streakLength: Int) {
+    func scheduleWeeklyReport(brainScore: Int, previousBrainScore: Int) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ["weeklyReport"])
 
         let content = UNMutableNotificationContent()
-        content.title = "Your Weekly Brain Report"
         content.sound = .default
 
-        if trainedDays == 0 {
-            content.body = "You didn't train this week. Even 5 minutes helps!"
+        if brainScore == 0 {
+            content.title = "Your first Brain Score awaits"
+            content.body = "Play a few games this week and find out how sharp your brain really is."
         } else {
-            let scorePercent = Int(avgScore * 100)
-            content.body = "This week: trained \(trainedDays) day\(trainedDays == 1 ? "" : "s"), avg score \(scorePercent)%, streak: \(streakLength) day\(streakLength == 1 ? "" : "s"). Keep it up!"
+            let delta = brainScore - previousBrainScore
+            if delta > 0 {
+                content.title = "Your brain got sharper!"
+                content.body = "Brain Score: \(brainScore) — up \(delta) points from last week. Keep the momentum going."
+            } else if delta < 0 {
+                content.title = "Your Brain Score dipped"
+                content.body = "Brain Score: \(brainScore) — down \(abs(delta)) points. A quick session can turn it around."
+            } else {
+                content.title = "Weekly Brain Report"
+                content.body = "Brain Score: \(brainScore) — holding steady. Can you push it higher this week?"
+            }
         }
 
         var dateComponents = DateComponents()
-        dateComponents.weekday = 1  // Sunday
-        dateComponents.hour = 19    // 7 PM
+        dateComponents.weekday = 2  // Monday
+        dateComponents.hour = 9     // 9 AM
         dateComponents.minute = 0
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)

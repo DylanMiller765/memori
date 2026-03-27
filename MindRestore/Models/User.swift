@@ -29,6 +29,7 @@ final class User {
     var totalXP: Int = 0
     var level: Int = 1
     var username: String = ""
+    var userAge: Int = 0  // 0 = not provided
     var avatarEmoji: String = ""
     var totalExercises: Int = 0
     var totalPerfectScores: Int = 0

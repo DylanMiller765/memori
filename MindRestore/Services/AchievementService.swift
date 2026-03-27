@@ -150,6 +150,9 @@ final class AchievementService {
         if !toUnlock.isEmpty {
             try? context.save()
             newlyUnlocked.append(contentsOf: toUnlock)
+            for type in toUnlock {
+                Analytics.achievementUnlocked(achievement: type.rawValue)
+            }
         }
 
         // Schedule nudge for achievements user is close to unlocking
@@ -169,6 +172,7 @@ final class AchievementService {
         context.insert(achievement)
         try? context.save()
         newlyUnlocked.append(.firstShare)
+        Analytics.achievementUnlocked(achievement: AchievementType.firstShare.rawValue)
     }
 
     func dismissAchievement(_ type: AchievementType) {

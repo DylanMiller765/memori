@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - ViewModel
 
@@ -14,13 +15,13 @@ final class VisualMemoryViewModel {
     var selectedCells: Set<Int> = []
     var gridSize: Int = 3
     var highlightCount: Int = 3
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var showTimer: Timer?
     var levelsCompleted = 0
 
-    let maxLevel = 10
-
     var score: Double {
-        Double(levelsCompleted) / Double(maxLevel)
+        Double(levelsCompleted) / 10.0
     }
 
     var maxLevelReached: Int {
@@ -59,6 +60,11 @@ final class VisualMemoryViewModel {
         level = max(1, AdaptiveDifficultyEngine.shared.currentLevel(for: .visualMemory))
         levelsCompleted = 0
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         startLevel()
     }
 
@@ -69,7 +75,12 @@ final class VisualMemoryViewModel {
         // Pick random cells to highlight
         var cells = Set<Int>()
         while cells.count < highlightCount {
-            cells.insert(Int.random(in: 0..<totalCells))
+            if var r = rng {
+                cells.insert(Int.random(in: 0..<totalCells, using: &r))
+                rng = r
+            } else {
+                cells.insert(Int.random(in: 0..<totalCells))
+            }
         }
         highlightedCells = cells
 
@@ -104,19 +115,13 @@ final class VisualMemoryViewModel {
             SoundService.shared.playCorrect()
             HapticService.correct()
 
-            if level >= maxLevel {
-                HapticService.complete()
-                phase = .finished
-                SoundService.shared.playComplete()
-            } else {
-                phase = .correct
-                showTimer?.invalidate()
-                showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
-                    Task { @MainActor in
-                        HapticService.levelUp()
-                        self?.level += 1
-                        self?.startLevel()
-                    }
+            phase = .correct
+            showTimer?.invalidate()
+            showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+                Task { @MainActor in
+                    HapticService.levelUp()
+                    self?.level += 1
+                    self?.startLevel()
                 }
             }
         } else {
@@ -159,12 +164,15 @@ struct VisualMemoryView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = VisualMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -190,11 +198,34 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.maxLevelReached,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .visualMemory, correct: viewModel.maxLevelReached, total: viewModel.level)
                 let card = ExerciseShareCard(
                     exerciseName: "Visual Memory",
@@ -204,7 +235,7 @@ struct VisualMemoryView: View {
                     mainLabel: "Max Level",
                     ratingText: viewModel.ratingText,
                     stats: [
-                        ("Levels Cleared", "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)"),
+                        ("Levels Cleared", "\(viewModel.levelsCompleted)"),
                         ("Score", viewModel.score.percentString),
                         ("Time", viewModel.durationSeconds.durationString)
                     ],
@@ -251,6 +282,7 @@ struct VisualMemoryView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -301,13 +333,13 @@ struct VisualMemoryView: View {
             Spacer()
 
             // Grid
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: viewModel.gridSize)
-            LazyVGrid(columns: columns, spacing: 6) {
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: viewModel.gridSize)
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(0..<viewModel.totalCells, id: \.self) { index in
                     gridCell(index: index, interactable: interactable)
                 }
             }
-            .padding(.horizontal, gridPadding)
+            .padding(.horizontal, 32)
 
             Spacer()
 
@@ -325,14 +357,6 @@ struct VisualMemoryView: View {
         .padding(.vertical, 24)
     }
 
-    private var gridPadding: CGFloat {
-        switch viewModel.gridSize {
-        case 3: return 40
-        case 4: return 24
-        default: return 16
-        }
-    }
-
     @ViewBuilder
     private func gridCell(index: Int, interactable: Bool) -> some View {
         let isHighlighted = viewModel.highlightedCells.contains(index)
@@ -341,10 +365,6 @@ struct VisualMemoryView: View {
         RoundedRectangle(cornerRadius: 10)
             .fill(cellFill(isHighlighted: isHighlighted, isSelected: isSelected, interactable: interactable))
             .aspectRatio(1, contentMode: .fit)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(cellBorder(isSelected: isSelected, interactable: interactable), lineWidth: isSelected ? 2 : 0.5)
-            )
             .animation(.easeInOut(duration: 0.15), value: isHighlighted)
             .animation(.easeInOut(duration: 0.15), value: isSelected)
             .onTapGesture {
@@ -358,35 +378,14 @@ struct VisualMemoryView: View {
 
     private func cellFill(isHighlighted: Bool, isSelected: Bool, interactable: Bool) -> some ShapeStyle {
         if !interactable && isHighlighted {
-            // Showing phase — highlight with accent
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppColors.accent, AppColors.violet],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            return AnyShapeStyle(AppColors.accent)
         } else if interactable && isSelected {
-            // Input phase — player selected
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppColors.accent.opacity(0.8), AppColors.violet.opacity(0.8)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            return AnyShapeStyle(AppColors.accent)
         } else {
-            // Default cell
-            return AnyShapeStyle(AppColors.cardSurface)
+            return AnyShapeStyle(Color.gray.opacity(0.12))
         }
     }
 
-    private func cellBorder(isSelected: Bool, interactable: Bool) -> Color {
-        if interactable && isSelected {
-            return AppColors.accent
-        }
-        return AppColors.cardBorder
-    }
 
     // MARK: - Correct
 
@@ -441,7 +440,7 @@ struct VisualMemoryView: View {
                         }
                 }
             }
-            .padding(.horizontal, gridPadding)
+            .padding(.horizontal, 32)
 
             Text("Level \(viewModel.levelsCompleted)")
                 .font(.headline)
@@ -489,7 +488,7 @@ struct VisualMemoryView: View {
                 }
 
                 VStack(spacing: 12) {
-                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted) / \(viewModel.maxLevel)")
+                    resultRow(label: "Levels Cleared", value: "\(viewModel.levelsCompleted)")
                         .accessibilityElement(children: .combine)
                     Divider()
                     resultRow(label: "Score", value: viewModel.score.percentString)
@@ -503,8 +502,6 @@ struct VisualMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .visualMemory,
                     userScore: viewModel.maxLevelReached,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -520,7 +517,39 @@ struct VisualMemoryView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .visualMemory,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.maxLevelReached,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()

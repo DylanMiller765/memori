@@ -11,6 +11,7 @@ struct OnboardingAssessmentView: View {
     @State private var viewModel = BrainAssessmentViewModel()
     @State private var hasSaved = false
     @State private var showingSkipConfirmation = false
+    @FocusState private var digitFieldFocused: Bool
 
     private var assessmentProgress: Double {
         switch viewModel.phase {
@@ -99,6 +100,9 @@ struct OnboardingAssessmentView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.showingRetryMessage)
         .onChange(of: viewModel.phase) { _, newPhase in
             backgroundColor = phaseBackgroundColor(for: newPhase)
+            if newPhase != .digitInput {
+                digitFieldFocused = false
+            }
         }
     }
 
@@ -132,15 +136,11 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 140, height: 140)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-                    .symbolEffect(.pulse)
-            }
+            Image("mascot-lab-coat")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
 
             VStack(spacing: 12) {
                 Text("Brain Assessment")
@@ -230,8 +230,12 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
 
-            ProgressView()
-                .tint(color)
+            Image("mascot-thinking")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 90)
+                .opacity(0.8)
                 .padding(.bottom, 40)
         }
         .transition(.opacity)
@@ -284,6 +288,7 @@ struct OnboardingAssessmentView: View {
 
             TextField("Type the numbers...", text: $viewModel.digitInput)
                 .keyboardType(.numberPad)
+                .focused($digitFieldFocused)
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .padding()
@@ -433,17 +438,16 @@ struct OnboardingAssessmentView: View {
 
             Spacer()
 
-            if interactive {
-                Button {
-                    viewModel.submitVisualAnswer()
-                } label: {
-                    Text("Submit")
-                        .gradientButton()
-                }
-                .padding(.horizontal, 32)
-                .disabled(viewModel.selectedCells.count != viewModel.highlightedCells.count)
-                .opacity(viewModel.selectedCells.count == viewModel.highlightedCells.count ? 1 : 0.4)
+            // Always reserve space for button so grid doesn't shift between phases
+            Button {
+                viewModel.submitVisualAnswer()
+            } label: {
+                Text("Submit")
+                    .gradientButton()
             }
+            .padding(.horizontal, 32)
+            .disabled(!interactive || viewModel.selectedCells.count != viewModel.highlightedCells.count)
+            .opacity(interactive && viewModel.selectedCells.count == viewModel.highlightedCells.count ? 1 : interactive ? 0.4 : 0)
         }
         .padding(.bottom, 16)
     }
@@ -485,10 +489,11 @@ struct OnboardingAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 64))
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.pulse)
+            Image("mascot-working-out")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
 
             Text("Analyzing your results...")
                 .font(.title3.weight(.semibold))

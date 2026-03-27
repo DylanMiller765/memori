@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Chunking Phase
 
@@ -79,6 +80,8 @@ final class ChunkingViewModel {
     private var timer: Timer?
     private var startTime: Date?
     private let hasSeenIntroKey = "chunkingTraining_hasSeenIntro"
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
 
     init() {}
 
@@ -92,12 +95,24 @@ final class ChunkingViewModel {
         totalDigits = params.digitCount + 4
         difficulty = AdaptiveDifficultyEngine.shared.currentLevel(for: .digits)
 
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
+
         // Generate random digit string
-        digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9)) }.joined()
+        if var r = rng {
+            digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9, using: &r)) }.joined()
+            chunkStyle = ChunkingStyle.allCases.randomElement(using: &r) ?? .phoneNumber
+            rng = r
+        } else {
+            digitString = (0..<totalDigits).map { _ in String(Int.random(in: 0...9)) }.joined()
+            chunkStyle = ChunkingStyle.allCases.randomElement() ?? .phoneNumber
+        }
         userInput = ""
         score = 0.0
         correctDigits = 0
-        chunkStyle = ChunkingStyle.allCases.randomElement() ?? .phoneNumber
 
         // Display time scales with difficulty — more digits, less time per digit
         let baseTime = AdaptiveDifficultyEngine.shared.displayTime(for: .digits, difficulty: difficulty)
@@ -216,11 +231,14 @@ struct ChunkingTrainingView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ChunkingViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -241,9 +259,31 @@ struct ChunkingTrainingView: View {
                 resultsView
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.correctDigits,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Chunking Training")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {
                 let card = ExerciseShareCard(
@@ -257,7 +297,7 @@ struct ChunkingTrainingView: View {
                         ("Correct Digits", "\(viewModel.correctDigits) / \(viewModel.totalDigits)"),
                         ("Difficulty", "Level \(viewModel.difficulty)")
                     ],
-                    ctaText: "Can you chunk better?"
+                    ctaText: "Think you're smarter?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -327,6 +367,7 @@ struct ChunkingTrainingView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.startFromIntro()
             } label: {
@@ -591,8 +632,6 @@ struct ChunkingTrainingView: View {
                 LeaderboardRankCard(
                     exerciseType: .chunkingTraining,
                     userScore: viewModel.correctDigits,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -608,7 +647,39 @@ struct ChunkingTrainingView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .chunkingTraining,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.correctDigits,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -680,7 +751,9 @@ struct ChunkingTrainingView: View {
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
-        PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining)
+        if PersonalBestTracker.shared.record(score: viewModel.correctDigits, for: .chunkingTraining) {
+            Analytics.personalBest(game: ExerciseType.chunkingTraining.rawValue, score: viewModel.correctDigits)
+        }
 
         let exercise = Exercise(
             type: .chunkingTraining,

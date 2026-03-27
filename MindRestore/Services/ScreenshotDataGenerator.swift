@@ -9,9 +9,8 @@ enum ScreenshotDataGenerator {
     /// Populate the app with impressive-looking demo data for screenshots.
     @MainActor
     static func generate(modelContext: ModelContext, user: User, gameCenterService: GameCenterService? = nil) {
-        // Enable mock leaderboard data for screenshots
+        // Mark as authenticated for screenshot purposes
         if let gc = gameCenterService {
-            gc.useMockData = true
             gc.isAuthenticated = true
         }
         // 1. Reset existing data

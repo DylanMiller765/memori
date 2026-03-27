@@ -2,6 +2,9 @@ import SwiftUI
 import StoreKit
 
 struct PaywallView: View {
+    /// Only show the exit offer on high-intent triggers (daily limit, post-assessment)
+    var isHighIntent: Bool = false
+
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
 
@@ -9,6 +12,8 @@ struct PaywallView: View {
     @State private var showExitOffer = false
     @State private var hasSeenExitOffer = false
     @State private var appeared = false
+    @AppStorage("exitOfferShownCount") private var exitOfferShownCount: Int = 0
+    private let maxExitOffers = 3
 
     var body: some View {
         NavigationStack {
@@ -30,13 +35,30 @@ struct PaywallView: View {
                 }
                 .padding(.bottom, 18)
 
+                // Mascot
+                Image("mascot-locked-sad")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
+                    .padding(.bottom, 10)
+
                 // Benefits
-                VStack(alignment: .leading, spacing: 8) {
-                    benefitRow(icon: "infinity", text: "Unlimited daily games")
-                    benefitRow(icon: "chart.line.uptrend.xyaxis", text: "Score trends & analytics")
-                    benefitRow(icon: "trophy.fill", text: "Global leaderboards")
+                HStack(spacing: 10) {
+                    benefitCard(
+                        icon: "infinity",
+                        title: "Unlimited",
+                        subtitle: "Daily Games",
+                        color: AppColors.accent
+                    )
+                    benefitCard(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "Score Trends",
+                        subtitle: "& Analytics",
+                        color: AppColors.violet
+                    )
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
                 .padding(.bottom, 18)
 
                 // Plans
@@ -145,31 +167,26 @@ struct PaywallView: View {
                 Spacer()
             }
             .background(
-                LinearGradient(
-                    colors: [
-                        AppColors.pageBgLight,
-                        AppColors.accent.opacity(0.07),
-                        AppColors.accent.opacity(0.22)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                paywallBackground
+                    .ignoresSafeArea()
             )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        if hasSeenExitOffer {
+                        if hasSeenExitOffer || !isHighIntent || exitOfferShownCount >= maxExitOffers {
+                            Analytics.paywallDismissed(trigger: isHighIntent ? "highIntent" : "browse")
                             dismiss()
                         } else {
                             showExitOffer = true
                             hasSeenExitOffer = true
+                            exitOfferShownCount += 1
                         }
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.secondary)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.tertiary)
+                            .padding(8)
+
                     }
                     .accessibilityLabel("Close")
                 }
@@ -180,6 +197,7 @@ struct PaywallView: View {
                     Task { await purchase() }
                 } onDismiss: {
                     showExitOffer = false
+                    Analytics.paywallDismissed(trigger: "exitOffer")
                     dismiss()
                 }
                 .presentationDetents([.medium])
@@ -190,6 +208,70 @@ struct PaywallView: View {
             withAnimation(.easeOut(duration: 0.6)) { appeared = true }
             Analytics.paywallShown()
         }
+    }
+
+    // MARK: - Background
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    @ViewBuilder
+    private var paywallBackground: some View {
+        if colorScheme == .dark {
+            ZStack {
+                Color(red: 0.06, green: 0.04, blue: 0.12)
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.16, green: 0.10, blue: 0.30),
+                        Color(red: 0.10, green: 0.06, blue: 0.25),
+                        Color(red: 0.06, green: 0.04, blue: 0.14),
+                        .clear
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                RadialGradient(
+                    colors: [AppColors.violet.opacity(0.15), .clear],
+                    center: .init(x: 0.5, y: 0.32),
+                    startRadius: 20,
+                    endRadius: 200
+                )
+            }
+        } else {
+            LinearGradient(
+                colors: [
+                    AppColors.pageBgLight,
+                    AppColors.accent.opacity(0.07),
+                    AppColors.accent.opacity(0.22)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    // MARK: - Benefit Card
+
+    private func benefitCard(icon: String, title: String, subtitle: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(height: 28)
+
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(subtitle)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(color.opacity(0.15), lineWidth: 1)
+        )
     }
 
     // MARK: - Benefit Row
@@ -411,23 +493,20 @@ struct ExitOfferSheet: View {
         VStack(spacing: 24) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 100, height: 100)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 44))
-                    .foregroundStyle(AppColors.accent)
-            }
-            .scaleEffect(appeared ? 1 : 0.5)
-            .opacity(appeared ? 1 : 0)
+            Image("mascot-locked-sad")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 140)
+                .scaleEffect(appeared ? 1 : 0.5)
+                .opacity(appeared ? 1 : 0)
 
             VStack(spacing: 8) {
-                Text("Wait — don't lose\nyour progress!")
+                Text("Don't lose your\nmomentum!")
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
 
-                Text("Pro members improve their Brain Score\n2x faster with unlimited training.")
+                Text("Pro members train unlimited — no daily\nlimits holding you back.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

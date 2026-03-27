@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Game Phase
 
@@ -23,6 +24,8 @@ final class ReactionTimeViewModel {
     var lastReactionMs: Int = 0
     var reactionStartTime: Date?
     var startTime: Date?
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     private var waitTimer: Timer?
 
     var averageMs: Int {
@@ -60,12 +63,23 @@ final class ReactionTimeViewModel {
         reactionTimes = []
         currentRound = 0
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         startRound()
     }
 
     func startRound() {
         phase = .waiting
-        let delay = Double.random(in: 1.5...4.0)
+        let delay: Double
+        if var r = rng {
+            delay = Double.random(in: 1.5...4.0, using: &r)
+            rng = r
+        } else {
+            delay = Double.random(in: 1.5...4.0)
+        }
         waitTimer?.invalidate()
         waitTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in
@@ -116,12 +130,15 @@ struct ReactionTimeView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = ReactionTimeViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -143,16 +160,39 @@ struct ReactionTimeView: View {
                 resultsView
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.averageMs,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Reaction Time")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .tabBar)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .navigationBar)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 let invertedScore = viewModel.averageMs > 0 ? (1000 - viewModel.averageMs) : 0
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: invertedScore, for: .reactionTime)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.reactionTime.rawValue, score: invertedScore) }
                 // Generate share card image
                 let card = ReactionTimeShareCard(
                     averageMs: viewModel.averageMs,
@@ -201,6 +241,7 @@ struct ReactionTimeView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -389,8 +430,6 @@ struct ReactionTimeView: View {
                 LeaderboardRankCard(
                     exerciseType: .reactionTime,
                     userScore: viewModel.averageMs,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -406,6 +445,7 @@ struct ReactionTimeView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
                     } else {
                         ShareLink(item: "My reaction time is \(viewModel.averageMs)ms — \(viewModel.ratingText)\n\nTest yours with Memori") {
                             HStack(spacing: 8) {
@@ -414,7 +454,39 @@ struct ReactionTimeView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .reactionTime,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.averageMs,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()

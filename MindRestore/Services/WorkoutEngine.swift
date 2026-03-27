@@ -11,7 +11,7 @@ import SwiftUI
 
 // MARK: - Cognitive Domain
 
-enum CognitiveDomain: String, CaseIterable, Codable {
+enum WorkoutDomain: String, CaseIterable, Codable {
     case memory   // 35% weight — Sequential Memory, Chunking, Dual N-Back
     case speed    // 30% weight — Reaction Time, Color Match, Speed Match
     case visual   // 35% weight — Visual Memory
@@ -56,9 +56,9 @@ enum CognitiveDomain: String, CaseIterable, Codable {
         }
     }
 
-    /// Map an ExerciseType back to its CognitiveDomain, if any.
-    static func domain(for type: ExerciseType) -> CognitiveDomain? {
-        for domain in CognitiveDomain.allCases {
+    /// Map an ExerciseType back to its WorkoutDomain, if any.
+    static func domain(for type: ExerciseType) -> WorkoutDomain? {
+        for domain in WorkoutDomain.allCases {
             if domain.exerciseTypes.contains(type) {
                 return domain
             }
@@ -77,7 +77,7 @@ struct WorkoutGame: Codable, Identifiable {
     var score: Double?
     var completed: Bool
 
-    init(exerciseType: ExerciseType, domain: CognitiveDomain, reasonTag: String) {
+    init(exerciseType: ExerciseType, domain: WorkoutDomain, reasonTag: String) {
         self.id = UUID()
         self.exerciseTypeRaw = exerciseType.rawValue
         self.domainRaw = domain.rawValue
@@ -90,8 +90,8 @@ struct WorkoutGame: Codable, Identifiable {
         ExerciseType(rawValue: exerciseTypeRaw) ?? .reactionTime
     }
 
-    var domain: CognitiveDomain {
-        CognitiveDomain(rawValue: domainRaw) ?? .speed
+    var domain: WorkoutDomain {
+        WorkoutDomain(rawValue: domainRaw) ?? .speed
     }
 }
 
@@ -211,7 +211,7 @@ final class WorkoutEngine {
         }
 
         // Game 3: Variety from remaining domains ("Mix it up")
-        let remainingDomains = CognitiveDomain.allCases.filter { dom in
+        let remainingDomains = WorkoutDomain.allCases.filter { dom in
             !selectedGames.contains { $0.domain == dom }
         }
         let game3Domain = remainingDomains.first ?? rankedDomains.last ?? .visual
@@ -342,15 +342,15 @@ final class WorkoutEngine {
 
     // MARK: - Private: Domain Performance
 
-    /// Calculate performance per CognitiveDomain from recent exercises + adaptive accuracy.
+    /// Calculate performance per WorkoutDomain from recent exercises + adaptive accuracy.
     /// Returns a dictionary of domain -> performance score (0.0 - 1.0), where lower is worse.
-    private func calculateDomainPerformance(from exercises: [Exercise]) -> [CognitiveDomain: Double] {
+    private func calculateDomainPerformance(from exercises: [Exercise]) -> [WorkoutDomain: Double] {
         let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let recentExercises = exercises.filter { $0.completedAt >= sevenDaysAgo }
 
-        var domainScores: [CognitiveDomain: Double] = [:]
+        var domainScores: [WorkoutDomain: Double] = [:]
 
-        for domain in CognitiveDomain.allCases {
+        for domain in WorkoutDomain.allCases {
             var scores: [Double] = []
 
             // Gather exercise scores for this domain
@@ -378,8 +378,8 @@ final class WorkoutEngine {
     }
 
     /// Rank domains from weakest to strongest.
-    private func rankDomainsByWeakness(_ scores: [CognitiveDomain: Double]) -> [CognitiveDomain] {
-        CognitiveDomain.allCases.sorted { a, b in
+    private func rankDomainsByWeakness(_ scores: [WorkoutDomain: Double]) -> [WorkoutDomain] {
+        WorkoutDomain.allCases.sorted { a, b in
             (scores[a] ?? 0) < (scores[b] ?? 0)
         }
     }
@@ -388,7 +388,7 @@ final class WorkoutEngine {
 
     /// Pick a random exercise from a domain, avoiding duplicates and yesterday's games.
     private func pickGame(
-        from domain: CognitiveDomain,
+        from domain: WorkoutDomain,
         excluding usedTypes: Set<String>,
         yesterdayTypes: Set<String>,
         reasonTag: String
@@ -414,8 +414,8 @@ final class WorkoutEngine {
         return nil
     }
 
-    /// Map user goals to a CognitiveDomain preference.
-    private func goalDomain(for goals: [UserFocusGoal]) -> CognitiveDomain? {
+    /// Map user goals to a WorkoutDomain preference.
+    private func goalDomain(for goals: [UserFocusGoal]) -> WorkoutDomain? {
         // Priority: first goal that maps to a domain
         for goal in goals {
             switch goal {

@@ -12,13 +12,27 @@ struct HomeView: View {
     @Query private var achievements: [Achievement]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
+    @Environment(WorkoutEngine.self) private var workoutEngine
+
     @Binding var selectedTab: Int
     @State private var viewModel = HomeViewModel()
     @State private var showingPaywall = false
     @State private var showingAssessment = false
     @State private var brainScoreShareImage: UIImage?
     @State private var showingFreezeInfo = false
+    @State private var showingWorkoutComplete = false
+    @State private var workoutOldBrainScore: Int = 0
+    @State private var workoutOldBrainAge: Int = 50
+    @State private var workoutNewBrainScore: Int = 0
+    @State private var workoutNewBrainAge: Int = 50
+    @State private var workoutNewResult: WorkoutEngine.RollingScoreResult?
+    @State private var workoutScoreSaved = false
+    @State private var workoutGameToPlay: ExerciseType?
+    @State private var isInWorkoutMode = false
+    @State private var workoutGameJustCompleted = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
+    @AppStorage("lastWeeklyReportDismissed") private var lastWeeklyReportDismissed: String = ""
+    @State private var weeklyReportShareImage: UIImage?
 
     private var hasDoneDailyChallenge: Bool {
         let formatter = DateFormatter()
@@ -47,6 +61,52 @@ struct HomeView: View {
         case .exercise(let type): return lastPlayedText(for: type)
         case .mixedTraining, .dailyChallenge, .brainAssessment: return nil
         }
+    }
+
+    // MARK: - Weekly Report Helpers
+
+    private var thisMondayString: String {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let weekday = cal.component(.weekday, from: today)
+        // weekday: 1=Sun, 2=Mon, ...
+        let daysFromMonday = (weekday + 5) % 7 // Mon=0, Tue=1, ..., Sun=6
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today) ?? today
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: monday)
+    }
+
+    private var shouldShowWeeklyReport: Bool {
+        // Show all week until dismissed (report generated each Monday)
+        guard !brainScores.isEmpty || !exercises.isEmpty else { return false }
+        if lastWeeklyReportDismissed != thisMondayString {
+            return true
+        }
+        return false
+    }
+
+    private var weeklyReportData: (weekStart: Date, weekEnd: Date, currentScore: Int, previousScore: Int, currentAge: Int, previousAge: Int, streak: Int, bestGame: String, gamesPlayed: Int) {
+        let cal = Calendar.current
+        let now = Date.now
+        let weekAgo = cal.date(byAdding: .day, value: -7, to: now) ?? now
+
+        let currentScore = brainScores.first?.brainScore ?? 0
+        let currentAge = brainScores.first?.brainAge ?? 0
+        let previousResult = brainScores.first(where: { $0.date <= weekAgo })
+        let previousScore = previousResult?.brainScore ?? currentScore
+        let previousAge = previousResult?.brainAge ?? currentAge
+
+        let weekExercises = exercises.filter { $0.completedAt >= weekAgo }
+        let gamesPlayed = weekExercises.count
+
+        // Best game = exercise with highest score this week
+        let bestExercise = weekExercises.max(by: { $0.score < $1.score })
+        let bestGame = bestExercise?.type.displayName ?? ""
+
+        let streak = user?.currentStreak ?? 0
+
+        return (weekAgo, now, currentScore, previousScore, currentAge, previousAge, streak, bestGame, gamesPlayed)
     }
 
     private var greeting: String {
@@ -88,19 +148,50 @@ struct HomeView: View {
                     }
                     .staggeredEntrance(index: 0)
 
+                    // Weekly Brain Report card (shows on Mondays until dismissed)
+                    if shouldShowWeeklyReport {
+                        weeklyReportCard
+                            .staggeredEntrance(index: 1)
+                    }
+
+                    // Smart Daily Workout — primary daily action, top of page
+                    if let workout = workoutEngine.todaysWorkout {
+                        WorkoutCard(
+                            workout: workout,
+                            onStartGame: { exerciseType in
+                                isInWorkoutMode = true
+                                workoutGameToPlay = exerciseType
+                            },
+                            onSeeResults: {
+                                if workoutScoreSaved {
+                                    // Already saved — show saved values without recomputing
+                                    showingWorkoutComplete = true
+                                    return
+                                }
+                                // Use workoutEngine.todaysWorkout directly (not captured struct)
+                                let games = workoutEngine.todaysWorkout?.games ?? []
+                                let result = workoutEngine.computeRollingBrainScore(
+                                    oldScore: latestBrainScore,
+                                    workoutGames: games
+                                )
+                                workoutOldBrainScore = latestBrainScore?.brainScore ?? 0
+                                workoutOldBrainAge = latestBrainScore?.brainAge ?? 50
+                                workoutNewBrainScore = result.brainScore
+                                workoutNewBrainAge = result.brainAge
+                                workoutNewResult = result
+                                showingWorkoutComplete = true
+                            }
+                        )
+                        .staggeredEntrance(index: 1)
+                    }
+
                     // Brain Score Ring + Stats
                     brainScoreCard
-                        .staggeredEntrance(index: 1)
+                        .staggeredEntrance(index: 2)
 
                     // Streak Week Calendar
                     streakWeekCard
-                        .staggeredEntrance(index: 2)
-
-                    // Today's Session (curated workout) — hide once goal met
-                    if viewModel.todaySessionCount < viewModel.dailyGoal {
-                        todaysSessionCard
-                            .staggeredEntrance(index: 3)
-                    }
+                        .staggeredEntrance(index: 3)
 
                     // Daily Challenge — high priority, brings users back
                     dailyChallengeCard
@@ -129,6 +220,9 @@ struct HomeView: View {
             }
             .pageBackground()
             .navigationTitle("Memori")
+            .navigationDestination(item: $workoutGameToPlay) { type in
+                exerciseView(for: type)
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -144,13 +238,91 @@ struct HomeView: View {
                                         .font(.title3)
                                         .foregroundStyle(.secondary)
                                 }
+                                .accessibilityLabel("Close")
                             }
                         }
                 }
             }
+            .fullScreenCover(isPresented: $showingWorkoutComplete) {
+                WorkoutCompleteView(
+                    oldBrainScore: workoutOldBrainScore,
+                    newBrainScore: workoutNewBrainScore,
+                    oldBrainAge: workoutOldBrainAge,
+                    newBrainAge: workoutNewBrainAge,
+                    streak: user?.currentStreak ?? 0,
+                    userAge: user?.userAge ?? 0,
+                    onDone: {
+                        // Save the new brain score only once
+                        if !workoutScoreSaved, let result = workoutNewResult {
+                            let score = BrainScoreResult()
+                            score.brainScore = result.brainScore
+                            score.brainAge = result.brainAge
+                            score.percentile = result.percentile
+                            score.brainType = result.brainType
+                            score.digitSpanScore = result.digitSpanScore
+                            score.reactionTimeScore = result.reactionTimeScore
+                            score.visualMemoryScore = result.visualMemoryScore
+                            score.sourceRaw = BrainScoreSource.workout.rawValue
+                            modelContext.insert(score)
+                            workoutScoreSaved = true
+                        }
+                        showingWorkoutComplete = false
+                    }
+                )
+            }
             .onAppear {
                 viewModel.refresh(user: user, sessions: sessions)
                 renderBrainScoreShareImage()
+                // Generate today's workout
+                workoutEngine.generateWorkout(
+                    exercises: exercises,
+                    userGoals: user?.focusGoals ?? []
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
+                guard let typeRaw = notification.userInfo?["exerciseType"] as? String,
+                      let type = ExerciseType(rawValue: typeRaw),
+                      let score = notification.userInfo?["score"] as? Double else { return }
+                workoutGameJustCompleted = true
+                let allDone = workoutEngine.recordGameCompletion(exerciseType: type, score: score)
+
+                // If all 3 games done and we're in workout mode, show celebration
+                if allDone && isInWorkoutMode {
+                    isInWorkoutMode = false
+                    let games = workoutEngine.todaysWorkout?.games ?? []
+                    let result = workoutEngine.computeRollingBrainScore(
+                        oldScore: latestBrainScore,
+                        workoutGames: games
+                    )
+                    workoutOldBrainScore = latestBrainScore?.brainScore ?? 0
+                    workoutOldBrainAge = latestBrainScore?.brainAge ?? 50
+                    workoutNewBrainScore = result.brainScore
+                    workoutNewBrainAge = result.brainAge
+                    workoutNewResult = result
+                    workoutScoreSaved = false
+                    // Small delay to let game view dismiss first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showingWorkoutComplete = true
+                    }
+                }
+            }
+            .onChange(of: workoutGameToPlay) { oldValue, newValue in
+                // User came back from a game — chain to next if game was completed
+                guard oldValue != nil, newValue == nil, isInWorkoutMode else { return }
+
+                // If user hit back manually (no game completed), stop the workout
+                guard workoutGameJustCompleted else {
+                    isInWorkoutMode = false
+                    return
+                }
+                workoutGameJustCompleted = false
+
+                guard let workout = workoutEngine.todaysWorkout,
+                      !workout.isComplete,
+                      let next = workout.nextGame else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    workoutGameToPlay = next.exerciseType
+                }
             }
         }
     }
@@ -248,13 +420,203 @@ struct HomeView: View {
         .glowingCard(color: AppColors.accent, intensity: 0.15)
     }
 
+    // MARK: - Weekly Report Card
+
+    private var weeklyReportCard: some View {
+        let data = weeklyReportData
+        let scoreDelta = data.currentScore - data.previousScore
+
+        return VStack(spacing: 0) {
+            // Header with dismiss
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.accent)
+                    Text("Weekly Brain Report")
+                        .font(.system(size: 15, weight: .bold))
+                }
+                Spacer()
+                Button {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        lastWeeklyReportDismissed = thisMondayString
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 28)
+                        .background(AppColors.cardSurface, in: Circle())
+                }
+                .accessibilityLabel("Dismiss")
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            // Content
+            VStack(spacing: 14) {
+                // Brain Score + Brain Age side by side
+                HStack(spacing: 0) {
+                    // Brain Score
+                    if data.currentScore > 0 {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Brain Score")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text("\(data.currentScore)")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                    .foregroundStyle(AppColors.accent)
+                                if data.previousScore > 0 && scoreDelta != 0 {
+                                    Text(scoreDelta > 0 ? "+\(scoreDelta)" : "\(scoreDelta)")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(scoreDelta > 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    // Brain Age
+                    if data.currentAge > 0 {
+                        let ageDelta = data.currentAge - data.previousAge
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Brain Age")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text("Age \(data.currentAge)")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                if ageDelta != 0 && data.previousAge > 0 {
+                                    Text(ageDelta < 0 ? "\(ageDelta)yr" : "+\(ageDelta)yr")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(ageDelta < 0 ? Color(red: 0.34, green: 0.85, blue: 0.74) : AppColors.coral)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+
+                // Stats row
+                HStack(spacing: 0) {
+                    // Streak
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppColors.coral)
+                            Text("\(data.streak)")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        Text("Streak")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // Games Played
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "gamecontroller.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(AppColors.teal)
+                            Text("\(data.gamesPlayed)")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        Text("Games")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // Best Game
+                    if !data.bestGame.isEmpty {
+                        VStack(spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(AppColors.amber)
+                                Text(data.bestGame)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
+                            Text("Best Game")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+
+                // Share button
+                if let shareImg = weeklyReportShareImage {
+                    ShareLink(
+                        item: Image(uiImage: shareImg),
+                        preview: SharePreview(
+                            "Weekly Brain Report",
+                            image: Image(uiImage: shareImg)
+                        )
+                    ) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Share Report")
+                                .font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundStyle(AppColors.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(AppColors.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppColors.cardSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
+                )
+        )
+        .onAppear {
+            renderWeeklyReportShareImage()
+        }
+    }
+
+    private func renderWeeklyReportShareImage() {
+        let data = weeklyReportData
+        let card = WeeklyReportShareCard(
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            brainScore: data.currentScore,
+            previousBrainScore: data.previousScore,
+            brainAge: data.currentAge,
+            previousBrainAge: data.previousAge,
+            streakLength: data.streak,
+            bestGameName: data.bestGame,
+            gamesPlayed: data.gamesPlayed
+        )
+        weeklyReportShareImage = card.renderAsImage(
+            size: CGSize(width: 360, height: 640),
+            scale: 3
+        )
+    }
+
     // MARK: - Brain Score Card
 
     private var brainScoreCard: some View {
         Group {
             if let score = latestBrainScore {
                 VStack(spacing: 0) {
-                    BrainScoreCard(score: score, compact: false)
+                    BrainScoreCard(score: score, compact: false, userAge: user?.userAge ?? 0)
 
                     // Divider
                     Rectangle()
@@ -264,10 +626,14 @@ struct HomeView: View {
                     // Actions row
                     HStack {
                         Button {
-                            showingAssessment = true
+                            if storeService.isProUser {
+                                showingAssessment = true
+                            } else {
+                                showingPaywall = true
+                            }
                         } label: {
                             HStack(spacing: 5) {
-                                Image(systemName: "arrow.counterclockwise")
+                                Image(systemName: storeService.isProUser ? "arrow.counterclockwise" : "lock.fill")
                                     .font(.system(size: 11, weight: .bold))
                                 Text("Retake")
                                     .font(.system(size: 13, weight: .semibold))
@@ -319,9 +685,11 @@ struct HomeView: View {
                     showingAssessment = true
                 } label: {
                     VStack(spacing: 20) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 48, weight: .medium))
-                            .foregroundStyle(AppColors.accent)
+                        Image("mascot-no-score")
+                            .renderingMode(.original)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 150)
 
                         VStack(spacing: 6) {
                             Text("Discover Your\nBrain Score")

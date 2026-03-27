@@ -133,6 +133,7 @@ struct TikTokBrainScoreCard: View {
     let digitScore: Double
     let reactionScore: Double
     let visualScore: Double
+    var userAge: Int = 0
 
     var body: some View {
         ZStack {
@@ -141,7 +142,15 @@ struct TikTokBrainScoreCard: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 32)
                 BrandingHeader()
-                Spacer().frame(height: 28)
+                Spacer().frame(height: 16)
+
+                Image("mascot-cool")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 100)
+
+                Spacer().frame(height: 12)
 
                 ShareCardSurface {
                     VStack(spacing: 16) {
@@ -159,6 +168,19 @@ struct TikTokBrainScoreCard: View {
                         Text("Brain Age: \(brainAge)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
+
+                        if userAge > 0 {
+                            let diff = userAge - brainAge
+                            if diff > 0 {
+                                Text("(\(diff) yrs younger than actual age!)")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.34, green: 0.85, blue: 0.74))
+                            } else if diff < 0 {
+                                Text("(\(abs(diff)) yrs older than actual age)")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(Color(red: 1, green: 0.45, blue: 0.45))
+                            }
+                        }
 
                         // Brain type badge
                         HStack(spacing: 6) {
@@ -196,7 +218,7 @@ struct TikTokBrainScoreCard: View {
 
                 Spacer()
 
-                Text("Can you beat me?")
+                Text("What's your Brain Age?")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -284,7 +306,7 @@ struct TikTokChallengeCard: View {
 
                 Spacer()
 
-                Text("Accept the Challenge")
+                Text("Think you're faster?")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
@@ -378,7 +400,7 @@ struct TikTokDuelResultCard: View {
 
                 Spacer()
 
-                Text("Think you can do better?")
+                Text("Who's next?")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -514,7 +536,7 @@ struct ReactionTimeShareCard: View {
 
                 Spacer()
 
-                Text("How fast are you?")
+                Text("Think you're faster?")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
 
@@ -657,6 +679,6 @@ struct ExerciseShareCard: View {
             ("Avg Response", "842 ms"),
             ("Score", "92%")
         ],
-        ctaText: "Test your focus"
+        ctaText: "Think you're faster?"
     )
 }

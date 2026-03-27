@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - ViewModel
 
@@ -24,6 +25,8 @@ final class SpeedMatchViewModel {
     var misses = 0
     var currentStreak = 0
     var bestStreak = 0
+    var challengeSeed: Int?
+    private var rng: SeededGenerator?
     var difficulty = 1 // 1-3, affects symbol count and speed
 
     // Difficulty 1: 6 symbols, Difficulty 2: 8, Difficulty 3: 10 + similar shapes
@@ -84,7 +87,12 @@ final class SpeedMatchViewModel {
     }
 
     private func nextShouldMatch() -> Bool {
-        Double.random(in: 0...1) < 0.30
+        if var r = rng {
+            let result = Double.random(in: 0...1, using: &r) < 0.30
+            rng = r
+            return result
+        }
+        return Double.random(in: 0...1) < 0.30
     }
 
     func startGame() {
@@ -100,6 +108,11 @@ final class SpeedMatchViewModel {
         previousSymbol = ""
         currentSymbol = ""
         startTime = Date.now
+        if let seed = challengeSeed {
+            rng = SeededGenerator(seed: UInt64(seed))
+        } else {
+            rng = nil
+        }
         showNextCard()
     }
 
@@ -109,7 +122,12 @@ final class SpeedMatchViewModel {
         currentRound += 1
 
         if currentRound == 1 {
-            currentSymbol = activeSymbols.randomElement()!
+            if var r = rng {
+                currentSymbol = activeSymbols.randomElement(using: &r)!
+                rng = r
+            } else {
+                currentSymbol = activeSymbols.randomElement()!
+            }
             isMatch = false
         } else {
             let shouldMatch = nextShouldMatch()
@@ -117,9 +135,18 @@ final class SpeedMatchViewModel {
                 currentSymbol = previousSymbol
                 isMatch = true
             } else {
-                var next = activeSymbols.randomElement()!
-                while next == previousSymbol {
+                var next: String
+                if var r = rng {
+                    next = activeSymbols.randomElement(using: &r)!
+                    while next == previousSymbol {
+                        next = activeSymbols.randomElement(using: &r)!
+                    }
+                    rng = r
+                } else {
                     next = activeSymbols.randomElement()!
+                    while next == previousSymbol {
+                        next = activeSymbols.randomElement()!
+                    }
                 }
                 currentSymbol = next
                 isMatch = false
@@ -201,11 +228,14 @@ struct SpeedMatchView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = SpeedMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -226,9 +256,31 @@ struct SpeedMatchView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.leaderboardScore,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Speed Match")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 let card = ExerciseShareCard(
@@ -243,7 +295,7 @@ struct SpeedMatchView: View {
                         ("Speed", viewModel.speedRating),
                         ("Best Streak", "\(viewModel.bestStreak)")
                     ],
-                    ctaText: "How fast can you match?"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -339,6 +391,7 @@ struct SpeedMatchView: View {
             .padding(.horizontal)
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -579,8 +632,6 @@ struct SpeedMatchView: View {
                 LeaderboardRankCard(
                     exerciseType: .speedMatch,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -596,7 +647,39 @@ struct SpeedMatchView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .speedMatch,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.leaderboardScore,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()
@@ -640,7 +723,9 @@ struct SpeedMatchView: View {
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         AdaptiveDifficultyEngine.shared.recordBlock(domain: .speedMatch, correct: viewModel.correctCount, total: viewModel.totalRounds)
-        PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch)
+        if PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .speedMatch) {
+            Analytics.personalBest(game: ExerciseType.speedMatch.rawValue, score: viewModel.correctCount)
+        }
 
         let exercise = Exercise(
             type: .speedMatch,

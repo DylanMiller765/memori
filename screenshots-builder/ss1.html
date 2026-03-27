@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; display: flex; justify-content: center; padding: 40px; }
+
+  .screenshot {
+    width: 1290px;
+    height: 2796px;
+    background: #F8F6F3;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .headline {
+    text-align: center;
+    padding-top: 140px;
+    padding-bottom: 60px;
+  }
+
+  .headline h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 128px;
+    line-height: 1.1;
+    color: #1A1A1A;
+  }
+
+  .accent { color: #3885F5; }
+
+  .phone-placeholder {
+    width: 880px;
+    height: 1900px;
+    background: #E0DDD8;
+    border-radius: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 40px;
+    color: #999;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .mascot {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    width: 480px;
+    height: 480px;
+    z-index: 10;
+  }
+
+  .mascot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+</style>
+</head>
+<body>
+<div class="screenshot">
+  <div class="headline">
+    <h1>What's Your<br><span class="accent">Brain Age?</span></h1>
+  </div>
+  <div class="phone-placeholder">Replace with<br>Brain Age screenshot</div>
+  <div class="mascot">
+    <img src="great-score-crown.png" alt="crown mascot">
+  </div>
+</div>
+</body>
+</html>

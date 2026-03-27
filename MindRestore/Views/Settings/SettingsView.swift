@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var debugTapCount = 0
     @State private var editingName = false
     @State private var editedName = ""
+    @State private var showingAgePicker = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -178,7 +179,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var profileBrainScoreHero: some View {
         if let score = latestBrainScore {
-            BrainScoreCard(score: score, compact: true)
+            BrainScoreCard(score: score, compact: true, userAge: user?.userAge ?? 0)
         } else {
             // No brain score yet
             VStack(spacing: 8) {
@@ -542,6 +543,63 @@ struct SettingsView: View {
                                 .foregroundStyle(user.username.isEmpty ? .secondary : .primary)
                         }
                     }
+                }
+
+                Divider()
+
+                HStack(spacing: 12) {
+                    settingIcon("birthday.cake.fill", color: AppColors.coral)
+                    Text("Your Age")
+                        .font(.subheadline)
+                    Spacer()
+                    Button {
+                        showingAgePicker = true
+                    } label: {
+                        Text(user.userAge > 0 ? "\(user.userAge)" : "Not set")
+                            .font(.subheadline)
+                            .foregroundStyle(user.userAge > 0 ? .primary : .secondary)
+                    }
+                }
+                .sheet(isPresented: $showingAgePicker) {
+                    NavigationStack {
+                        VStack(spacing: 16) {
+                            Text("Select your age")
+                                .font(.headline)
+
+                            Picker("Age", selection: Binding(
+                                get: { user.userAge > 0 ? user.userAge : 25 },
+                                set: { user.userAge = $0 }
+                            )) {
+                                ForEach(18...99, id: \.self) { age in
+                                    Text("\(age)").tag(age)
+                                }
+                            }
+                            .pickerStyle(.wheel)
+                            .frame(height: 150)
+
+                            HStack(spacing: 6) {
+                                Image(systemName: "lock.fill")
+                                    .font(.caption2)
+                                Text("Stored on your device only. Never shared.")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                        .padding()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { showingAgePicker = false }
+                            }
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Remove") {
+                                    user.userAge = 0
+                                    showingAgePicker = false
+                                }
+                                .foregroundStyle(.red)
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
                 }
 
                 Divider()

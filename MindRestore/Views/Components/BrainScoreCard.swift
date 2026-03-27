@@ -61,6 +61,7 @@ struct SegmentedScoreRing: View {
 struct BrainScoreCard: View {
     let score: BrainScoreResult
     var compact: Bool = false
+    var userAge: Int = 0
     @State private var showingExplainer = false
 
     var body: some View {
@@ -118,7 +119,17 @@ struct BrainScoreCard: View {
 
             // Stats row
             HStack(spacing: 0) {
-                statBlock(topText: "\(score.brainAge)", bottomText: "Brain Age", color: brainAgeColor)
+                VStack(spacing: 2) {
+                    statBlock(topText: "\(score.brainAge)", bottomText: "Brain Age", color: brainAgeColor)
+                    if userAge > 0 {
+                        let diff = userAge - score.brainAge
+                        if diff != 0 {
+                            Text(diff > 0 ? "\(diff) yrs younger than you" : "\(abs(diff)) yrs older than you")
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(diff > 0 ? AppColors.teal : AppColors.coral)
+                        }
+                    }
+                }
 
                 Rectangle()
                     .fill(AppColors.cardBorder)
@@ -205,6 +216,14 @@ struct BrainScoreCard: View {
                         Text("\(score.brainAge)")
                             .font(.system(size: 24, weight: .black, design: .rounded))
                             .foregroundStyle(brainAgeColor)
+                        if userAge > 0 {
+                            let diff = userAge - score.brainAge
+                            if diff != 0 {
+                                Text(diff > 0 ? "\(diff) yrs younger than you" : "\(abs(diff)) yrs older than you")
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .foregroundStyle(diff > 0 ? AppColors.teal : AppColors.coral)
+                            }
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 1) {

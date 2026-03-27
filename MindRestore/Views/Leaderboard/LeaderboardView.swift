@@ -7,8 +7,6 @@ struct LeaderboardView: View {
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
     @Environment(GameCenterService.self) private var gameCenterService
-    @Environment(StoreService.self) private var storeService
-    @Environment(PaywallTriggerService.self) private var paywallTrigger
 
     @State private var selectedCategory: LeaderboardCategory = .brainScore
     @State private var selectedFilter: LeaderboardTimeFilter = .allTime
@@ -26,11 +24,12 @@ struct LeaderboardView: View {
                 // Category picker
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
-                        ForEach(LeaderboardCategory.allCases) { category in
+                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain }) { category in
                             Button {
                                 withAnimation(.spring(response: 0.3)) {
                                     selectedCategory = category
                                 }
+                                Analytics.leaderboardViewed(category: category.rawValue)
                                 loadLeaderboard()
                             } label: {
                                 HStack(spacing: 6) {
@@ -80,9 +79,7 @@ struct LeaderboardView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 12)
 
-                if !storeService.isProUser {
-                    proGateView
-                } else if !gameCenterService.isAuthenticated {
+                if !gameCenterService.isAuthenticated {
                     gameCenterRequiredView
                 } else if isLoading && entries.isEmpty {
                     skeletonLoadingView
@@ -118,6 +115,7 @@ struct LeaderboardView: View {
             }
             .onAppear {
                 guard !hasLoaded else { return }
+                Analytics.leaderboardViewed(category: selectedCategory.rawValue)
                 loadLeaderboard()
             }
         }
@@ -138,7 +136,7 @@ struct LeaderboardView: View {
                 }
 
                 // Top 3 podium
-                if entries.count >= 3 {
+                if !entries.isEmpty {
                     podiumView
                         .padding(.bottom, 16)
                 }
@@ -171,9 +169,11 @@ struct LeaderboardView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "trophy")
-                .font(.system(size: 48))
-                .foregroundStyle(AppColors.textTertiary)
+            Image("mascot-podium")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 160)
 
             Text("No Rankings Yet")
                 .font(.title3.weight(.semibold))
@@ -248,120 +248,45 @@ struct LeaderboardView: View {
         }
     }
 
-    // MARK: - Pro Gate
-
-    private var proGateView: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            // Mini podium with metallic avatars
-            VStack(spacing: 0) {
-                // Mini avatar podium
-                HStack(alignment: .bottom, spacing: 8) {
-                    // 2nd
-                    VStack(spacing: 4) {
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(2), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 28, height: 28)
-                            .overlay(Text("2").font(.system(size: 11, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(2).opacity(0.25), podiumColor(2).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 36, height: 36)
-                    }
-                    // 1st
-                    VStack(spacing: 4) {
-                        // Trophy centered above 1st
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    RadialGradient(
-                                        colors: [podiumColor(1).opacity(0.15), .clear],
-                                        center: .center,
-                                        startRadius: 10,
-                                        endRadius: 40
-                                    )
-                                )
-                                .frame(width: 64, height: 64)
-
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 32))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 0.93, green: 0.65, blue: 0.0)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .shadow(color: podiumColor(1).opacity(0.4), radius: 8)
-                        }
-
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(1), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 34, height: 34)
-                            .overlay(Text("1").font(.system(size: 13, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(1).opacity(0.30), podiumColor(1).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 40, height: 50)
-                    }
-                    // 3rd
-                    VStack(spacing: 4) {
-                        Circle()
-                            .fill(LinearGradient(colors: podiumGradientColors(3), startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 24, height: 24)
-                            .overlay(Text("3").font(.system(size: 10, weight: .black, design: .rounded)).foregroundStyle(.white))
-                        UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 6)
-                            .fill(LinearGradient(colors: [podiumColor(3).opacity(0.25), podiumColor(3).opacity(0.10)], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 32, height: 28)
-                    }
-                }
-            }
-
-            VStack(spacing: 8) {
-                Text("Compete Globally")
-                    .font(.title2.weight(.bold))
-                Text("Unlock leaderboards to see how you rank\nagainst players worldwide.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button {
-                paywallTrigger.triggerLeaderboard(isProUser: false)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.open.fill")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Unlock Leaderboards")
-                        .font(.headline.weight(.bold))
-                }
-                .gradientButton(AppColors.premiumGradient)
-            }
-            .padding(.horizontal, 32)
-
-            Spacer()
-        }
-    }
-
     // MARK: - Podium
 
     private var podiumView: some View {
-        VStack(spacing: 0) {
-            if entries.count >= 3 {
-                // Players floating above pedestals
-                HStack(alignment: .bottom, spacing: 6) {
+        let count = min(entries.count, 3)
+        return VStack(spacing: 0) {
+            // Players floating above pedestals
+            HStack(alignment: .bottom, spacing: 6) {
+                if count >= 2 {
                     podiumPlayer(entries[1], rank: 2)
                         .padding(.bottom, 64)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
+                }
+                if count >= 1 {
                     podiumPlayer(entries[0], rank: 1)
                         .padding(.bottom, 88)
+                }
+                if count >= 3 {
                     podiumPlayer(entries[2], rank: 3)
                         .padding(.bottom, 48)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
                 }
+            }
 
-                // Pedestals
-                HStack(alignment: .bottom, spacing: 4) {
+            // Pedestals
+            HStack(alignment: .bottom, spacing: 4) {
+                if count >= 2 {
                     podiumPedestal(rank: 2, height: 64)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                }
+                if count >= 1 {
                     podiumPedestal(rank: 1, height: 88)
+                }
+                if count >= 3 {
                     podiumPedestal(rank: 3, height: 48)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                 }
             }
         }
@@ -622,9 +547,17 @@ struct LeaderboardView: View {
         case .visualMemory, .dualNBack: return "Lvl \(score)"
         case .numberMemory: return "\(score) digits"
         case .mathSpeed:
-            // Composite score: correctCount × 1000 + timeBonus
+            // Composite score: correctCount × 1000 + speedBonus
             let primary = score / 1000
-            return "\(primary)"
+            return "\(primary)/20"
+        case .wordScramble:
+            // Composite score: wordsCorrect × 1000 + timeBonus
+            let primary = score / 1000
+            return "\(primary)/10"
+        case .memoryChain:
+            return "\(score)"
+        case .dailyChallenge:
+            return "\(score)"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)
@@ -743,6 +676,24 @@ struct LeaderboardView: View {
                 }
             }
 
+            // Filter out zero-score entries (meaningless for all games)
+            loadedEntries = loadedEntries.filter { $0.score > 0 || $0.isCurrentUser }
+            // Re-assign ranks after filtering
+            loadedEntries = loadedEntries.enumerated().map { index, entry in
+                LeaderboardEntryData(
+                    rank: index + 1,
+                    username: entry.username,
+                    score: entry.score,
+                    avatarEmoji: entry.avatarEmoji,
+                    level: entry.level,
+                    isCurrentUser: entry.isCurrentUser
+                )
+            }
+            // Remove current user if their score is 0 (they haven't played this game)
+            if let userEntry = loadedEntries.first(where: { $0.isCurrentUser }), userEntry.score <= 0 {
+                loadedEntries = loadedEntries.filter { !$0.isCurrentUser }
+            }
+
             entries = loadedEntries
             totalPlayerCount = max(result.totalPlayerCount, loadedEntries.count)
             isLoading = false
@@ -774,6 +725,12 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .mathSpeed)
         case .dualNBack:
             return PersonalBestTracker.shared.best(for: .dualNBack)
+        case .wordScramble:
+            return PersonalBestTracker.shared.best(for: .wordScramble)
+        case .memoryChain:
+            return PersonalBestTracker.shared.best(for: .memoryChain)
+        case .dailyChallenge:
+            return nil
         }
     }
 }

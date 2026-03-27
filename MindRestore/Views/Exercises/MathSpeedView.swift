@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GameKit
 
 // MARK: - Difficulty
 
@@ -64,6 +65,7 @@ final class MathSpeedViewModel {
     var correctCount: Int = 0
     var wrongCount: Int = 0
     var results: [(problem: MathProblem, userAnswer: Int?, correct: Bool)] = []
+    var challengeSeed: Int?
     var startTime: Date?
     var elapsedSeconds: Double = 0
     private var timer: Timer?
@@ -101,18 +103,37 @@ final class MathSpeedViewModel {
         Int(elapsedSeconds)
     }
 
-    /// Composite leaderboard score: correct count × 1000 + time bonus (faster = higher)
+    /// Composite leaderboard score: correct × 1000 + speed bonus (faster avg = higher)
+    /// Speed bonus: 999 at ≤1s avg, 0 at ≥10s avg, linear between
     var leaderboardScore: Int {
-        correctCount * 1000 + max(0, 999 - durationSeconds)
+        let speedBonus: Int
+        if averageTimePerProblem <= 1.0 {
+            speedBonus = 999
+        } else if averageTimePerProblem >= 10.0 {
+            speedBonus = 0
+        } else {
+            speedBonus = Int((10.0 - averageTimePerProblem) / 9.0 * 999.0)
+        }
+        return correctCount * 1000 + speedBonus
     }
 
     func startGame() {
         let range = difficulty.range
-        problems = (0..<totalProblems).map { _ in
-            MathProblem(
-                a: Int.random(in: range),
-                b: Int.random(in: range)
-            )
+        if let seed = challengeSeed {
+            var rng = SeededGenerator(seed: UInt64(seed))
+            problems = (0..<totalProblems).map { _ in
+                MathProblem(
+                    a: Int.random(in: range, using: &rng),
+                    b: Int.random(in: range, using: &rng)
+                )
+            }
+        } else {
+            problems = (0..<totalProblems).map { _ in
+                MathProblem(
+                    a: Int.random(in: range),
+                    b: Int.random(in: range)
+                )
+            }
         }
         currentProblemIndex = 0
         correctCount = 0
@@ -196,12 +217,15 @@ struct MathSpeedView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(StoreService.self) private var storeService
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
     @State private var viewModel = MathSpeedViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var activeChallenge: ChallengeLink?
+    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -218,13 +242,36 @@ struct MathSpeedView: View {
                 resultsView
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
+        /*
+        .sheet(isPresented: $showingChallengeResult) {
+            if let challenge = activeChallenge {
+                FriendChallengeResultView(
+                    challenge: challenge,
+                    playerScore: viewModel.leaderboardScore,
+                    onShareResult: { showingChallengeResult = false },
+                    onChallengeAnother: { showingChallengeResult = false },
+                    onDone: {
+                        showingChallengeResult = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
+        }
+        */
         .navigationTitle("Math Speed")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                viewModel.challengeSeed = challenge.seed
+                activeChallenge = challenge
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 SoundService.shared.playComplete()
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
+                if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.mathSpeed.rawValue, score: viewModel.correctCount) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
                 let card = ExerciseShareCard(
                     exerciseName: "Math Speed",
@@ -238,7 +285,7 @@ struct MathSpeedView: View {
                         ("Avg/Problem", String(format: "%.1fs", viewModel.averageTimePerProblem)),
                         ("Score", viewModel.score.percentString)
                     ],
-                    ctaText: "Can you solve faster?"
+                    ctaText: "Think you're faster?"
                 )
                 shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
             }
@@ -324,6 +371,7 @@ struct MathSpeedView: View {
             Spacer()
 
             Button {
+                Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
                 viewModel.startGame()
             } label: {
                 Text("Start")
@@ -502,8 +550,6 @@ struct MathSpeedView: View {
                 LeaderboardRankCard(
                     exerciseType: .mathSpeed,
                     userScore: viewModel.leaderboardScore,
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -519,7 +565,39 @@ struct MathSpeedView: View {
                             }
                             .accentButton()
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue) })
                     }
+
+                    /*
+                    if let challengeURL = ChallengeLink(
+                        game: .mathSpeed,
+                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
+                        score: viewModel.leaderboardScore,
+                        challengerName: GKLocalPlayer.local.displayName
+                    ).url {
+                        ShareLink(item: challengeURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("Challenge a Friend")
+                            }
+                            .gradientButton()
+                        }
+                    }
+                    */
+
+                    /*
+                    if let challenge = activeChallenge {
+                        Button {
+                            showingChallengeResult = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                Text("See Challenge Result")
+                            }
+                            .accentButton()
+                        }
+                    }
+                    */
 
                     Button {
                         saveExercise()

@@ -3,6 +3,8 @@ import SwiftData
 
 extension Notification.Name {
     static let streakMilestoneCelebration = Notification.Name("streakMilestoneCelebration")
+    static let brainScoreMilestoneCelebration = Notification.Name("brainScoreMilestoneCelebration")
+    static let workoutGameCompleted = Notification.Name("workoutGameCompleted")
 }
 
 struct ContentView: View {
@@ -18,8 +20,10 @@ struct ContentView: View {
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
-    // TODO: Re-add WorkoutEngine after adding file to Xcode project
-    // @State private var workoutEngine = WorkoutEngine()
+    @State private var workoutEngine = WorkoutEngine()
+
+    // Challenge accept flow
+    @State private var showingChallengeAccept = false
 
     // Toast state
     @State private var showingXPToast = false
@@ -34,6 +38,10 @@ struct ContentView: View {
     // Streak milestone celebration
     @State private var showingStreakCelebration = false
     @State private var celebrationStreak = 0
+
+    // Brain Score milestone celebration
+    @State private var showingBrainScoreMilestone = false
+    @State private var milestoneBrainScore = 0
 
     private var user: User? { users.first }
 
@@ -55,7 +63,7 @@ struct ContentView: View {
         .environment(trainingManager)
         .environment(gameCenterService)
         .environment(deepLinkRouter)
-        // TODO: .environment(workoutEngine)
+        .environment(workoutEngine)
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
@@ -163,16 +171,25 @@ struct ContentView: View {
                 showingStreakCelebration = false
             }
         }
+        .fullScreenCover(isPresented: $showingBrainScoreMilestone) {
+            BrainScoreMilestoneView(milestone: milestoneBrainScore) {
+                showingBrainScoreMilestone = false
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .streakMilestoneCelebration)) { notification in
             if let streak = notification.userInfo?["streak"] as? Int {
                 celebrationStreak = streak
                 withAnimation { showingStreakCelebration = true }
             }
         }
-        .onChange(of: selectedTab) { _, newTab in
-            let tabNames = ["Home", "Train", "Compete", "Insights", "Profile"]
-            if newTab < tabNames.count {
-                Analytics.tabViewed(tab: tabNames[newTab])
+        .onReceive(NotificationCenter.default.publisher(for: .brainScoreMilestoneCelebration)) { notification in
+            if let milestone = notification.userInfo?["milestone"] as? Int {
+                milestoneBrainScore = milestone
+                // Delay slightly if streak celebration is showing
+                let delay: Double = showingStreakCelebration ? 2.0 : 0.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation { showingBrainScoreMilestone = true }
+                }
             }
         }
         .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
@@ -180,16 +197,44 @@ struct ContentView: View {
             switch destination {
             case .home:
                 selectedTab = 0
-            case .train, .game(_), .dailyChallenge:
+                deepLinkRouter.pendingDestination = nil
+            case .train, .dailyChallenge:
                 selectedTab = 1
+                deepLinkRouter.pendingDestination = nil
+            case .game(_):
+                selectedTab = 1
+                // Leave pendingDestination so TrainingView can handle it
+            case .challenge:
+                selectedTab = 1
+                showingChallengeAccept = true
+                deepLinkRouter.pendingDestination = nil
             case .compete:
                 selectedTab = 2
+                deepLinkRouter.pendingDestination = nil
             case .insights:
                 selectedTab = 3
+                deepLinkRouter.pendingDestination = nil
             case .profile:
                 selectedTab = 4
+                deepLinkRouter.pendingDestination = nil
             }
-            deepLinkRouter.pendingDestination = nil
+        }
+        .fullScreenCover(isPresented: $showingChallengeAccept) {
+            if let challenge = deepLinkRouter.pendingChallenge {
+                ChallengeAcceptView(
+                    challenge: challenge,
+                    onAccept: {
+                        showingChallengeAccept = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            deepLinkRouter.pendingDestination = .game(challenge.game)
+                        }
+                    },
+                    onDismiss: {
+                        showingChallengeAccept = false
+                        deepLinkRouter.pendingChallenge = nil
+                    }
+                )
+            }
         }
     }
 
@@ -234,18 +279,15 @@ struct ContentView: View {
     private func scheduleWeeklyReportIfNeeded() {
         guard let user, user.notificationsEnabled else { return }
 
-        let calendar = Calendar.current
-        let now = Date.now
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        let currentScore = brainScoreResults.first?.brainScore ?? 0
 
-        let thisWeekSessions = sessions.filter { $0.date >= weekAgo }
-        let trainedDays = Set(thisWeekSessions.map { calendar.startOfDay(for: $0.date) }).count
-        let avgScore = thisWeekSessions.isEmpty ? 0.0 : thisWeekSessions.map(\.totalScore).reduce(0, +) / Double(thisWeekSessions.count)
+        // Find a brain score from 7+ days ago for comparison
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
+        let previousScore = brainScoreResults.first(where: { $0.date <= weekAgo })?.brainScore ?? currentScore
 
         NotificationService.shared.scheduleWeeklyReport(
-            trainedDays: trainedDays,
-            avgScore: avgScore,
-            streakLength: user.currentStreak
+            brainScore: currentScore,
+            previousBrainScore: previousScore
         )
     }
 }
@@ -317,6 +359,8 @@ extension ContentView {
                 case .sequentialMemory: GameCenterService.numberMemoryLeaderboard
                 case .mathSpeed: GameCenterService.mathSpeedLeaderboard
                 case .dualNBack: GameCenterService.dualNBackLeaderboard
+                case .wordScramble: GameCenterService.wordScrambleLeaderboard
+                case .memoryChain: GameCenterService.memoryChainLeaderboard
                 default: nil
                 }
                 if let leaderboardID {
@@ -335,6 +379,16 @@ extension ContentView {
             Analytics.exerciseCompleted(game: exerciseType.rawValue, score: score, difficulty: difficulty)
         }
 
+        // Record workout game completion if applicable
+        if let exerciseType {
+            // Post notification so HomeView can check workout completion
+            NotificationCenter.default.post(
+                name: .workoutGameCompleted,
+                object: nil,
+                userInfo: ["exerciseType": exerciseType.rawValue, "score": score]
+            )
+        }
+
         // Prompt for App Store review at natural moment
         ReviewPromptService.requestIfAppropriate(totalExercises: user.totalExercises, streak: user.currentStreak)
 
@@ -344,11 +398,28 @@ extension ContentView {
             let lastCelebrated = UserDefaults.standard.integer(forKey: "lastCelebratedStreak")
             if lastCelebrated < user.currentStreak {
                 UserDefaults.standard.set(user.currentStreak, forKey: "lastCelebratedStreak")
+                Analytics.streakMilestone(streak: user.currentStreak)
                 NotificationCenter.default.post(
                     name: .streakMilestoneCelebration,
                     object: nil,
                     userInfo: ["streak": user.currentStreak]
                 )
+            }
+        }
+
+        // Brain Score milestone celebration
+        let brainScoreMilestones = [500, 600, 700, 800, 900, 1000]
+        let latestBrainScoreValue = latestBrainScore
+        let highestCelebrated = UserDefaults.standard.integer(forKey: "highestBrainScoreMilestone")
+        for milestone in brainScoreMilestones.sorted(by: >) {
+            if latestBrainScoreValue >= milestone && highestCelebrated < milestone {
+                UserDefaults.standard.set(milestone, forKey: "highestBrainScoreMilestone")
+                NotificationCenter.default.post(
+                    name: .brainScoreMilestoneCelebration,
+                    object: nil,
+                    userInfo: ["milestone": milestone]
+                )
+                break  // Only celebrate highest new milestone
             }
         }
 
@@ -362,6 +433,7 @@ struct TrainingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreService.self) private var storeService
     @Environment(PaywallTriggerService.self) private var paywallTrigger
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
@@ -404,6 +476,9 @@ struct TrainingView: View {
         (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber, "Mental math"),
         (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky, "Working memory"),
         (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose, "Group & remember"),
+        // v1.2: uncomment when ready to ship new games
+        // (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
+        // (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
     ]
 
     var body: some View {
@@ -497,6 +572,12 @@ struct TrainingView: View {
             .pageBackground()
             .navigationTitle("Train")
             .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
+                if case .game(let type) = destination {
+                    selectedExercise = type
+                    deepLinkRouter.pendingDestination = nil
+                }
+            }
         }
     }
 
@@ -583,6 +664,10 @@ struct TrainingView: View {
             SpeedMatchView()
         case .visualMemory:
             VisualMemoryView()
+        case .wordScramble:
+            WordScrambleView()
+        case .memoryChain:
+            MemoryChainView()
         }
     }
 
@@ -613,14 +698,16 @@ struct TrainingTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
-                if let lastPlayed = lastPlayedText {
-                    Text(lastPlayed)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(AppColors.textTertiary)
-                } else if !isLocked {
-                    Text("New")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(AppColors.accent.opacity(0.7))
+                if !isLocked {
+                    if let lastPlayed = lastPlayedText {
+                        Text(lastPlayed)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(AppColors.textTertiary)
+                    } else {
+                        Text("New")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(AppColors.accent.opacity(0.7))
+                    }
                 }
             }
             .padding(.horizontal, 8)
@@ -635,32 +722,26 @@ struct TrainingTile: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(color.opacity(0.2), lineWidth: 1)
         )
+        .overlay {
+            if isLocked {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.black.opacity(0.55))
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(color.opacity(0.7))
+                        .padding(8)
+                        .background(color.opacity(0.15), in: Circle())
+                }
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityLabel("\(title)\(isLocked ? ", locked" : "")")
     }
 
     @ViewBuilder
     private var miniPreview: some View {
-        if isLocked {
-            ZStack {
-                // Keep the game's color identity but muted
-                color.opacity(0.06)
-
-                // Blurred version of the game icon as background
-                Image(systemName: type.icon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(color.opacity(0.12))
-
-                // Lock badge
-                VStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(color.opacity(0.6))
-                        .padding(8)
-                        .background(color.opacity(0.1), in: Circle())
-                }
-            }
-        } else {
+        ZStack {
             switch type {
             case .reactionTime:
                 // Lightning bolt target
@@ -808,6 +889,43 @@ struct TrainingTile: View {
                     }
                 }
 
+            case .wordScramble:
+                ZStack {
+                    color.opacity(0.06)
+                    HStack(spacing: 3) {
+                        ForEach(["B", "R", "A", "I", "N"], id: \.self) { letter in
+                            Text(letter)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(color)
+                                .frame(width: 18, height: 22)
+                                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                        }
+                    }
+                }
+
+            case .memoryChain:
+                // Mini 4x4 grid with shapes — one cell glowing to show sequence
+                ZStack {
+                    color.opacity(0.06)
+                    let icons = ["circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                                 "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill",
+                                 "circle.fill", "square.fill", "triangle.fill", "diamond.fill",
+                                 "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill"]
+                    let glowing = [2, 5, 10] // cells that are "highlighted" in sequence
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
+                        ForEach(0..<16, id: \.self) { i in
+                            Image(systemName: icons[i])
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(glowing.contains(i) ? .white : color.opacity(0.5))
+                                .frame(width: 14, height: 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(glowing.contains(i) ? color : color.opacity(0.1))
+                                )
+                        }
+                    }
+                }
+
             default:
                 ZStack {
                     color.opacity(0.08)
@@ -816,6 +934,7 @@ struct TrainingTile: View {
                         .foregroundStyle(color)
                 }
             }
+
         }
     }
 }

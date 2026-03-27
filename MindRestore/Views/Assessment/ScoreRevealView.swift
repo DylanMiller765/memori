@@ -4,6 +4,7 @@ import SwiftData
 struct ScoreRevealView: View {
     let viewModel: BrainAssessmentViewModel
     let previousScore: BrainScoreResult?
+    var userAge: Int = 0
     let onDone: () -> Void
 
     @Query private var users: [User]
@@ -20,7 +21,8 @@ struct ScoreRevealView: View {
     @State private var showBreakdown = false
     @State private var showComparison = false
     @State private var scoreTimer: Timer?
-    @State private var showChallenge = false
+    // @State private var showChallenge = false
+    @AppStorage("celebratedBrainAgeBelow") private var celebratedBrainAgeBelow = false
 
     // Brain Age dramatic reveal states
     @State private var showBrainAgeOverlay = false
@@ -36,6 +38,22 @@ struct ScoreRevealView: View {
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
+
+    private var ageComparisonText: String? {
+        guard userAge > 0 else { return nil }
+        let diff = userAge - viewModel.brainAge
+        if diff > 0 { return "\(diff) years younger than you!" }
+        if diff < 0 { return "\(abs(diff)) years older than your real age" }
+        return "Same as your real age!"
+    }
+
+    private var ageComparisonColor: Color {
+        guard userAge > 0 else { return .secondary }
+        let diff = userAge - viewModel.brainAge
+        if diff > 0 { return AppColors.teal }
+        if diff < 0 { return AppColors.coral }
+        return .secondary
+    }
 
     var body: some View {
         ZStack {
@@ -77,6 +95,40 @@ struct ScoreRevealView: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Your brain age is \(viewModel.brainAge)")
                         .transition(.move(edge: .bottom).combined(with: .opacity))
+
+                        if let comparison = ageComparisonText {
+                            Text(comparison)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(ageComparisonColor)
+                        }
+
+                        // First-time brain age below real age celebration
+                        if userAge > 0 && viewModel.brainAge < userAge && !celebratedBrainAgeBelow {
+                            VStack(spacing: 8) {
+                                Text("Your brain is younger than you!")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(AppColors.teal)
+
+                                ShareLink(
+                                    item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                                ) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "square.and.arrow.up")
+                                            .font(.caption.weight(.semibold))
+                                        Text("Share This")
+                                            .font(.subheadline.weight(.bold))
+                                    }
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 10)
+                                    .background(AppColors.teal, in: Capsule())
+                                }
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                            .onAppear {
+                                celebratedBrainAgeBelow = true
+                            }
+                        }
                     }
 
                     // Brain Type
@@ -194,8 +246,6 @@ struct ScoreRevealView: View {
                         LeaderboardRankCard(
                             exerciseType: nil,
                             userScore: viewModel.brainScore,
-                            isPro: isProUser,
-                            onUpgradeTap: { showingPaywall = true }
                         )
                         .padding(.horizontal, 20)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -239,6 +289,7 @@ struct ScoreRevealView: View {
                             }
 
                             HStack(spacing: 12) {
+                                /*
                                 Button {
                                     showChallenge = true
                                 } label: {
@@ -252,6 +303,7 @@ struct ScoreRevealView: View {
                                     .padding(.vertical, 14)
                                     .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
                                 }
+                                */
 
                                 Button(action: onDone) {
                                     Text("Done")
@@ -284,6 +336,7 @@ struct ScoreRevealView: View {
         }
         .onAppear { startRevealSequence() }
         .task { await fetchRealPercentile() }
+        /*
         .sheet(isPresented: $showChallenge) {
             ChallengeView(
                 challengeType: .brainScore(
@@ -298,8 +351,9 @@ struct ScoreRevealView: View {
                 percentile: viewModel.percentile
             )
         }
+        */
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 
@@ -333,10 +387,13 @@ struct ScoreRevealView: View {
             VStack(spacing: 16) {
                 Spacer()
 
-                // Emoji reaction
+                // Mascot reaction
                 if countUpFinished {
-                    Text(emoji)
-                        .font(.system(size: 56))
+                    Image(viewModel.brainAge <= 30 ? "mascot-crown" : viewModel.brainAge >= 50 ? "mascot-low-score" : "mascot-celebrate")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 120)
                         .transition(.scale.combined(with: .opacity))
                 }
 
@@ -402,6 +459,12 @@ struct ScoreRevealView: View {
                         Text("You have the brain of a \(viewModel.brainAge)-year-old")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
+
+                        if let comparison = ageComparisonText {
+                            Text(comparison)
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(ageComparisonColor)
+                        }
                     }
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
@@ -613,7 +676,7 @@ struct ScoreRevealView: View {
     // MARK: - Real Percentile from Leaderboard
 
     private func fetchRealPercentile() async {
-        guard gameCenterService.isAuthenticated || gameCenterService.useMockData else { return }
+        guard gameCenterService.isAuthenticated else { return }
         let result = await gameCenterService.loadLeaderboardEntries(
             category: .brainScore,
             timeFilter: .allTime
@@ -647,7 +710,8 @@ struct ScoreRevealView: View {
             percentile: viewModel.percentile,
             digitScore: viewModel.digitScore,
             reactionScore: viewModel.reactionScore,
-            visualScore: viewModel.visualScore
+            visualScore: viewModel.visualScore,
+            userAge: userAge
         )
         shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
 

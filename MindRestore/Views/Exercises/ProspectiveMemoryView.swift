@@ -535,7 +535,7 @@ struct ProspectiveMemoryView: View {
         .navigationTitle("Prospective Memory")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallView(isHighIntent: true)
         }
     }
 
@@ -922,8 +922,6 @@ struct ProspectiveMemoryView: View {
                 LeaderboardRankCard(
                     exerciseType: .prospectiveMemory,
                     userScore: Int(viewModel.overallScore * 100),
-                    isPro: isProUser,
-                    onUpgradeTap: { showingPaywall = true }
                 )
                 .padding(.horizontal)
 
@@ -995,7 +993,9 @@ struct ProspectiveMemoryView: View {
             NotificationService.shared.scheduleMilestone(streak: streak)
         }
 
-        PersonalBestTracker.shared.record(score: Int(viewModel.overallScore * 100), for: .prospectiveMemory)
+        if PersonalBestTracker.shared.record(score: Int(viewModel.overallScore * 100), for: .prospectiveMemory) {
+            Analytics.personalBest(game: ExerciseType.prospectiveMemory.rawValue, score: Int(viewModel.overallScore * 100))
+        }
 
         if let user {
             _ = ContentView.awardXP(
