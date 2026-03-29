@@ -171,6 +171,7 @@ struct VisualMemoryView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -242,6 +243,8 @@ struct VisualMemoryView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxLevelReached, for: .visualMemory)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.visualMemory.rawValue, score: viewModel.maxLevelReached) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .visualMemory, correct: viewModel.maxLevelReached, total: viewModel.level)
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Visual Memory",
                     exerciseIcon: "square.grid.3x3.fill",
@@ -579,7 +582,7 @@ struct VisualMemoryView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -619,6 +622,8 @@ struct VisualMemoryView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

@@ -137,6 +137,7 @@ struct ReactionTimeView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     // @State private var showingChallengeResult = false
@@ -201,6 +202,8 @@ struct ReactionTimeView: View {
                 let invertedScore = viewModel.averageMs > 0 ? (1000 - viewModel.averageMs) : 0
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: invertedScore, for: .reactionTime)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.reactionTime.rawValue, score: invertedScore) }
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 // Generate share card image
                 let card = ReactionTimeShareCard(
                     averageMs: viewModel.averageMs,
@@ -507,7 +510,7 @@ struct ReactionTimeView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -547,6 +550,8 @@ struct ReactionTimeView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

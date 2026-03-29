@@ -237,6 +237,7 @@ struct ChunkingTrainingView: View {
     @State private var viewModel = ChunkingViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -294,6 +295,8 @@ struct ChunkingTrainingView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .results {
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 if viewModel.score < 0.7 {
                     withAnimation(.default) { shakeAmount += 1 }
                 }
@@ -702,7 +705,7 @@ struct ChunkingTrainingView: View {
                     Button {
                         resultsAppeared = false
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startChallenge()
                     } label: {
                         Text("Next Challenge")
@@ -770,6 +773,8 @@ struct ChunkingTrainingView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

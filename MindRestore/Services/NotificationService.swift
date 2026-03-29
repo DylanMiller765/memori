@@ -17,16 +17,16 @@ final class NotificationService: Sendable {
     // MARK: - Daily Reminder
 
     private static let reminderMessages: [(title: String, body: String)] = [
-        ("Your brain's ready", "A quick 5-minute session keeps your mind sharp."),
-        ("Memory check-in", "How's your memory today? Let's find out."),
-        ("Brain training time", "The best minds train daily. Your turn."),
-        ("Don't skip brain day", "You wouldn't skip leg day... right?"),
-        ("Quick brain boost", "5 minutes now = sharper thinking all day."),
-        ("Beat yesterday's score", "Your brain has XP waiting to be earned."),
-        ("Time to train", "Champions train every day. Be a champion."),
-        ("Mental fitness check", "Your brain is a muscle. Let's work it out."),
-        ("Stay sharp", "A few minutes of training goes a long way."),
-        ("Today's challenge is ready", "Can you top your best score?"),
+        ("Your Brain Score awaits", "3 games. 5 minutes. See if you improved."),
+        ("Quick brain check", "Your score won't improve itself. Play today."),
+        ("Train your brain", "Yesterday's you set the bar. Beat it."),
+        ("Brain training time", "Your ranking is live. Climb higher."),
+        ("Don't let your brain slack", "5 minutes today = sharper tomorrow."),
+        ("Your brain called", "It wants its daily workout. 3 games, let's go."),
+        ("Score check", "Your Brain Score is waiting. Did it go up?"),
+        ("Daily brain reps", "Even 3 games makes a difference."),
+        ("Quick session?", "Your brain gets sharper every day you train."),
+        ("The leaderboard moved", "Did you move with it? Play now."),
     ]
 
     func scheduleDailyReminder(hour: Int, minute: Int, streak: Int) {
@@ -55,13 +55,15 @@ final class NotificationService: Sendable {
 
     // MARK: - Streak Risk
 
-    private static let streakRiskMessages: [(title: String, body: String)] = [
-        ("Your streak is waiting!", "Quick session to keep it alive. Don't let it slip."),
-        ("Don't break the chain!", "Just 5 minutes. Your brain will thank you."),
-        ("Still time today!", "A quick game keeps your streak going."),
-        ("Your brain's ready", "One more day to add to your streak."),
-        ("Keep it going!", "You've come too far to stop now."),
-    ]
+    private static func streakRiskMessages(streak: Int) -> [(title: String, body: String)] {
+        [
+            ("Your streak is at risk!", "You've trained \(streak) days straight. Don't break it now."),
+            ("\(streak)-day streak on the line", "One quick game saves it. 2 minutes."),
+            ("Don't lose \(streak) days!", "Your streak vanishes at midnight. Play now."),
+            ("Streak alert", "\(streak) days of brain training. Keep the chain alive."),
+            ("Last chance today", "Your \(streak)-day streak needs you. One game."),
+        ]
+    }
 
     func scheduleStreakRisk(streak: Int) {
         let center = UNUserNotificationCenter.current()
@@ -69,11 +71,12 @@ final class NotificationService: Sendable {
 
         guard streak > 0 else { return }
 
-        let message = Self.streakRiskMessages[streak % Self.streakRiskMessages.count]
+        let messages = Self.streakRiskMessages(streak: streak)
+        let message = messages[streak % messages.count]
 
         let content = UNMutableNotificationContent()
         content.title = message.title
-        content.body = "\(message.body) (\(streak)-day streak)"
+        content.body = message.body
         content.sound = .default
 
         var dateComponents = DateComponents()
@@ -123,10 +126,10 @@ final class NotificationService: Sendable {
         guard lastTrainedDaysAgo >= 2 else { return }
 
         let messages: [(title: String, body: String)] = [
-            ("We miss you!", "Your brain misses its daily workout. Come back for a quick session."),
-            ("It's been a while", "Memory fades without practice. Just 5 minutes to get back on track."),
-            ("Come back stronger", "Every champion takes breaks. Now it's time to return."),
-            ("Your brain called", "It wants to know when you're coming back to train."),
+            ("Your brain misses training", "It's been a while. See where you rank now."),
+            ("Brain Score check-in", "Come back and see if your score held up."),
+            ("Your leaderboard rank dropped", "Other players are training. Are you?"),
+            ("Quick comeback session?", "3 games. Your brain remembers how to play."),
         ]
 
         let message = messages[lastTrainedDaysAgo % messages.count]
@@ -236,6 +239,43 @@ final class NotificationService: Sendable {
 
     func cancelRetakeReminder() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.retakeIdentifier])
+    }
+
+    // MARK: - Brain Score Follow-Up
+
+    func scheduleBrainScoreFollowUp(currentScore: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = "Your Brain Score hit \(currentScore)"
+        content.body = "Play today to push it even higher."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 24 * 60 * 60, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "brainScoreFollowUp",
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    func scheduleDecayWarning(pointsLost: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = "Your Brain Score dropped \(pointsLost) points"
+        content.body = "Play today to recover. Your brain needs consistent training."
+        content.sound = .default
+
+        // Schedule for 2 hours from now (give them time to play first)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2 * 60 * 60, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "decay_warning",
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    func cancelDecayWarning() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["decay_warning"])
     }
 
     func cancelStreakRisk() {

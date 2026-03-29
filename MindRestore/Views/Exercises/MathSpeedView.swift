@@ -224,6 +224,7 @@ struct MathSpeedView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -280,6 +281,8 @@ struct MathSpeedView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.correctCount, for: .mathSpeed)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.mathSpeed.rawValue, score: viewModel.correctCount) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .mathSpeed, correct: viewModel.correctCount, total: viewModel.totalProblems)
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Math Speed",
                     exerciseIcon: "function",
@@ -629,7 +632,7 @@ struct MathSpeedView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -669,6 +672,8 @@ struct MathSpeedView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

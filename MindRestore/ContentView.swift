@@ -5,6 +5,7 @@ extension Notification.Name {
     static let streakMilestoneCelebration = Notification.Name("streakMilestoneCelebration")
     static let brainScoreMilestoneCelebration = Notification.Name("brainScoreMilestoneCelebration")
     static let workoutGameCompleted = Notification.Name("workoutGameCompleted")
+    static let brainScoreImproved = Notification.Name("brainScoreImproved")
 }
 
 struct ContentView: View {
@@ -76,6 +77,9 @@ struct ContentView: View {
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
+            // v1.2: Brain score decay (disabled for now)
+            // let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
+            // if decayed > 0 { NotificationService.shared.scheduleDecayWarning(pointsLost: decayed) }
             // Sync widget data on app launch (off the main thread)
             Task { syncWidgetData() }
         }
@@ -301,6 +305,9 @@ extension ContentView {
         user.totalExercises += 1
         if score >= 0.95 { user.totalPerfectScores += 1 }
 
+        // Cancel decay warning since user is playing
+        NotificationService.shared.cancelDecayWarning()
+
         achievementService.checkAchievements(context: modelContext, user: user)
 
         if leveledUp {
@@ -323,6 +330,15 @@ extension ContentView {
             descriptor.fetchLimit = 1
             return (try? modelContext.fetch(descriptor))?.first?.brainScore ?? 0
         }()
+
+        // v1.2: Rolling Brain Score (disabled for now)
+        // Uncomment to enable brain score updating after every game
+        /*
+        if let exerciseType, let rawScore = gameScore,
+           let (domain, newDomainScore) = BrainScoring.domainScore(for: exerciseType, gameScore: rawScore, score: score) {
+            // ... rolling brain score logic ...
+        }
+        */
 
         WidgetDataService.updateWidgetData(
             streak: user.currentStreak,

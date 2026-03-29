@@ -236,6 +236,7 @@ struct ColorMatchView: View {
     @State private var viewModel = ColorMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -287,6 +288,8 @@ struct ColorMatchView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Color Match",
                     exerciseIcon: "paintpalette.fill",
@@ -594,7 +597,7 @@ struct ColorMatchView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -634,6 +637,8 @@ struct ColorMatchView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

@@ -171,4 +171,117 @@ enum BrainScoring {
         let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.8212560 + t * 1.330274))))
         return z > 0 ? 1.0 - p : p
     }
+
+    /// Calculate domain score (0-100) from an exercise result
+    static func domainScore(for exerciseType: ExerciseType, gameScore: Int, score: Double) -> (domain: String, score: Double)? {
+        switch exerciseType {
+        // Memory domain — maps to digitSpanScore
+        case .sequentialMemory:
+            // gameScore = maxCorrectLength (digit span)
+            return ("memory", digitSpanScore(maxDigits: gameScore))
+        case .chunkingTraining:
+            // gameScore = correctDigits, approximate as digit span
+            return ("memory", digitSpanScore(maxDigits: max(1, gameScore / 3)))
+
+        // Speed domain — maps to reactionTimeScore
+        case .reactionTime:
+            // gameScore = averageMs
+            return ("speed", reactionTimeScore(avgMs: gameScore))
+        case .colorMatch, .speedMatch:
+            // composite score: accuracy% * 1000 + timeBonus. Extract accuracy as speed proxy
+            let accuracy = Double(gameScore / 1000)
+            return ("speed", accuracy)
+        case .mathSpeed:
+            // composite: correct * 1000 + speedBonus. Map correct/20 to 0-100
+            let correct = Double(gameScore / 1000)
+            return ("speed", correct * 5.0) // 20/20 = 100
+
+        // Visual domain — maps to visualMemoryScore
+        case .visualMemory:
+            // gameScore = maxLevelReached
+            return ("visual", visualMemoryScore(maxLevel: gameScore))
+        case .dualNBack:
+            // gameScore = currentN level. Map N to visual memory equivalent
+            // N=1 ~ level 3, N=2 ~ level 5, N=3 ~ level 7, N=4 ~ level 9
+            return ("visual", visualMemoryScore(maxLevel: gameScore * 2 + 1))
+
+        default:
+            return nil
+        }
+    }
+}
+
+// MARK: - Brain Score Decay
+
+/// Applies daily Brain Score decay when user hasn't played.
+/// - Grace period: 48 hours (no decay)
+/// - Decay rate: 10 points/day
+/// - Floor: 50% of peak score
+enum BrainScoreDecayService {
+    private static let decayPerDay = 10
+    private static let floorPercentage = 0.50
+    private static let gracePeriodHours = 48
+
+    @discardableResult
+    static func applyDecayIfNeeded(modelContext: ModelContext) -> Int {
+        var descriptor = FetchDescriptor<BrainScoreResult>(sortBy: [SortDescriptor(\BrainScoreResult.date, order: .reverse)])
+        descriptor.fetchLimit = 1
+        guard let latest = (try? modelContext.fetch(descriptor))?.first else { return 0 }
+
+        // Get last exercise date
+        var exerciseDescriptor = FetchDescriptor<Exercise>(sortBy: [SortDescriptor(\Exercise.completedAt, order: .reverse)])
+        exerciseDescriptor.fetchLimit = 1
+        let lastExercise = (try? modelContext.fetch(exerciseDescriptor))?.first
+        let lastPlayedDate = lastExercise?.completedAt ?? latest.date
+
+        let hoursSincePlay = Calendar.current.dateComponents([.hour], from: lastPlayedDate, to: Date()).hour ?? 0
+        guard hoursSincePlay >= gracePeriodHours else { return 0 }
+
+        // Only decay once per day
+        let lastDecayKey = "lastDecayDate"
+        let today = Calendar.current.startOfDay(for: Date())
+        if let lastDecay = UserDefaults.standard.object(forKey: lastDecayKey) as? Date,
+           Calendar.current.isDate(lastDecay, inSameDayAs: today) {
+            return 0
+        }
+
+        let decayHours = hoursSincePlay - gracePeriodHours
+        let decayDays = max(1, decayHours / 24)
+
+        // Find peak score
+        var peakDescriptor = FetchDescriptor<BrainScoreResult>(sortBy: [SortDescriptor(\BrainScoreResult.brainScore, order: .reverse)])
+        peakDescriptor.fetchLimit = 1
+        let peakScore = (try? modelContext.fetch(peakDescriptor))?.first?.brainScore ?? latest.brainScore
+
+        let floor = Int(Double(peakScore) * floorPercentage)
+        let totalDecay = min(decayDays * decayPerDay, latest.brainScore - floor)
+        guard totalDecay > 0 else { return 0 }
+
+        let decayedScore = max(floor, latest.brainScore - totalDecay)
+        let ratio = latest.brainScore > 0 ? Double(decayedScore) / Double(latest.brainScore) : 1.0
+
+        let result = BrainScoreResult()
+        result.date = Date()
+        result.brainScore = decayedScore
+        result.brainAge = BrainScoring.brainAge(from: decayedScore)
+        result.digitSpanScore = latest.digitSpanScore * ratio
+        result.reactionTimeScore = latest.reactionTimeScore * ratio
+        result.visualMemoryScore = latest.visualMemoryScore * ratio
+        result.digitSpanMax = latest.digitSpanMax
+        result.reactionTimeAvgMs = latest.reactionTimeAvgMs
+        result.visualMemoryMax = latest.visualMemoryMax
+        result.percentile = BrainScoring.percentile(score: decayedScore)
+        result.brainType = BrainScoring.determineBrainType(
+            digit: latest.digitSpanScore * ratio,
+            reaction: latest.reactionTimeScore * ratio,
+            visual: latest.visualMemoryScore * ratio
+        )
+        result.source = .workout
+
+        modelContext.insert(result)
+        try? modelContext.save()
+
+        UserDefaults.standard.set(today, forKey: lastDecayKey)
+        return latest.brainScore - decayedScore
+    }
 }

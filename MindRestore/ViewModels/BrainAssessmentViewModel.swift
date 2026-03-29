@@ -94,22 +94,32 @@ final class BrainAssessmentViewModel {
 
     private func showNextDigit() {
         digitTimer?.invalidate()
-        displayDigitIndex += 1
 
-        if displayDigitIndex >= currentDigits.count {
-            digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    self?.displayDigitIndex = -1
-                    self?.phase = .digitInput
-                }
-            }
-            return
-        }
+        // Brief gap between digits so repeated numbers visibly pop
+        let previousIndex = displayDigitIndex
+        displayDigitIndex = -1 // hide briefly
 
-        let interval: TimeInterval = currentDigits.count <= 5 ? 0.8 : 0.65
-        digitTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+        digitTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: false) { [weak self] _ in
             Task { @MainActor in
-                self?.showNextDigit()
+                guard let self else { return }
+                self.displayDigitIndex = previousIndex + 1
+
+                if self.displayDigitIndex >= self.currentDigits.count {
+                    self.digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+                        Task { @MainActor in
+                            self?.displayDigitIndex = -1
+                            self?.phase = .digitInput
+                        }
+                    }
+                    return
+                }
+
+                let interval: TimeInterval = self.currentDigits.count <= 5 ? 0.8 : 0.65
+                self.digitTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+                    Task { @MainActor in
+                        self?.showNextDigit()
+                    }
+                }
             }
         }
     }

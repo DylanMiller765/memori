@@ -160,6 +160,7 @@ struct SequentialMemoryView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -232,6 +233,8 @@ struct SequentialMemoryView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.maxCorrectLength, for: .sequentialMemory)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.sequentialMemory.rawValue, score: viewModel.maxCorrectLength) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .sequentialMemory, correct: viewModel.correctRounds, total: viewModel.roundResults.count)
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Number Memory",
                     exerciseIcon: "number.circle.fill",
@@ -588,7 +591,7 @@ struct SequentialMemoryView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -628,6 +631,8 @@ struct SequentialMemoryView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

@@ -234,6 +234,7 @@ struct SpeedMatchView: View {
     @State private var viewModel = SpeedMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -286,6 +287,8 @@ struct SpeedMatchView: View {
         }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Speed Match",
                     exerciseIcon: "bolt.square.fill",
@@ -705,7 +708,7 @@ struct SpeedMatchView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -745,6 +748,8 @@ struct SpeedMatchView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

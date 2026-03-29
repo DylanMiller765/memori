@@ -288,6 +288,7 @@ struct MemoryChainView: View {
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -345,6 +346,8 @@ struct MemoryChainView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.longestChain, for: .memoryChain)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.memoryChain.rawValue, score: viewModel.longestChain) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .memoryChain, correct: viewModel.longestChain, total: viewModel.longestChain + 1)
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 let card = ExerciseShareCard(
                     exerciseName: "Memory Chain",
                     exerciseIcon: "link.circle.fill",
@@ -645,6 +648,7 @@ struct MemoryChainView: View {
 
                     Button {
                         resultsAppeared = false
+                        exerciseSaved = false
                         shareImage = nil
                         isNewPersonalBest = false
                         viewModel.startGame()
@@ -686,6 +690,8 @@ struct MemoryChainView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

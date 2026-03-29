@@ -316,6 +316,7 @@ struct WordScrambleView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
@@ -371,6 +372,8 @@ struct WordScrambleView: View {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .wordScramble)
                 if isNewPersonalBest { Analytics.personalBest(game: ExerciseType.wordScramble.rawValue, score: viewModel.leaderboardScore) }
                 AdaptiveDifficultyEngine.shared.recordBlock(domain: .wordScramble, correct: viewModel.wordsCorrect, total: viewModel.totalRounds)
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
 
                 let avgTimeFormatted = String(format: "%.1f", viewModel.averageTime)
                 let card = ExerciseShareCard(
@@ -761,6 +764,7 @@ struct WordScrambleView: View {
 
                     Button {
                         resultsAppeared = false
+                        exerciseSaved = false
                         viewModel.startGame()
                     } label: {
                         Text("Play Again")
@@ -800,6 +804,8 @@ struct WordScrambleView: View {
     // MARK: - Save
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 

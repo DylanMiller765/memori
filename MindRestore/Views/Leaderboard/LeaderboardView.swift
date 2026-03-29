@@ -362,8 +362,8 @@ struct LeaderboardView: View {
                     .offset(x: isFirst ? 20 : 16, y: isFirst ? 20 : 16)
             }
 
-            // Score
-            Text(formatScore(entry.score))
+            // Score (compact for podium — no wrapping)
+            Text(formatScoreCompact(entry.score))
                 .font(.system(size: isFirst ? 20 : 15, weight: .black, design: .rounded).monospacedDigit())
                 .foregroundStyle(color)
 
@@ -375,7 +375,7 @@ struct LeaderboardView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(rank == 1 ? "First" : rank == 2 ? "Second" : "Third") place, \(entry.isCurrentUser ? "You" : entry.username), score \(formatScore(entry.score))")
+        .accessibilityLabel("\(rank == 1 ? "First" : rank == 2 ? "Second" : "Third") place, \(entry.isCurrentUser ? "You" : entry.username), score \(formatScoreCompact(entry.score))")
     }
 
     private func podiumPedestal(rank: Int, height: CGFloat) -> some View {
@@ -473,7 +473,7 @@ struct LeaderboardView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(formatScore(entry.score))
+                Text(formatScoreCompact(entry.score))
                     .font(.headline.weight(.bold).monospacedDigit())
                 if totalPlayerCount > 0, entry.rank > 0 {
                     let percentile = min(100, max(1, Int(ceil(Double(entry.rank) / Double(totalPlayerCount) * 100))))
@@ -494,7 +494,7 @@ struct LeaderboardView: View {
                 .stroke(AppColors.accent.opacity(0.15), lineWidth: 1.5)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your rank: number \(entry.rank), score \(formatScore(entry.score))")
+        .accessibilityLabel("Your rank: number \(entry.rank), score \(formatScoreCompact(entry.score))")
     }
 
     // MARK: - Row
@@ -555,20 +555,38 @@ struct LeaderboardView: View {
 
     // MARK: - Helpers
 
+    private func formatScoreCompact(_ score: Int) -> String {
+        switch selectedCategory {
+        case .colorMatch, .speedMatch:
+            let accuracy = score / 1000
+            return "\(accuracy)%"
+        case .mathSpeed:
+            let correct = score / 1000
+            return "\(correct)/20"
+        default:
+            return formatScore(score)
+        }
+    }
+
     private func formatScore(_ score: Int) -> String {
         switch selectedCategory {
         case .streak: return "\(score)d"
         case .reactionTime: return "\(score)ms"
         case .colorMatch, .speedMatch:
             // Composite score: accuracy% × 1000 + timeBonus
-            let primary = score / 1000
-            return "\(primary)%"
+            let accuracy = score / 1000
+            if accuracy == 0 { return "0%" }
+            let timeBonus = score % 1000
+            let seconds = max(0, 999 - timeBonus)
+            return "\(accuracy)% · \(seconds)s"
         case .visualMemory, .dualNBack: return "Lvl \(score)"
         case .numberMemory: return "\(score) digits"
         case .mathSpeed:
             // Composite score: correctCount × 1000 + speedBonus
-            let primary = score / 1000
-            return "\(primary)/20"
+            let correct = score / 1000
+            let speedBonus = score % 1000
+            let avgTime = max(1, Int((10.0 - Double(speedBonus) / 999.0 * 9.0)))
+            return "\(correct)/20 · \(avgTime)s"
         case .wordScramble:
             // Composite score: wordsCorrect × 1000 + timeBonus
             let primary = score / 1000

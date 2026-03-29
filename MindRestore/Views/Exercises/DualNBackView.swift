@@ -19,6 +19,7 @@ struct DualNBackView: View {
     @State private var strategyTip: StrategyTip?
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
+    @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     // @State private var showingChallengeResult = false
@@ -76,6 +77,8 @@ struct DualNBackView: View {
                 if PersonalBestTracker.shared.record(score: viewModel.currentN, for: .dualNBack) {
                     Analytics.personalBest(game: ExerciseType.dualNBack.rawValue, score: viewModel.currentN)
                 }
+                // Auto-save so GC gets the score even if user doesn't tap Done
+                saveExercise()
                 strategyTip = StrategyTipService.shared.freshTip(for: .nBack)
                 SoundService.shared.playComplete()
                 HapticService.complete()
@@ -467,7 +470,7 @@ struct DualNBackView: View {
 
                     Button {
                         resultsAppeared = false
-                        saveExercise()
+                        exerciseSaved = false
                         selectedN = viewModel.nextN
                         gameStarted = true
                         viewModel.startGame(n: selectedN, dual: true)
@@ -519,6 +522,8 @@ struct DualNBackView: View {
     }
 
     private func saveExercise() {
+        guard !exerciseSaved else { return }
+        exerciseSaved = true
         paywallTrigger.recordExerciseCompleted()
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
