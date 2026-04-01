@@ -58,9 +58,6 @@ struct BrainAssessmentView: View {
                 calculatingView
             case .results:
                 ScoreRevealView(viewModel: viewModel, previousScore: previousScore, userAge: users.first?.userAge ?? 0) {
-                    // Trigger paywall AFTER the reveal is done, not before
-                    let isProUser = storeService.isProUser
-                    paywallTrigger.triggerAfterAssessment(isProUser: isProUser)
                     dismiss()
                 }
                 .onAppear {
@@ -233,16 +230,27 @@ struct BrainAssessmentView: View {
             Spacer()
 
             if viewModel.isShowingDigit {
-                Text(viewModel.currentDisplayDigit)
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(AppColors.accent)
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                    .animation(.easeOut(duration: 0.15), value: viewModel.displayDigitIndex)
-                    .accessibilityLabel("Remember this number: \(viewModel.currentDisplayDigit)")
+                VStack(spacing: 16) {
+                    Text(viewModel.currentDisplayDigit)
+                        .font(.system(size: 96, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppColors.accent)
+                        .id("digit-\(viewModel.displayDigitIndex)")
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+
+                    HStack(spacing: 6) {
+                        ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                            Circle()
+                                .fill(i == viewModel.displayDigitIndex ? AppColors.accent : AppColors.accent.opacity(0.2))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(i == viewModel.displayDigitIndex ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: viewModel.displayDigitIndex)
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
             } else {
-                Text("...")
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundStyle(.secondary)
+                Text(" ")
+                    .font(.system(size: 96, weight: .bold, design: .monospaced))
             }
 
             Spacer()

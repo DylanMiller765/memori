@@ -248,41 +248,55 @@ struct OnboardingAssessmentView: View {
 
     private var digitShowView: some View {
         VStack(spacing: 24) {
+            HStack {
+                Text("\(viewModel.currentDigits.count) digits")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.accent)
+                Spacer()
+                Text("Round \(viewModel.digitRound + 1)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+
+            ProgressView(value: Double(viewModel.displayDigitIndex + 1), total: Double(viewModel.currentDigits.count))
+                .tint(AppColors.accent)
+                .padding(.horizontal)
+
             Spacer()
 
-            Text("Watch carefully")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.secondary)
-
             if viewModel.isShowingDigit {
-                Text(viewModel.currentDisplayDigit)
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
-                    .foregroundStyle(AppColors.accent)
-                    .id("onboard-digit-\(viewModel.displayDigitIndex)")
-                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+                VStack(spacing: 16) {
+                    Text(viewModel.currentDisplayDigit)
+                        .font(.system(size: 96, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppColors.accent)
+                        .id("digit-\(viewModel.displayDigitIndex)")
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+
+                    HStack(spacing: 6) {
+                        ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                            Circle()
+                                .fill(i == viewModel.displayDigitIndex ? AppColors.accent : AppColors.accent.opacity(0.2))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(i == viewModel.displayDigitIndex ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: viewModel.displayDigitIndex)
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
             } else {
                 Text(" ")
                     .font(.system(size: 96, weight: .bold, design: .monospaced))
             }
 
-            // Progress dots
-            HStack(spacing: 6) {
-                ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
-                    Circle()
-                        .fill(i == viewModel.displayDigitIndex ? AppColors.accent : i < viewModel.displayDigitIndex ? AppColors.accent.opacity(0.5) : Color.gray.opacity(0.3))
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(i == viewModel.displayDigitIndex ? 1.3 : 1.0)
-                        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
-                }
-            }
-
-            Text("Round \(viewModel.digitRound + 1) · \(viewModel.currentDigits.count) digits")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-
             Spacer()
+
+            Text("Watch carefully")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 32)
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
+        .padding(.vertical, 24)
     }
 
     private var digitInputView: some View {
