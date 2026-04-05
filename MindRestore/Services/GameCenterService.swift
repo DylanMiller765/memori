@@ -12,7 +12,7 @@ final class GameCenterService {
     // MARK: - Leaderboard IDs
 
     static let brainScoreLeaderboard = "com.dylanmiller.mindrestore.leaderboard.brainScore"
-    static let weeklyXPLeaderboard = "com.dylanmiller.mindrestore.leaderboard.weeklyXP"
+    static let xpLeaderboard = "com.dylanmiller.mindrestore.leaderboard.xp"
     static let longestStreakLeaderboard = "com.dylanmiller.mindrestore.leaderboard.longestStreak"
     static let reactionTimeLeaderboard = "com.dylanmiller.mindrestore.leaderboard.reactionTime"
     static let colorMatchLeaderboard = "com.dylanmiller.mindrestore.leaderboard.colorMatch"
@@ -36,7 +36,7 @@ final class GameCenterService {
     static func leaderboardID(for category: LeaderboardCategory) -> String {
         switch category {
         case .brainScore: return brainScoreLeaderboard
-        case .weeklyXP: return weeklyXPLeaderboard
+        case .xp: return xpLeaderboard
         case .streak: return longestStreakLeaderboard
         case .reactionTime: return reactionTimeLeaderboard
         case .colorMatch: return colorMatchLeaderboard

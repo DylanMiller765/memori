@@ -419,11 +419,11 @@ final class WorkoutEngine {
         // Priority: first goal that maps to a domain
         for goal in goals {
             switch goal {
-            case .forgetThings, .gettingWorse:
+            case .forgetInstantly, .attentionShot:
                 return .memory
-            case .cantFocus:
+            case .loseFocus, .screenTimeFrying:
                 return .speed
-            case .staySharp:
+            case .getSharper:
                 return .visual
             }
         }

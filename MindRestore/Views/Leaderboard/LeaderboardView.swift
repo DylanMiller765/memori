@@ -741,7 +741,7 @@ struct LeaderboardView: View {
         switch category {
         case .brainScore:
             return brainScores.first?.brainScore
-        case .weeklyXP:
+        case .xp:
             return user?.totalXP
         case .streak:
             return user?.longestStreak

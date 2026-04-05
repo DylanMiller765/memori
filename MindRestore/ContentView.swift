@@ -276,6 +276,8 @@ struct ContentView: View {
             if let myCode = referralService.getReferralCode(modelContext: modelContext) {
                 referralService.checkForPendingRewards(myCode: myCode)
             }
+            // Register short referral code in CloudKit
+            _ = referralService.getOrCreateShortCode(modelContext: modelContext)
         }
     }
 
@@ -475,8 +477,8 @@ extension ContentView {
             // Report longest streak
             gc.reportScore(user.longestStreak, leaderboardID: GameCenterService.longestStreakLeaderboard)
 
-            // Report weekly XP
-            gc.reportScore(user.totalXP, leaderboardID: GameCenterService.weeklyXPLeaderboard)
+            // Report total XP
+            gc.reportScore(user.totalXP, leaderboardID: GameCenterService.xpLeaderboard)
 
             // Report individual exercise score to its leaderboard
             if let type = exerciseType, let rawScore = gameScore, rawScore > 0 {

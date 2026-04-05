@@ -95,7 +95,7 @@ final class TrainingSessionManager {
 
     private func exercises(for goal: UserFocusGoal) -> [ExerciseRecommendation] {
         switch goal {
-        case .forgetThings:
+        case .forgetInstantly:
             return [
                 ExerciseRecommendation(
                     title: "Visual Memory",
@@ -120,7 +120,7 @@ final class TrainingSessionManager {
                 ),
             ]
 
-        case .cantFocus:
+        case .loseFocus:
             return [
                 ExerciseRecommendation(
                     title: "Dual N-Back",
@@ -145,7 +145,7 @@ final class TrainingSessionManager {
                 ),
             ]
 
-        case .gettingWorse:
+        case .attentionShot:
             return [
                 ExerciseRecommendation(
                     title: "Dual N-Back",
@@ -170,7 +170,7 @@ final class TrainingSessionManager {
                 ),
             ]
 
-        case .staySharp:
+        case .getSharper:
             return [
                 ExerciseRecommendation(
                     title: "Reaction Time",
@@ -192,6 +192,31 @@ final class TrainingSessionManager {
                     icon: "paintpalette.fill",
                     color: AppColors.violet,
                     destination: .exercise(.colorMatch)
+                ),
+            ]
+
+        case .screenTimeFrying:
+            return [
+                ExerciseRecommendation(
+                    title: "Dual N-Back",
+                    subtitle: "Rebuild attention damaged by scrolling",
+                    icon: "square.grid.3x3",
+                    color: AppColors.sky,
+                    destination: .dualNBack
+                ),
+                ExerciseRecommendation(
+                    title: "Reaction Time",
+                    subtitle: "Sharpen sluggish processing speed",
+                    icon: "bolt.fill",
+                    color: AppColors.coral,
+                    destination: .exercise(.reactionTime)
+                ),
+                ExerciseRecommendation(
+                    title: "Speed Match",
+                    subtitle: "Train sustained focus under pressure",
+                    icon: "bolt.square.fill",
+                    color: AppColors.sky,
+                    destination: .exercise(.speedMatch)
                 ),
             ]
         }

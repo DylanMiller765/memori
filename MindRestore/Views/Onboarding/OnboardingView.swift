@@ -13,15 +13,18 @@ struct OnboardingView: View {
     @State private var enteredName: String = ""
     @State private var selectedAge: Int = 25
     @State private var selectedAppearance: Int = 0 // 0=system, 1=light, 2=dark
+    @State private var holdProgress: CGFloat = 0
+    @State private var holdTimer: Timer?
+    @State private var commitmentCompleted = false
     @FocusState private var nameFieldFocused: Bool
 
     var onComplete: () -> Void
 
-    private let totalPages = 8
+    private let totalPages = 11
 
     var body: some View {
         ZStack {
-            (currentPage == 5 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
+            (currentPage == 7 ? assessmentBgColor : AppColors.pageBg).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
@@ -30,9 +33,12 @@ struct OnboardingView: View {
                     goalsPage.tag(2)
                     agePage.tag(3)
                     appearancePage.tag(4)
-                    assessmentPage.tag(5)
-                    notificationsPage.tag(6)
-                    privacyPage.tag(7)
+                    badNewsPage.tag(5)
+                    goodNewsPage.tag(6)
+                    assessmentPage.tag(7)
+                    commitmentPage.tag(8)
+                    notificationsPage.tag(9)
+                    privacyPage.tag(10)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -50,7 +56,7 @@ struct OnboardingView: View {
                     }
                 }
 
-                if currentPage != 5 {
+                if currentPage != 7 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
                             Capsule()
@@ -71,32 +77,31 @@ struct OnboardingView: View {
     }
 
     private var welcomePage: some View {
-        VStack(spacing: 40) {
-            Spacer()
+        VStack(spacing: 24) {
+            Spacer().frame(height: 40)
 
-            VStack(spacing: 16) {
-                Image("mascot-wave")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 160)
+            Image("mascot-wave")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
 
+            VStack(spacing: 10) {
                 Text("Memori")
-                    .font(.largeTitle.bold())
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
 
-                Text("Train your brain.\nSharpen your mind.")
+                Text("Brain games that actually\nmake you competitive.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(icon: CognitiveDomain.memory.icon, color: CognitiveDomain.memory.color, title: "Memory Training", subtitle: "Visual, sequential & chunking games")
-                FeatureRow(icon: CognitiveDomain.attention.icon, color: CognitiveDomain.attention.color, title: "Dual N-Back", subtitle: "Working memory & attention")
-                FeatureRow(icon: CognitiveDomain.speed.icon, color: CognitiveDomain.speed.color, title: "Processing Speed", subtitle: "Reaction time challenges")
-                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.amber, title: "Brain Score", subtitle: "Track your cognitive improvement")
+            VStack(alignment: .leading, spacing: 14) {
+                FeatureRow(icon: "trophy.fill", color: AppColors.amber, title: "Compete Globally", subtitle: "Climb leaderboards & challenge friends")
+                FeatureRow(icon: "brain.head.profile", color: CognitiveDomain.memory.color, title: "8 Brain Games", subtitle: "Memory, speed, focus & problem solving")
+                FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.accent, title: "Track Your Brain Score", subtitle: "See how you stack up against everyone")
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 36)
 
             Spacer()
 
@@ -208,24 +213,24 @@ struct OnboardingView: View {
     }
 
     private var goalsPage: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        VStack(spacing: 16) {
+            Spacer().frame(height: 20)
 
             Image("mascot-goal")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 150)
+                .frame(height: 130)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Pick your focus")
-                    .font(.title.bold())
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                 Text("Select 1-3 goals")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(UserFocusGoal.allCases) { goal in
                     GoalCard(goal: goal, isSelected: selectedGoals.contains(goal)) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -317,6 +322,91 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity)
     }
 
+    // MARK: - Bad News Page
+
+    private var badNewsPage: some View {
+        VStack(spacing: 24) {
+            Spacer().frame(height: 60)
+
+            Image("mascot-low-score")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
+
+            VStack(spacing: 8) {
+                (Text("Doomscrolling is frying\nyour ")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                + Text("memory")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.red))
+                    .multilineTextAlignment(.center)
+
+                Text("Heavy phone users have the attention span\nof a goldfish. Literally.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+
+            continueButton {
+                Analytics.onboardingStep(step: "badNews")
+                currentPage = 6
+            }
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Good News Page
+
+    private var goodNewsPage: some View {
+        VStack(spacing: 24) {
+            Spacer().frame(height: 60)
+
+            Image("mascot-working-out")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
+
+            VStack(spacing: 8) {
+                (Text("But your brain can\n")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                + Text("bounce back")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.accent))
+                    .multilineTextAlignment(.center)
+
+                Text("Just 5 minutes a day of brain training\ncan improve memory, focus, and reaction time.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Text("Let's see where you stand.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 4)
+            }
+
+            Spacer()
+
+            Button {
+                Analytics.onboardingStep(step: "goodNews")
+                withAnimation { currentPage = 7 }
+            } label: {
+                Text("Take the Brain Age Test")
+                    .gradientButton()
+            }
+            .padding(.horizontal, 32)
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Brain Assessment Page
 
     private var assessmentPage: some View {
@@ -326,12 +416,149 @@ struct OnboardingView: View {
             // Brain score result is saved in completeOnboarding() along with the User,
             // so both are persisted in a single transaction before the view transition.
             withAnimation {
-                currentPage = 6
+                currentPage = 8 // → commitment
             }
         }
     }
 
     // Note: OnboardingAssessmentView's onComplete now passes nil when skipped
+
+    // MARK: - Commitment Page
+
+    private var commitmentPage: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 80)
+
+            // Title with user's name
+            Group {
+                if enteredName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Your Contract")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                } else {
+                    (Text(enteredName.trimmingCharacters(in: .whitespacesAndNewlines))
+                        .foregroundColor(AppColors.accent)
+                    + Text("'s Contract"))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                }
+            }
+            .padding(.bottom, 28)
+
+            // Commitment bullets
+            VStack(alignment: .leading, spacing: 16) {
+                commitmentBullet("I'll train my brain for ", bold: "5 minutes a day")
+                commitmentBullet("I'll ", bold: "build my streak", suffix: " and not break it")
+                commitmentBullet("I'll ", bold: "put down the scroll", suffix: " and pick up the games")
+                commitmentBullet("I'll ", bold: "sharpen my mind", suffix: " every single day")
+            }
+            .padding(.horizontal, 32)
+
+            Spacer()
+
+            // Hold to agree — organic shape
+            VStack(spacing: 12) {
+                ZStack {
+                    // Invisible hit target
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 100, height: 100)
+                        .contentShape(Circle())
+
+                    // Organic background outline
+                    OrganicCircle()
+                        .stroke(AppColors.cardBorder, lineWidth: 2.5)
+                        .frame(width: 80, height: 80)
+
+                    // Progress fill inside
+                    OrganicCircle()
+                        .fill(AppColors.accent.opacity(0.15 * holdProgress))
+                        .frame(width: 74, height: 74)
+                        .scaleEffect(0.3 + 0.7 * holdProgress)
+                        .animation(.easeOut(duration: 0.1), value: holdProgress)
+
+                    // Completed state
+                    if commitmentCompleted {
+                        OrganicCircle()
+                            .fill(AppColors.accent.opacity(0.2))
+                            .frame(width: 74, height: 74)
+
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(AppColors.accent)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            guard !commitmentCompleted else { return }
+                            if holdTimer == nil {
+                                startHoldTimer()
+                            }
+                        }
+                        .onEnded { _ in
+                            if !commitmentCompleted {
+                                cancelHoldTimer()
+                            }
+                        }
+                )
+
+                if !commitmentCompleted {
+                    Text("Hold to agree")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+
+                    Text("Research shows that committing to contracts\nboosts follow-through and accountability")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+            }
+            .padding(.bottom, 32)
+        }
+        .padding(.bottom, 8)
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func commitmentBullet(_ prefix: String, bold: String, suffix: String = "") -> some View {
+        (Text("• " + prefix)
+            .font(.subheadline)
+        + Text(bold)
+            .font(.subheadline.weight(.bold))
+        + Text(suffix)
+            .font(.subheadline))
+            .foregroundStyle(.primary)
+    }
+
+    private func startHoldTimer() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        holdTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            Task { @MainActor in
+                holdProgress += 0.05 / 3.0 // 3 seconds total
+                if holdProgress.truncatingRemainder(dividingBy: 0.1) < 0.02 {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+                if holdProgress >= 1.0 {
+                    holdProgress = 1.0
+                    cancelHoldTimer()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                        commitmentCompleted = true
+                    }
+                    Analytics.onboardingStep(step: "commitment")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        withAnimation { currentPage = 9 }
+                    }
+                }
+            }
+        }
+    }
+
+    private func cancelHoldTimer() {
+        holdTimer?.invalidate()
+        holdTimer = nil
+        // Don't reset progress — let users resume from where they stopped
+    }
 
     // MARK: - Notifications Page
 
@@ -339,18 +566,15 @@ struct OnboardingView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 140, height: 140)
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-            }
+            Image("mascot-celebrate")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 150)
 
             VStack(spacing: 8) {
                 Text("Stay on track")
-                    .font(.title.bold())
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                 Text("Get gentle reminders to train daily\nand keep your streak alive.")
                     .font(.subheadline)
@@ -366,7 +590,7 @@ struct OnboardingView: View {
                         let granted = await NotificationService.shared.requestPermission()
                         notificationsEnabled = granted
                         Analytics.onboardingStep(step: "notifications")
-                        withAnimation { currentPage = 7 }
+                        withAnimation { currentPage = 10 }
                     }
                 } label: {
                     Text("Enable Notifications")
@@ -393,22 +617,16 @@ struct OnboardingView: View {
     // MARK: - Appearance Page
 
     private var appearancePage: some View {
-        VStack(spacing: 28) {
-            Spacer()
+        VStack(spacing: 24) {
+            Spacer().frame(height: 60)
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 140, height: 140)
-                Image(systemName: selectedAppearance == 2 ? "moon.fill" : selectedAppearance == 1 ? "sun.max.fill" : "circle.lefthalf.filled")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-                    .contentTransition(.symbolEffect(.replace))
-            }
+            Text(selectedAppearance == 2 ? "🌙" : selectedAppearance == 1 ? "☀️" : "🌗")
+                .font(.system(size: 80))
+                .contentTransition(.symbolEffect(.replace))
 
             VStack(spacing: 8) {
                 Text("Choose your look")
-                    .font(.title.bold())
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                 Text("You can change this anytime in Settings.")
                     .font(.subheadline)
@@ -416,10 +634,10 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
             }
 
-            HStack(spacing: 12) {
-                appearanceOption(value: 0, label: "System", icon: "iphone", description: "Match device")
-                appearanceOption(value: 1, label: "Light", icon: "sun.max.fill", description: "Always light")
-                appearanceOption(value: 2, label: "Dark", icon: "moon.fill", description: "Always dark")
+            VStack(spacing: 10) {
+                appearanceOption(value: 0, label: "System", emoji: "📱", description: "Match device")
+                appearanceOption(value: 1, label: "Light", emoji: "☀️", description: "Always light")
+                appearanceOption(value: 2, label: "Dark", emoji: "🌙", description: "Always dark")
             }
             .padding(.horizontal, 24)
 
@@ -427,7 +645,7 @@ struct OnboardingView: View {
 
             Button {
                 Analytics.onboardingStep(step: "appearance")
-                withAnimation { currentPage = 5 }
+                withAnimation { currentPage = 5 } // → bad news
             } label: {
                 Text("Continue")
                     .gradientButton()
@@ -439,39 +657,43 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func appearanceOption(value: Int, label: String, icon: String, description: String) -> some View {
-        Button {
+    private func appearanceOption(value: Int, label: String, emoji: String, description: String) -> some View {
+        let isSelected = selectedAppearance == value
+        return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 selectedAppearance = value
                 applyAppearance(value)
             }
         } label: {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundStyle(selectedAppearance == value ? .white : AppColors.accent)
-                    .frame(width: 48, height: 48)
-                    .background(
-                        selectedAppearance == value
-                            ? AnyShapeStyle(AppColors.accentGradient)
-                            : AnyShapeStyle(AppColors.accent.opacity(0.1))
-                        , in: Circle()
-                    )
+            HStack(spacing: 14) {
+                Text(emoji)
+                    .font(.system(size: 28))
 
-                Text(label)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(selectedAppearance == value ? .primary : .secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
-                Text(description)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .padding(.vertical, 14)
+            .padding(.horizontal, 18)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(isSelected ? AppColors.accent.opacity(0.4) : AppColors.cardBorder)
+                        .offset(y: 3)
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(isSelected ? AppColors.accent.opacity(0.08) : AppColors.cardSurface)
+                }
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(selectedAppearance == value ? AppColors.accent : AppColors.cardBorder, lineWidth: selectedAppearance == value ? 2 : 1)
+                    .stroke(isSelected ? AppColors.accent : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1.5)
             )
         }
         .buttonStyle(.plain)
@@ -489,27 +711,35 @@ struct OnboardingView: View {
     // MARK: - Privacy Page
 
     private var privacyPage: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        VStack(spacing: 24) {
+            Spacer().frame(height: 60)
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 140, height: 140)
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.accent)
-            }
+            Image("mascot-streak-fire")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 180)
 
-            VStack(spacing: 8) {
-                Text("Your data stays on\nyour device. Always.")
-                    .font(.title.bold())
-                    .multilineTextAlignment(.center)
-                Text("No accounts. Privacy-first.\nYour training data stays on your device.")
-                    .font(.subheadline)
+            VStack(spacing: 10) {
+                Text("You're ready!")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+
+                Text("Start training and climb\nthe leaderboards.")
+                    .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
+
+            // Privacy note - subtle, not the focus
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Text("Your data stays on your device. Always.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.top, 8)
 
             Spacer()
 
@@ -517,7 +747,7 @@ struct OnboardingView: View {
                 Analytics.onboardingStep(step: "privacy")
                 completeOnboarding()
             } label: {
-                Text("Get Started")
+                Text("Let's Go")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -565,6 +795,34 @@ struct OnboardingView: View {
     }
 }
 
+// MARK: - Organic Circle Shape
+
+struct OrganicCircle: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        let cx = rect.midX
+        let cy = rect.midY
+
+        var path = Path()
+        let points = 60
+        for i in 0..<points {
+            let angle = Double(i) / Double(points) * 2 * .pi
+            let wobble = sin(angle * 3) * 0.06 + cos(angle * 5) * 0.04
+            let r = 0.5 + wobble
+            let x = cx + CGFloat(cos(angle) * r) * w
+            let y = cy + CGFloat(sin(angle) * r) * h
+            if i == 0 {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
 // MARK: - Feature Row
 
 struct FeatureRow: View {
@@ -599,46 +857,34 @@ struct GoalCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                Image(systemName: goal.icon)
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? .white : .secondary)
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isSelected ? AppColors.accentGradient : LinearGradient(colors: [AppColors.cardBorder.opacity(0.4)], startPoint: .top, endPoint: .bottom))
-                    )
+            HStack(spacing: 14) {
+                Text(goal.emoji)
+                    .font(.system(size: 28))
 
                 Text(goal.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
 
                 Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(AppColors.accent)
-                }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 18)
             .background(
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(AppColors.cardSurface)
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.accent.opacity(0.06))
-                    }
+                    // Bottom shadow/3D edge
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(isSelected ? AppColors.accent.opacity(0.4) : AppColors.cardBorder)
+                        .offset(y: 3)
+                    // Main card
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(isSelected ? AppColors.accent.opacity(0.08) : AppColors.cardSurface)
                 }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 14)
                     .stroke(
-                        isSelected ? AppColors.accent.opacity(0.5) : Color.clear,
-                        lineWidth: 1.5
+                        isSelected ? AppColors.accent : AppColors.cardBorder,
+                        lineWidth: isSelected ? 2 : 1.5
                     )
             )
         }

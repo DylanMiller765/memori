@@ -4,7 +4,7 @@ import Foundation
 
 enum LeaderboardCategory: String, CaseIterable, Identifiable {
     case brainScore = "Brain Score"
-    case weeklyXP = "XP"
+    case xp = "XP"
     case streak = "Streak"
     // Per-game leaderboards
     case reactionTime = "Reaction Time"
@@ -23,7 +23,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .brainScore: return "brain.head.profile"
-        case .weeklyXP: return "star.fill"
+        case .xp: return "star.fill"
         case .streak: return "flame.fill"
         case .reactionTime: return "bolt.fill"
         case .colorMatch: return "paintpalette.fill"
@@ -41,7 +41,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
     var scoreDescription: String {
         switch self {
         case .brainScore: return "Overall cognitive score out of 1000"
-        case .weeklyXP: return "Total XP earned from exercises"
+        case .xp: return "Total XP earned from exercises"
         case .streak: return "Longest consecutive days trained"
         case .reactionTime: return "Fastest average reaction time — lower is better"
         case .colorMatch: return "Highest color matching accuracy %"
