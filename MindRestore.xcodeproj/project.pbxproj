@@ -128,6 +128,7 @@
 		WR01000100000000000000A1 /* WeeklyReportShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WR01000200000000000000A1 /* WeeklyReportShareCard.swift */; };
 		WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WSCR0002000000000000WS01 /* WordScrambleView.swift */; };
 		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
+		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -285,6 +286,7 @@
 		WR01000200000000000000A1 /* WeeklyReportShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportShareCard.swift; sourceTree = "<group>"; };
 		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
 		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
+		CHMP0002000000000000CH01 /* ChimpTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimpTestView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -524,6 +526,7 @@
 				WSCR0002000000000000WS01 /* WordScrambleView.swift */,
 				MCHN0002000000000000MC01 /* MemoryChainView.swift */,
 				VRBM0002000000000000VB01 /* VerbalMemoryView.swift */,
+				CHMP0002000000000000CH01 /* ChimpTestView.swift */,
 			);
 			path = Exercises;
 			sourceTree = "<group>";
@@ -872,6 +875,7 @@
 				WSCR0001000000000000WS01 /* WordScrambleView.swift in Sources */,
 				MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */,
 				VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */,
+				CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

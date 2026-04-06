@@ -496,6 +496,8 @@ extension ContentView {
                 case .dualNBack: GameCenterService.dualNBackLeaderboard
                 case .wordScramble: GameCenterService.wordScrambleLeaderboard
                 case .memoryChain: GameCenterService.memoryChainLeaderboard
+                case .chimpTest: GameCenterService.chimpTestLeaderboard
+                case .verbalMemory: GameCenterService.verbalMemoryLeaderboard
                 default: nil
                 }
                 if let leaderboardID {
@@ -611,6 +613,8 @@ struct TrainingView: View {
         (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber, "Mental math"),
         (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky, "Working memory"),
         (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose, "Group & remember"),
+        (.chimpTest, "Chimp Test", "pawprint.fill", AppColors.amber, "Beat the chimp"),
+        (.verbalMemory, "Verbal Memory", "text.book.closed.fill", AppColors.violet, "Word recognition"),
         // v1.2: uncomment when ready to ship new games
         // (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
         // (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
@@ -808,7 +812,7 @@ struct TrainingView: View {
         case .memoryChain:
             MemoryChainView()
         case .chimpTest:
-            EmptyView() // TODO: ChimpTestView()
+            ChimpTestView()
         case .verbalMemory:
             VerbalMemoryView()
         }
@@ -1078,6 +1082,33 @@ struct TrainingTile: View {
                                         .fill(glowing.contains(i) ? color : color.opacity(0.1))
                                 )
                         }
+                    }
+                }
+
+            case .chimpTest:
+                ZStack {
+                    color.opacity(0.06)
+                    HStack(spacing: 4) {
+                        ForEach([1, 2, 3], id: \.self) { n in
+                            Text("\(n)")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(width: 18, height: 18)
+                                .background(color, in: RoundedRectangle(cornerRadius: 4))
+                        }
+                    }
+                }
+
+            case .verbalMemory:
+                ZStack {
+                    color.opacity(0.06)
+                    VStack(spacing: 2) {
+                        Text("seen?")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(color)
+                        Text("apple")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(color.opacity(0.6))
                     }
                 }
 

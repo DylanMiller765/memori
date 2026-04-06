@@ -533,7 +533,8 @@ struct ChimpTestView: View {
             stats: [
                 ("Time", "\(viewModel.durationSeconds)s"),
                 ("Score", String(format: "%.0f%%", viewModel.score * 100))
-            ]
+            ],
+            ctaText: "Can you beat the chimp?"
         )
         shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
     }
