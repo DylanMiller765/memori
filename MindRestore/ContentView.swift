@@ -467,17 +467,15 @@ extension ContentView {
             trainedToday: true
         )
 
-        // Prompt Game Center sign-in after first exercise if not authenticated
-        if let gc = gameCenterService, !gc.isAuthenticated, user.totalExercises == 1 {
-            gc.authenticate()
-        }
+        // Report to Game Center (reportScore handles auth guard internally)
+        if let gc = gameCenterService {
+            // Prompt sign-in after first exercise if not authenticated
+            if !gc.isAuthenticated, user.totalExercises == 1 {
+                gc.authenticate()
+            }
 
-        // Report to Game Center
-        if let gc = gameCenterService, gc.isAuthenticated {
-            // Report longest streak
+            // Always attempt to report — reportScore checks isAuthenticated internally
             gc.reportScore(user.longestStreak, leaderboardID: GameCenterService.longestStreakLeaderboard)
-
-            // Report total XP
             gc.reportScore(user.totalXP, leaderboardID: GameCenterService.xpLeaderboard)
 
             // Report individual exercise score to its leaderboard

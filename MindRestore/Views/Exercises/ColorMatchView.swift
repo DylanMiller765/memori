@@ -22,6 +22,7 @@ final class ColorMatchViewModel {
     var correctAnswer: String = ""
     var feedbackColor: Color? = nil
     var showFeedback = false
+    var isTransitioning = false
     var lastWrongCorrectAnswer: String? = nil
     private var roundTimer: Timer?
 
@@ -158,6 +159,7 @@ final class ColorMatchViewModel {
         HapticService.wrong()
         lastWrongCorrectAnswer = correctAnswer
         showFeedback = true
+        isTransitioning = true
         currentRound += 1
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
@@ -169,11 +171,12 @@ final class ColorMatchViewModel {
             } else {
                 self.generateRound()
             }
+            self.isTransitioning = false
         }
     }
 
     func submitAnswer(_ answer: String) {
-        guard !showFeedback else { return }
+        guard !showFeedback, !isTransitioning else { return }
         roundTimer?.invalidate()
 
         let responseTime = Date.now.timeIntervalSince(roundStartTime ?? Date.now)
@@ -192,6 +195,7 @@ final class ColorMatchViewModel {
         }
 
         showFeedback = true
+        isTransitioning = true
         currentRound += 1
 
         // Brief feedback flash then advance
@@ -205,6 +209,7 @@ final class ColorMatchViewModel {
             } else {
                 self.generateRound()
             }
+            self.isTransitioning = false
         }
     }
 
@@ -217,6 +222,7 @@ final class ColorMatchViewModel {
         startTime = nil
         feedbackColor = nil
         showFeedback = false
+        isTransitioning = false
     }
 }
 
