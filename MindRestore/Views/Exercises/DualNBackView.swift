@@ -22,6 +22,7 @@ struct DualNBackView: View {
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
+    @State private var showingInfo = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -108,15 +109,8 @@ struct DualNBackView: View {
         ScrollView {
         VStack(spacing: 24) {
             // Icon with radial glow
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                    .accessibilityHidden(true)
-                Image(systemName: "square.grid.3x3")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(AppColors.accent)
-            }
+            TrainingTileMiniPreview(type: .dualNBack, color: AppColors.sky, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Dual N-Back")
@@ -195,6 +189,18 @@ struct DualNBackView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .dualNBack)
+                .presentationDetents([.medium])
         }
     }
 

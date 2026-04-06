@@ -44,9 +44,8 @@ final class ChimpTestViewModel {
         return Int(Date.now.timeIntervalSince(start))
     }
 
-    /// Composite leaderboard score: bestLevel * 1000 + time bonus (faster = higher)
     var leaderboardScore: Int {
-        bestLevel * 1000 + max(0, 999 - durationSeconds)
+        bestLevel
     }
 
     var difficulty: Int {
@@ -199,6 +198,7 @@ struct ChimpTestView: View {
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
     @State private var resultsAppeared = false
+    @State private var showingInfo = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -237,34 +237,27 @@ struct ChimpTestView: View {
     // MARK: - Setup
 
     private var setupView: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 20) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                    .accessibilityHidden(true)
-                Image(systemName: "pawprint.fill")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(AppColors.amber)
-            }
+            TrainingTileMiniPreview(type: .chimpTest, color: AppColors.amber, scale: 2.0)
+                .frame(width: 200, height: 140)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Chimp Test")
                     .font(.title.weight(.bold))
                 Text("Can you beat a chimpanzee?")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 infoRow(icon: "number", text: "Numbers appear on a grid")
                 infoRow(icon: "eye.slash", text: "Tap 1 first — then numbers hide")
                 infoRow(icon: "arrow.up", text: "Tap remaining in order from memory")
                 infoRow(icon: "heart.fill", text: "3 lives — wrong tap loses one")
                 infoRow(icon: "star.fill", text: "Each level adds one more number")
+                infoRow(icon: "pawprint.fill", text: "Chimps average level 7 — can you beat that?")
             }
             .appCard()
             .padding(.horizontal)
@@ -282,6 +275,18 @@ struct ChimpTestView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .chimpTest)
+                .presentationDetents([.medium])
+        }
     }
 
     private func infoRow(icon: String, text: String) -> some View {

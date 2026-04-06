@@ -83,10 +83,10 @@ struct ContentView: View {
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
-            // Daily brain fact notification
-            if user?.notificationsEnabled == true {
-                NotificationService.shared.scheduleDailyBrainFact()
-            }
+            // Daily brain fact notification (disabled — method not yet implemented)
+            // if user?.notificationsEnabled == true {
+            //     NotificationService.shared.scheduleDailyBrainFact()
+            // }
             // Brain score decay — mascot ages if you don't train
             let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
             if decayed > 0 {
@@ -284,8 +284,8 @@ struct ContentView: View {
             if let myCode = referralService.getReferralCode(modelContext: modelContext) {
                 referralService.checkForPendingRewards(myCode: myCode)
             }
-            // Register short referral code in CloudKit
-            _ = referralService.getOrCreateShortCode(modelContext: modelContext)
+            // Register short referral code in CloudKit (not yet implemented)
+            // Task { _ = await referralService.getOrCreateShortCode(modelContext: modelContext) }
         }
     }
 
@@ -604,7 +604,7 @@ struct TrainingView: View {
         let icon: String
         let color: Color
         let subtitle: String
-        let games: [(type: ExerciseType, title: String, icon: String)]
+        let games: [(type: ExerciseType, title: String, icon: String, color: Color)]
     }
 
     private static let gameCategories: [GameCategory] = [
@@ -614,10 +614,10 @@ struct TrainingView: View {
             color: AppColors.violet,
             subtitle: "Train your recall",
             games: [
-                (.sequentialMemory, "Number Memory", "number.circle.fill"),
-                (.visualMemory, "Visual Memory", "square.grid.3x3.fill"),
-                (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill"),
-                (.verbalMemory, "Verbal Memory", "text.book.closed.fill"),
+                (.sequentialMemory, "Number Memory", "number.circle.fill", AppColors.teal),
+                (.visualMemory, "Visual Memory", "square.grid.3x3.fill", AppColors.indigo),
+                (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose),
+                (.verbalMemory, "Verbal Memory", "text.book.closed.fill", AppColors.violet),
             ]
         ),
         GameCategory(
@@ -626,10 +626,10 @@ struct TrainingView: View {
             color: AppColors.coral,
             subtitle: "Sharpen your reflexes",
             games: [
-                (.reactionTime, "Reaction Time", "bolt.fill"),
-                (.mathSpeed, "Math Speed", "multiply.circle.fill"),
-                (.speedMatch, "Speed Match", "bolt.square.fill"),
-                (.colorMatch, "Color Match", "paintpalette.fill"),
+                (.reactionTime, "Reaction Time", "bolt.fill", AppColors.coral),
+                (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber),
+                (.speedMatch, "Speed Match", "bolt.square.fill", AppColors.sky),
+                (.colorMatch, "Color Match", "paintpalette.fill", AppColors.violet),
             ]
         ),
         GameCategory(
@@ -638,8 +638,8 @@ struct TrainingView: View {
             color: AppColors.sky,
             subtitle: "Build concentration",
             games: [
-                (.dualNBack, "Dual N-Back", "square.grid.3x3"),
-                (.chimpTest, "Chimp Test", "pawprint.fill"),
+                (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky),
+                (.chimpTest, "Chimp Test", "pawprint.fill", AppColors.amber),
             ]
         ),
     ]
@@ -735,7 +735,7 @@ struct TrainingView: View {
                                             GameCard(
                                                 title: game.title,
                                                 type: game.type,
-                                                color: category.color,
+                                                color: game.color,
                                                 isLocked: hasReachedLimit,
                                                 lastPlayedText: lastPlayedText(for: game.type)
                                             )
@@ -945,14 +945,35 @@ struct TrainingTile: View {
         .accessibilityLabel("\(title)\(isLocked ? ", locked" : "")")
     }
 
-    @ViewBuilder
     private var miniPreview: some View {
+        TrainingTileMiniPreview(type: type, color: color)
+    }
+}
+
+// MARK: - Shared Mini Preview (used by TrainingTile and GameCard)
+
+struct TrainingTileMiniPreview: View {
+    let type: ExerciseType
+    let color: Color
+    var scale: CGFloat = 1.0
+
+    private var bgOpacity: Double { scale > 1.0 ? 0.0 : 1.0 }
+
+    var body: some View {
+        ZStack {
+            previewContent
+                .scaleEffect(scale)
+        }
+    }
+
+    @ViewBuilder
+    private var previewContent: some View {
         ZStack {
             switch type {
             case .reactionTime:
                 // Lightning bolt target
                 ZStack {
-                    color.opacity(0.08)
+                    color.opacity(0.08 * bgOpacity)
                     Circle()
                         .stroke(color.opacity(0.3), lineWidth: 2)
                         .frame(width: 44, height: 44)
@@ -967,7 +988,7 @@ struct TrainingTile: View {
             case .colorMatch:
                 // Stroop color words
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     VStack(spacing: 3) {
                         Text("RED")
                             .font(.system(size: 11, weight: .black, design: .rounded))
@@ -984,7 +1005,7 @@ struct TrainingTile: View {
             case .speedMatch:
                 // Two cards matching
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     HStack(spacing: 6) {
                         RoundedRectangle(cornerRadius: 6)
                             .fill(color.opacity(0.15))
@@ -1012,7 +1033,7 @@ struct TrainingTile: View {
             case .visualMemory:
                 // Mini grid with highlighted cells
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
                         ForEach(0..<16, id: \.self) { i in
                             RoundedRectangle(cornerRadius: 2)
@@ -1025,7 +1046,7 @@ struct TrainingTile: View {
             case .sequentialMemory:
                 // Number sequence
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     HStack(spacing: 4) {
                         ForEach(["3", "8", "1", "5"], id: \.self) { digit in
                             Text(digit)
@@ -1040,7 +1061,7 @@ struct TrainingTile: View {
             case .mathSpeed:
                 // Math equation
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     VStack(spacing: 4) {
                         Text("7 × 8")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -1063,7 +1084,7 @@ struct TrainingTile: View {
             case .dualNBack:
                 // 3x3 grid with highlighted cell
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(18), spacing: 3), count: 3), spacing: 3) {
                         ForEach(0..<9, id: \.self) { i in
                             RoundedRectangle(cornerRadius: 3)
@@ -1082,7 +1103,7 @@ struct TrainingTile: View {
             case .chunkingTraining:
                 // Grouped number chunks
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     HStack(spacing: 8) {
                         ForEach(["482", "917", "35"], id: \.self) { chunk in
                             Text(chunk)
@@ -1097,7 +1118,7 @@ struct TrainingTile: View {
 
             case .wordScramble:
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     HStack(spacing: 3) {
                         ForEach(["B", "R", "A", "I", "N"], id: \.self) { letter in
                             Text(letter)
@@ -1112,7 +1133,7 @@ struct TrainingTile: View {
             case .memoryChain:
                 // Mini 4x4 grid with shapes — one cell glowing to show sequence
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     let icons = ["circle.fill", "square.fill", "triangle.fill", "diamond.fill",
                                  "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill",
                                  "circle.fill", "square.fill", "triangle.fill", "diamond.fill",
@@ -1133,22 +1154,50 @@ struct TrainingTile: View {
                 }
 
             case .chimpTest:
+                // Mini chimp test grid: numbered cells + hidden cells
+                let s: CGFloat = 14
+                let sp: CGFloat = 3
+                let fs: CGFloat = 8
                 ZStack {
-                    color.opacity(0.06)
-                    HStack(spacing: 4) {
-                        ForEach([1, 2, 3], id: \.self) { n in
-                            Text("\(n)")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .frame(width: 18, height: 18)
+                    VStack(spacing: sp) {
+                        HStack(spacing: sp) {
+                            Color.clear.frame(width: s, height: s)
+                            Text("1").font(.system(size: fs, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white).frame(width: s, height: s)
                                 .background(color, in: RoundedRectangle(cornerRadius: 4))
+                            Color.clear.frame(width: s, height: s)
+                            RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.35)).frame(width: s, height: s)
+                        }
+                        HStack(spacing: sp) {
+                            RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.35)).frame(width: s, height: s)
+                            Color.clear.frame(width: s, height: s)
+                            Text("2").font(.system(size: fs, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white).frame(width: s, height: s)
+                                .background(color, in: RoundedRectangle(cornerRadius: 4))
+                            Color.clear.frame(width: s, height: s)
+                        }
+                        HStack(spacing: sp) {
+                            Color.clear.frame(width: s, height: s)
+                            RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.35)).frame(width: s, height: s)
+                            Color.clear.frame(width: s, height: s)
+                            Text("3").font(.system(size: fs, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white).frame(width: s, height: s)
+                                .background(color, in: RoundedRectangle(cornerRadius: 4))
+                        }
+                        HStack(spacing: sp) {
+                            Text("4").font(.system(size: fs, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white).frame(width: s, height: s)
+                                .background(color, in: RoundedRectangle(cornerRadius: 4))
+                            Color.clear.frame(width: s, height: s)
+                            RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.35)).frame(width: s, height: s)
+                            Color.clear.frame(width: s, height: s)
                         }
                     }
                 }
 
             case .verbalMemory:
                 ZStack {
-                    color.opacity(0.06)
+                    color.opacity(0.06 * bgOpacity)
                     VStack(spacing: 2) {
                         Text("seen?")
                             .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -1161,7 +1210,7 @@ struct TrainingTile: View {
 
             default:
                 ZStack {
-                    color.opacity(0.08)
+                    color.opacity(0.08 * bgOpacity)
                     Image(systemName: "brain.fill")
                         .font(.system(size: 24))
                         .foregroundStyle(color)
@@ -1172,7 +1221,7 @@ struct TrainingTile: View {
     }
 }
 
-// MARK: - Game Card (Duolingo-inspired horizontal scroll card)
+// MARK: - Game Card (horizontal scroll card)
 
 struct GameCardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
@@ -1197,22 +1246,11 @@ struct GameCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top: colored area with mini preview
-            ZStack {
-                // Main fill
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [color, color.opacity(0.85)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                // Mini preview
-                cardMiniPreview
-            }
-            .frame(width: 130, height: 88)
+            // Top: dark surface with colorful preview elements (matches old TrainingTile)
+            TrainingTileMiniPreview(type: type, color: color)
+                .frame(maxWidth: .infinity)
+                .frame(height: 88)
+                .clipped()
 
             // Bottom: title area
             VStack(spacing: 2) {
@@ -1259,187 +1297,132 @@ struct GameCard: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
+}
 
-    @ViewBuilder
-    private var cardMiniPreview: some View {
+// MARK: - Exercise Info Sheet
+
+struct ExerciseInfoSheet: View {
+    let type: ExerciseType
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                Text(title)
+                    .font(.title2.bold())
+
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(benefits, id: \.self) { benefit in
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: "brain.fill")
+                                .foregroundStyle(color)
+                                .frame(width: 24)
+                            Text(benefit)
+                                .font(.body)
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(24)
+            .navigationTitle("What This Trains")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var title: String {
+        type.displayName
+    }
+
+    private var color: Color {
+        switch type {
+        case .reactionTime: return AppColors.coral
+        case .colorMatch: return AppColors.violet
+        case .speedMatch: return AppColors.sky
+        case .visualMemory: return AppColors.indigo
+        case .sequentialMemory: return AppColors.teal
+        case .mathSpeed: return AppColors.amber
+        case .dualNBack: return AppColors.sky
+        case .chunkingTraining: return AppColors.rose
+        case .chimpTest: return AppColors.amber
+        case .verbalMemory: return AppColors.violet
+        default: return AppColors.accent
+        }
+    }
+
+    private var benefits: [String] {
         switch type {
         case .reactionTime:
-            ZStack {
-                Circle()
-                    .stroke(.white.opacity(0.3), lineWidth: 2)
-                    .frame(width: 44, height: 44)
-                Circle()
-                    .fill(.white.opacity(0.2))
-                    .frame(width: 32, height: 32)
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-
+            return [
+                "Processing speed — how fast your brain responds to stimuli",
+                "Visual reflexes and motor response time",
+                "Alertness and sustained attention"
+            ]
         case .colorMatch:
-            VStack(spacing: 3) {
-                Text("RED")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(red: 0.4, green: 0.7, blue: 1.0))
-                Text("BLUE")
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(red: 1.0, green: 0.5, blue: 0.5))
-                Text("GREEN")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
-            }
-
+            return [
+                "Cognitive flexibility — the Stroop effect tests your ability to override automatic responses",
+                "Selective attention and impulse control",
+                "Processing speed under conflicting information"
+            ]
         case .speedMatch:
-            ZStack {
-                HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(.white.opacity(0.2))
-                        .frame(width: 30, height: 36)
-                        .overlay(
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.white)
-                        )
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(.white.opacity(0.2))
-                        .frame(width: 30, height: 36)
-                        .overlay(
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.white)
-                        )
-                }
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white)
-                    .offset(x: 22, y: -14)
-            }
-
+            return [
+                "Processing speed and rapid visual comparison",
+                "Short-term visual memory for symbol patterns",
+                "Decision-making speed under time pressure"
+            ]
         case .visualMemory:
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
-                ForEach(0..<16, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill([2, 5, 7, 10, 13].contains(i) ? .white : .white.opacity(0.2))
-                        .frame(height: 14)
-                }
-            }
-
+            return [
+                "Visuospatial working memory — remembering patterns in space",
+                "Spatial recall and mental imagery",
+                "Attention to detail and pattern recognition"
+            ]
         case .sequentialMemory:
-            HStack(spacing: 4) {
-                ForEach(["3", "8", "1", "5"], id: \.self) { digit in
-                    Text(digit)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .frame(width: 24, height: 28)
-                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 5))
-                }
-            }
-
+            return [
+                "Digit span — a core measure of working memory capacity",
+                "Sequential processing and number recall",
+                "Concentration and mental rehearsal"
+            ]
         case .mathSpeed:
-            VStack(spacing: 4) {
-                Text("7 × 8")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                HStack(spacing: 6) {
-                    ForEach(["54", "56", "58"], id: \.self) { ans in
-                        Text(ans)
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(ans == "56" ? color : .white.opacity(0.7))
-                            .frame(width: 28, height: 20)
-                            .background(
-                                (ans == "56" ? .white : .white.opacity(0.2)),
-                                in: RoundedRectangle(cornerRadius: 4)
-                            )
-                    }
-                }
-            }
-
+            return [
+                "Mental arithmetic and numerical fluency",
+                "Processing speed with mathematical operations",
+                "Working memory for holding numbers while calculating"
+            ]
         case .dualNBack:
-            ZStack {
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(18), spacing: 3), count: 3), spacing: 3) {
-                    ForEach(0..<9, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(i == 4 ? .white : .white.opacity(0.2))
-                            .frame(height: 18)
-                    }
-                }
-                Text("2")
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                    .offset(x: 22, y: -22)
-                    .padding(3)
-                    .background(.white.opacity(0.25), in: Circle())
-            }
-
+            return [
+                "Working memory — the gold standard training task backed by research",
+                "Dual-task processing (tracking two things simultaneously)",
+                "Fluid intelligence and cognitive control"
+            ]
         case .chunkingTraining:
-            HStack(spacing: 8) {
-                ForEach(["482", "917", "35"], id: \.self) { chunk in
-                    Text(chunk)
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 5))
-                }
-            }
-
-        case .wordScramble:
-            HStack(spacing: 3) {
-                ForEach(["B", "R", "A", "I", "N"], id: \.self) { letter in
-                    Text(letter)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(width: 18, height: 22)
-                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 4))
-                }
-            }
-
-        case .memoryChain:
-            ZStack {
-                let icons = ["circle.fill", "square.fill", "triangle.fill", "diamond.fill",
-                             "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill",
-                             "circle.fill", "square.fill", "triangle.fill", "diamond.fill",
-                             "star.fill", "heart.fill", "pentagon.fill", "hexagon.fill"]
-                let glowing = [2, 5, 10]
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 3), count: 4), spacing: 3) {
-                    ForEach(0..<16, id: \.self) { i in
-                        Image(systemName: icons[i])
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(glowing.contains(i) ? color : .white.opacity(0.5))
-                            .frame(width: 14, height: 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(glowing.contains(i) ? .white : .white.opacity(0.15))
-                            )
-                    }
-                }
-            }
-
+            return [
+                "Memory chunking — grouping information into meaningful units",
+                "Working memory capacity expansion",
+                "Pattern recognition in number sequences"
+            ]
         case .chimpTest:
-            HStack(spacing: 4) {
-                ForEach([1, 2, 3], id: \.self) { n in
-                    Text("\(n)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(color)
-                        .frame(width: 18, height: 18)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 4))
-                }
-            }
-
+            return [
+                "Spatial working memory — remembering positions after brief exposure",
+                "Based on research with chimpanzee Ayumu at Kyoto University",
+                "Visual processing speed and positional recall"
+            ]
         case .verbalMemory:
-            VStack(spacing: 2) {
-                Text("seen?")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text("apple")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-
+            return [
+                "Verbal recognition memory — distinguishing new from familiar words",
+                "Long-term encoding and retrieval",
+                "Sustained attention over growing word pools"
+            ]
         default:
-            Image(systemName: "brain.fill")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
+            return ["General cognitive training"]
         }
     }
 }

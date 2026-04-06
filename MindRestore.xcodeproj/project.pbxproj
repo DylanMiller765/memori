@@ -33,7 +33,6 @@
 		711F761A2F620A2B005ABF8A /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 711F76192F620A2B005ABF8A /* TelemetryDeck */; };
 		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */; };
-		71A50A1A2F81B5D800C6CDC3 /* ReferralCodeEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A50A192F81B5D800C6CDC3 /* ReferralCodeEntryView.swift */; };
 		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
@@ -190,7 +189,6 @@
 		711F761B2F620B8B005ABF8A /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreExplainerSheet.swift; sourceTree = "<group>"; };
 		717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MemoriWidgetExtension.entitlements; sourceTree = "<group>"; };
-		71A50A192F81B5D800C6CDC3 /* ReferralCodeEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralCodeEntryView.swift; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		7E5DDC6D3EBDEE0F446EE2AF /* SpeedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedMatchView.swift; sourceTree = "<group>"; };
 		85498D53922848A7B7E5000B /* ReactionTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionTimeView.swift; sourceTree = "<group>"; };
@@ -483,7 +481,6 @@
 		7C931884ACF860DD4B9838D8 /* Paywall */ = {
 			isa = PBXGroup;
 			children = (
-				71A50A192F81B5D800C6CDC3 /* ReferralCodeEntryView.swift */,
 				4B18226B6A2D87A22928921B /* PaywallView.swift */,
 				RFRRL0000000000000004 /* ReferralBannerView.swift */,
 			);
@@ -783,7 +780,6 @@
 				D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */,
 				E97ADA93A06FD52948075DD9 /* ActiveRecallView.swift in Sources */,
 				CA7D1ECEB363997F9A27FC7E /* ActiveRecallViewModel.swift in Sources */,
-				71A50A1A2F81B5D800C6CDC3 /* ReferralCodeEntryView.swift in Sources */,
 				E19FD204B981EA7E98758597 /* BrainAssessmentView.swift in Sources */,
 				6FA7676BFD4BDC702165B01C /* BrainAssessmentViewModel.swift in Sources */,
 				C93B5314318FD0ED427CDDE3 /* BrainScore.swift in Sources */,

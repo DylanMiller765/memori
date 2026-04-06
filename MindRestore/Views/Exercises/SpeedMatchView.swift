@@ -239,6 +239,7 @@ struct SpeedMatchView: View {
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
+    @State private var showingInfo = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -313,15 +314,8 @@ struct SpeedMatchView: View {
     private var setupView: some View {
         ScrollView {
         VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                    .accessibilityHidden(true)
-                Image(systemName: "bolt.square.fill")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(AppColors.accent)
-            }
+            TrainingTileMiniPreview(type: .speedMatch, color: AppColors.sky, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Speed Match")
@@ -331,20 +325,6 @@ struct SpeedMatchView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-
-            // What this trains
-            VStack(alignment: .leading, spacing: 10) {
-                Text("WHAT THIS TRAINS")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .tracking(1)
-
-                infoRow(icon: "bolt.fill", text: "Processing speed — how fast your brain processes visual info")
-                infoRow(icon: "eye.fill", text: "Pattern recognition — quickly identify same vs. different")
-                infoRow(icon: "brain.head.profile", text: "Inhibitory control — resist impulsive wrong answers")
-            }
-            .appCard()
-            .padding(.horizontal)
 
             // Difficulty picker
             VStack(spacing: 12) {
@@ -407,6 +387,18 @@ struct SpeedMatchView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .speedMatch)
+                .presentationDetents([.medium])
         }
     }
 

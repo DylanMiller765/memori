@@ -140,6 +140,7 @@ struct ReactionTimeView: View {
     @State private var exerciseSaved = false
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
+    @State private var showingInfo = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -222,15 +223,8 @@ struct ReactionTimeView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                    .accessibilityHidden(true)
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(AppColors.accent)
-            }
+            TrainingTileMiniPreview(type: .reactionTime, color: AppColors.coral, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Reaction Time")
@@ -263,6 +257,18 @@ struct ReactionTimeView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .reactionTime)
+                .presentationDetents([.medium])
+        }
     }
 
     private func infoRow(icon: String, text: String) -> some View {

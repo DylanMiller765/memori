@@ -165,6 +165,7 @@ struct SequentialMemoryView: View {
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
+    @State private var showingInfo = false
     // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
@@ -259,14 +260,8 @@ struct SequentialMemoryView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                Image(systemName: "number.circle.fill")
-                    .font(.system(size: 52, weight: .medium))
-                    .foregroundStyle(AppColors.accent)
-            }
+            TrainingTileMiniPreview(type: .sequentialMemory, color: AppColors.teal, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Number Memory")
@@ -298,6 +293,18 @@ struct SequentialMemoryView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .sequentialMemory)
+                .presentationDetents([.medium])
+        }
     }
 
     private func infoRow(icon: String, text: String) -> some View {

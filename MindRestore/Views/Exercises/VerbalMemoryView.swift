@@ -65,7 +65,7 @@ final class VerbalMemoryViewModel {
     }
 
     var leaderboardScore: Int {
-        bestStreak * 1000 + max(0, 999 - durationSeconds)
+        bestStreak
     }
 
     var accuracy: Double {
@@ -252,6 +252,7 @@ struct VerbalMemoryView: View {
     @State private var exerciseSaved = false
     @State private var wordOffset: CGFloat = 0
     @State private var resultsAppeared = false
+    @State private var showingInfo = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser || (user?.isProUser ?? false) }
@@ -288,15 +289,8 @@ struct VerbalMemoryView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.cardBorder)
-                    .frame(width: 120, height: 120)
-                    .accessibilityHidden(true)
-                Image(systemName: "text.book.closed.fill")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(AppColors.violet)
-            }
+            TrainingTileMiniPreview(type: .verbalMemory, color: AppColors.violet, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Verbal Memory")
@@ -329,6 +323,18 @@ struct VerbalMemoryView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .verbalMemory)
+                .presentationDetents([.medium])
+        }
     }
 
     private func infoRow(icon: String, text: String) -> some View {

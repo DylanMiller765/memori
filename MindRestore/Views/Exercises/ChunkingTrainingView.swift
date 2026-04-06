@@ -241,6 +241,7 @@ struct ChunkingTrainingView: View {
     @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
+    @State private var showingInfo = false
     // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
@@ -324,14 +325,8 @@ struct ChunkingTrainingView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(AppColors.teal.opacity(0.12))
-                    .frame(width: 100, height: 100)
-                Image(systemName: "square.grid.4x3.fill")
-                    .font(.system(size: 44, weight: .medium))
-                    .foregroundStyle(AppColors.teal)
-            }
+            TrainingTileMiniPreview(type: .chunkingTraining, color: AppColors.rose, scale: 2.0)
+                .frame(width: 200, height: 140)
 
             VStack(spacing: 8) {
                 Text("Chunking Training")
@@ -391,6 +386,18 @@ struct ChunkingTrainingView: View {
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { showingInfo = true } label: {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(16)
+        }
+        .sheet(isPresented: $showingInfo) {
+            ExerciseInfoSheet(type: .chunkingTraining)
+                .presentationDetents([.medium])
+        }
     }
 
     private func introPoint(icon: String, text: String) -> some View {
