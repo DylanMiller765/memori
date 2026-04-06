@@ -576,7 +576,6 @@ struct TrainingView: View {
     @Query private var users: [User]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
 
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToDailyChallenge = false
@@ -600,26 +599,49 @@ struct TrainingView: View {
         return "\(days / 7)w ago"
     }
 
-    private var columns: [GridItem] {
-        let count = horizontalSizeClass == .regular ? 3 : 2
-        return Array(repeating: GridItem(.flexible(), spacing: 12), count: count)
+    private struct GameCategory {
+        let name: String
+        let icon: String
+        let color: Color
+        let subtitle: String
+        let games: [(type: ExerciseType, title: String, icon: String)]
     }
 
-    /// The fun, game-like exercises worth featuring
-    private static let featuredGames: [(type: ExerciseType, title: String, icon: String, color: Color, subtitle: String)] = [
-        (.reactionTime, "Reaction Time", "bolt.fill", AppColors.coral, "Processing speed"),
-        (.colorMatch, "Color Match", "paintpalette.fill", AppColors.violet, "Stroop effect"),
-        (.speedMatch, "Speed Match", "bolt.square.fill", AppColors.sky, "Pattern matching"),
-        (.visualMemory, "Visual Memory", "square.grid.3x3.fill", AppColors.indigo, "Pattern recall"),
-        (.sequentialMemory, "Number Memory", "number.circle.fill", AppColors.teal, "Digit recall"),
-        (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber, "Mental math"),
-        (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky, "Working memory"),
-        (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose, "Group & remember"),
-        (.chimpTest, "Chimp Test", "pawprint.fill", AppColors.amber, "Beat the chimp"),
-        (.verbalMemory, "Verbal Memory", "text.book.closed.fill", AppColors.violet, "Word recognition"),
-        // v1.2: uncomment when ready to ship new games
-        // (.wordScramble, "Word Scramble", "textformat.abc.dottedunderline", AppColors.rose, "Unscramble words"),
-        // (.memoryChain, "Memory Chain", "link.circle.fill", AppColors.mint, "Sequence recall"),
+    private static let gameCategories: [GameCategory] = [
+        GameCategory(
+            name: "Memory",
+            icon: "brain.head.profile",
+            color: AppColors.violet,
+            subtitle: "Train your recall",
+            games: [
+                (.sequentialMemory, "Number Memory", "number.circle.fill"),
+                (.visualMemory, "Visual Memory", "square.grid.3x3.fill"),
+                (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill"),
+                (.verbalMemory, "Verbal Memory", "text.book.closed.fill"),
+            ]
+        ),
+        GameCategory(
+            name: "Speed",
+            icon: "bolt.fill",
+            color: AppColors.coral,
+            subtitle: "Sharpen your reflexes",
+            games: [
+                (.reactionTime, "Reaction Time", "bolt.fill"),
+                (.mathSpeed, "Math Speed", "multiply.circle.fill"),
+                (.speedMatch, "Speed Match", "bolt.square.fill"),
+                (.colorMatch, "Color Match", "paintpalette.fill"),
+            ]
+        ),
+        GameCategory(
+            name: "Focus",
+            icon: "eye.fill",
+            color: AppColors.sky,
+            subtitle: "Build concentration",
+            games: [
+                (.dualNBack, "Dual N-Back", "square.grid.3x3"),
+                (.chimpTest, "Chimp Test", "pawprint.fill"),
+            ]
+        ),
     ]
 
     var body: some View {
@@ -677,37 +699,60 @@ struct TrainingView: View {
                     ReferralBannerView()
                         .padding(.horizontal)
 
-                    // Games Grid
-                    SectionHeader(title: "Games")
-                        .padding(.horizontal)
+                    // Game Categories
+                    ForEach(Array(Self.gameCategories.enumerated()), id: \.offset) { _, category in
+                        VStack(alignment: .leading, spacing: 10) {
+                            // Section header
+                            HStack(spacing: 8) {
+                                Image(systemName: category.icon)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 28, height: 28)
+                                    .background(category.color, in: RoundedRectangle(cornerRadius: 8))
 
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(Self.featuredGames, id: \.type) { game in
-                            Button {
-                                if hasReachedLimit {
-                                    showingPaywall = true
-                                } else {
-                                    selectedExercise = game.type
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(category.name)
+                                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                                        .foregroundStyle(AppColors.textPrimary)
+                                    Text(category.subtitle)
+                                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                                        .foregroundStyle(AppColors.textSecondary)
                                 }
-                            } label: {
-                                TrainingTile(
-                                    title: game.title,
-                                    type: game.type,
-                                    color: game.color,
-                                    isLocked: hasReachedLimit,
-                                    lastPlayedText: lastPlayedText(for: game.type)
-                                )
                             }
-                            .buttonStyle(PressButtonStyle())
+                            .padding(.horizontal, 16)
+
+                            // Horizontal scroll of game cards
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(category.games, id: \.type) { game in
+                                        Button {
+                                            if hasReachedLimit {
+                                                showingPaywall = true
+                                            } else {
+                                                selectedExercise = game.type
+                                            }
+                                        } label: {
+                                            GameCard(
+                                                title: game.title,
+                                                icon: game.icon,
+                                                color: category.color,
+                                                isLocked: hasReachedLimit,
+                                                lastPlayedText: lastPlayedText(for: game.type)
+                                            )
+                                        }
+                                        .buttonStyle(GameCardButtonStyle())
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
                         }
                     }
-                    .padding(.horizontal)
-                    .navigationDestination(item: $selectedExercise) { type in
-                        exerciseDestination(for: type)
-                    }
-                    .navigationDestination(isPresented: $navigateToDailyChallenge) {
-                        DailyChallengeView()
-                    }
+                }
+                .navigationDestination(item: $selectedExercise) { type in
+                    exerciseDestination(for: type)
+                }
+                .navigationDestination(isPresented: $navigateToDailyChallenge) {
+                    DailyChallengeView()
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 32)
@@ -1124,5 +1169,97 @@ struct TrainingTile: View {
             }
 
         }
+    }
+}
+
+// MARK: - Game Card (Duolingo-inspired horizontal scroll card)
+
+struct GameCardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .offset(y: configuration.isPressed ? 3 : 0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+struct GameCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let isLocked: Bool
+    var lastPlayedText: String? = nil
+
+    // Darker shade for 3D shadow effect (Duolingo signature)
+    private var shadowColor: Color {
+        color.opacity(0.5)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top: colored area with icon
+            ZStack {
+                // Main fill
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [color, color.opacity(0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                // Icon
+                Image(systemName: icon)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+            }
+            .frame(width: 130, height: 88)
+
+            // Bottom: title area
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                if let lastPlayed = lastPlayedText {
+                    Text(lastPlayed)
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                } else {
+                    Text("NEW")
+                        .font(.system(size: 9, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(red: 0.35, green: 0.80, blue: 0.01), in: Capsule())
+                }
+            }
+            .padding(.vertical, 10)
+            .frame(width: 130)
+        }
+        .background {
+            // 3D raised card effect
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppColors.cardSurface)
+                .shadow(color: shadowColor, radius: 0, x: 0, y: 4)
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(color.opacity(0.2), lineWidth: 1)
+        )
+        .overlay {
+            if isLocked {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.black.opacity(0.5))
+                    LockPulse(color: color)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
