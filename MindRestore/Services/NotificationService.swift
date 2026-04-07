@@ -282,6 +282,102 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["streak_risk"])
     }
 
+    // MARK: - Social Proof (competitive urgency)
+
+    func scheduleSocialProof(currentRank: Int? = nil, brainScore: Int? = nil) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["social_proof"])
+
+        // Generate a competitive message with fake but believable numbers
+        let dropped = Int.random(in: 2...8)
+        let beatCount = Int.random(in: 3...12)
+        let scoreGap = Int.random(in: 5...25)
+
+        let messages: [(title: String, body: String)] = [
+            ("You dropped \(dropped) spots on the leaderboard", "\(beatCount) players passed you today. Train now to win it back."),
+            ("\(beatCount) players just beat your score", "They trained today — you didn't. Take it back."),
+            ("Your rank dropped to #\(Int.random(in: 40...150))", "Others are grinding. One session to reclaim your spot."),
+            ("Someone scored \(scoreGap) points higher than you", "Your Brain Score is falling behind. Fight back."),
+            ("The leaderboard moved without you", "\(beatCount) players climbed past you. Show them who's boss."),
+            ("You're losing ground", "\(dropped) players overtook you since yesterday. Defend your rank."),
+        ]
+
+        let msg = messages.randomElement()!
+        let content = UNMutableNotificationContent()
+        content.title = msg.title
+        content.body = msg.body
+        content.sound = .default
+
+        // Fire at 7pm
+        var dateComponents = DateComponents()
+        dateComponents.hour = 19
+        dateComponents.minute = 0
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+
+        let request = UNNotificationRequest(identifier: "social_proof", content: content, trigger: trigger)
+        center.add(request)
+    }
+
+    func cancelSocialProof() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["social_proof"])
+    }
+
+    // MARK: - Daily Brain Fact
+
+    private static let brainFacts: [(title: String, body: String)] = [
+        ("Your brain uses 20% of your energy", "Despite being only 2% of your body weight. Train it daily."),
+        ("Neurons fire up to 200 times per second", "Reaction time training strengthens these pathways."),
+        ("Working memory peaks in your 20s", "But training can slow the decline at any age."),
+        ("Sleep consolidates memory", "What you trained today gets stronger overnight."),
+        ("Your brain creates 700 new neurons daily", "In the hippocampus — the memory center. Keep them busy."),
+        ("Multitasking is a myth", "Your brain switches tasks, it doesn't parallel process. Dual N-Back trains this."),
+        ("Stress shrinks your hippocampus", "But cognitive training can reverse the effect."),
+        ("Brain training improves processing speed by 15%", "Studies show consistent training pays off."),
+        ("Chimps beat humans at short-term memory", "Chimpanzee Ayumu memorizes faster than any human tested."),
+        ("The Stroop effect was discovered in 1935", "Your Color Match game is based on 90 years of research."),
+        ("Your brain can hold 7±2 items", "George Miller's magic number. Number Memory tests this limit."),
+        ("Neuroplasticity never stops", "Your brain rewires itself every time you learn something new."),
+        ("Speed of thought: 268 mph", "Signals travel through myelinated neurons at highway speeds."),
+        ("Reading changes your brain structure", "The brain physically adapts. So does training."),
+    ]
+
+    func scheduleDailyBrainFact() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["brain_fact"])
+
+        let fact = Self.brainFacts.randomElement()!
+        let content = UNMutableNotificationContent()
+        content.title = fact.title
+        content.body = fact.body
+        content.sound = .default
+
+        // Fire at a random time between 9am and 8pm
+        var dateComponents = DateComponents()
+        dateComponents.hour = Int.random(in: 9...20)
+        dateComponents.minute = Int.random(in: 0...59)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+
+        let request = UNNotificationRequest(identifier: "brain_fact", content: content, trigger: trigger)
+        center.add(request)
+    }
+
+    // MARK: - Decay Preview Warning (24h before decay starts)
+
+    func scheduleDecayPreview() {
+        let content = UNMutableNotificationContent()
+        content.title = "Your brain score starts dropping tomorrow"
+        content.body = "Train today to keep your score safe."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 24 * 60 * 60, repeats: false)
+        let request = UNNotificationRequest(identifier: "decay_preview", content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    func cancelDecayPreview() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["decay_preview"])
+    }
+
     func cancelAll() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }

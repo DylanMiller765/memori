@@ -83,10 +83,12 @@ struct ContentView: View {
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
             scheduleWeeklyReportIfNeeded()
-            // Daily brain fact notification (disabled — method not yet implemented)
-            // if user?.notificationsEnabled == true {
-            //     NotificationService.shared.scheduleDailyBrainFact()
-            // }
+            // Daily notifications
+            if user?.notificationsEnabled == true {
+                NotificationService.shared.scheduleDailyBrainFact()
+                NotificationService.shared.scheduleSocialProof()
+                NotificationService.shared.scheduleDecayPreview()
+            }
             // Brain score decay — mascot ages if you don't train
             let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
             if decayed > 0 {
