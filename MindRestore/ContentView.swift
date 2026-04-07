@@ -763,7 +763,13 @@ struct TrainingView: View {
             }
             .pageBackground()
             .navigationTitle("Train")
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(
+                    isHighIntent: true,
+                    currentStreak: user?.currentStreak ?? 0,
+                    gamesPlayedToday: paywallTrigger.exercisesToday
+                )
+            }
             .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
                 if case .game(let type) = destination {
                     selectedExercise = type

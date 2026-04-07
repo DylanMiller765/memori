@@ -4,6 +4,10 @@ import StoreKit
 struct PaywallView: View {
     /// Only show the exit offer on high-intent triggers (daily limit, post-assessment)
     var isHighIntent: Bool = false
+    var currentStreak: Int = 0
+    var todayScoreGain: Int = 0
+    var isPersonalBest: Bool = false
+    var gamesPlayedToday: Int = 0
 
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
@@ -20,25 +24,21 @@ struct PaywallView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Hero
+                // Hero — contextual copy
                 VStack(spacing: 6) {
-                    Text("Unlock Your\nFull Brain Power")
+                    Text(heroHeadline)
                         .font(.system(size: 26, weight: .bold))
                         .multilineTextAlignment(.center)
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared ? 0 : 10)
 
-                    Text("Unlimited training. Real cognitive gains.")
+                    Text(heroSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                         .opacity(appeared ? 1 : 0)
                 }
                 .padding(.bottom, 18)
-
-                // Referral option — top placement for growth
-                ReferralBannerView()
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
 
                 // Mascot
                 Image("mascot-locked-sad")
@@ -49,21 +49,27 @@ struct PaywallView: View {
                     .padding(.bottom, 6)
 
                 // Benefits
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     benefitCard(
                         icon: "infinity",
                         title: "Unlimited",
-                        subtitle: "Daily Games",
+                        subtitle: "No daily cap",
                         color: AppColors.accent
                     )
                     benefitCard(
                         icon: "chart.line.uptrend.xyaxis",
-                        title: "Score Trends",
-                        subtitle: "& Analytics",
+                        title: "Track Progress",
+                        subtitle: "Detailed insights",
                         color: AppColors.violet
                     )
+                    benefitCard(
+                        icon: "trophy.fill",
+                        title: "Compete",
+                        subtitle: "Climb even higher",
+                        color: AppColors.amber
+                    )
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 18)
 
                 // Plans
@@ -289,6 +295,34 @@ struct PaywallView: View {
                 .frame(width: 20)
             Text(text)
                 .font(.subheadline.weight(.medium))
+        }
+    }
+
+    // MARK: - Contextual Copy
+
+    private var heroHeadline: String {
+        if isPersonalBest {
+            return "New personal best!\nDon't stop now."
+        } else if todayScoreGain > 0 {
+            return "Your score jumped \(todayScoreGain) points.\nKeep going."
+        } else if currentStreak > 2 {
+            return "You're on a \(currentStreak)-day streak.\nDon't let it die."
+        } else if gamesPlayedToday >= 3 {
+            return "You've hit today's limit.\nThe best players train more."
+        } else {
+            return "Train without limits."
+        }
+    }
+
+    private var heroSubtitle: String {
+        if currentStreak > 2 {
+            return "\(currentStreak) days of progress. Pro members never get cut off."
+        } else if todayScoreGain > 0 {
+            return "3 games isn't enough to keep those gains."
+        } else if gamesPlayedToday >= 3 {
+            return "Unlimited games. Real improvement."
+        } else {
+            return "3 games a day isn't enough to see real results."
         }
     }
 
