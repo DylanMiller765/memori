@@ -46,10 +46,11 @@ struct SegmentedScoreRing: View {
             Text("\(score)")
                 .font(.system(size: size * 0.32, weight: .black, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary)
+                .contentTransition(.numericText())
         }
         .frame(width: size, height: size)
         .onAppear {
-            withAnimation(.spring(response: 0.9, dampingFraction: 0.7)) {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.65).delay(0.3)) {
                 animatedProgress = 1.0
             }
         }
@@ -216,6 +217,7 @@ struct BrainScoreCard: View {
                         Text("\(score.brainAge)")
                             .font(.system(size: 24, weight: .black, design: .rounded))
                             .foregroundStyle(brainAgeColor)
+                            .contentTransition(.numericText())
                         if userAge > 0 {
                             let diff = userAge - score.brainAge
                             if diff != 0 {
@@ -263,6 +265,7 @@ struct BrainScoreCard: View {
             Text(topText)
                 .font(.system(size: 22, weight: .black, design: .rounded))
                 .foregroundStyle(color)
+                .contentTransition(.numericText())
             Text(bottomText)
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(AppColors.textTertiary)
@@ -282,6 +285,7 @@ struct BrainScoreCard: View {
             Text("\(value)")
                 .font(.system(size: 13, weight: .black, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary)
+                .contentTransition(.numericText())
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)

@@ -408,6 +408,7 @@ struct MemoryChainView: View {
                 Text("Start")
                     .gradientButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }

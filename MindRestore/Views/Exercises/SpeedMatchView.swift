@@ -383,6 +383,7 @@ struct SpeedMatchView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -422,6 +423,7 @@ struct SpeedMatchView: View {
                 Text("Round \(viewModel.currentRound)")
                     .font(.headline)
                     .foregroundStyle(AppColors.accent)
+                    .contentTransition(.numericText())
                 Spacer()
                 if viewModel.currentStreak >= 3 {
                     HStack(spacing: 4) {
@@ -430,6 +432,7 @@ struct SpeedMatchView: View {
                         Text("\(viewModel.currentStreak)")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(AppColors.coral)
+                            .contentTransition(.numericText())
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -438,6 +441,7 @@ struct SpeedMatchView: View {
                 Text("\(viewModel.currentRound) / \(viewModel.totalRounds)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
             .padding(.horizontal)
 

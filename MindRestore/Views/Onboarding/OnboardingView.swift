@@ -16,6 +16,16 @@ struct OnboardingView: View {
     @State private var holdProgress: CGFloat = 0
     @State private var holdTimer: Timer?
     @State private var commitmentCompleted = false
+    @State private var mascotBob = false
+    @State private var welcomeSubtitleVisible = false
+    @State private var badNewsTypingDone = false
+    @State private var goodNewsTypingDone = false
+    @State private var badNewsSubtitleVisible = false
+    @State private var goodNewsSubtitleVisible = false
+    @State private var commitmentBullet1Visible = false
+    @State private var commitmentBullet2Visible = false
+    @State private var commitmentBullet3Visible = false
+    @State private var commitmentBullet4Visible = false
     @FocusState private var nameFieldFocused: Bool
 
     var onComplete: () -> Void
@@ -54,6 +64,21 @@ struct OnboardingView: View {
                             nameFieldFocused = true
                         }
                     }
+                    // Reset typewriter animation states when navigating away
+                    if newPage != 5 {
+                        badNewsTypingDone = false
+                        badNewsSubtitleVisible = false
+                    }
+                    if newPage != 6 {
+                        goodNewsTypingDone = false
+                        goodNewsSubtitleVisible = false
+                    }
+                    if newPage != 8 {
+                        commitmentBullet1Visible = false
+                        commitmentBullet2Visible = false
+                        commitmentBullet3Visible = false
+                        commitmentBullet4Visible = false
+                    }
                 }
 
                 if currentPage != 7 {
@@ -80,28 +105,42 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             Spacer().frame(height: 40)
 
-            Image("mascot-wave")
+            Image("mascot-welcome")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 180)
+                .frame(height: 220)
+                .offset(y: mascotBob ? -6 : 6)
+                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: mascotBob)
+                .onAppear { mascotBob = true }
 
             VStack(spacing: 10) {
-                Text("Memori")
+                TypewriterText(fullText: "Welcome to Memori")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
 
                 Text("Brain games that actually\nmake you competitive.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .opacity(welcomeSubtitleVisible ? 1 : 0)
+                    .offset(y: welcomeSubtitleVisible ? 0 : 10)
+                    .animation(.easeOut(duration: 0.5), value: welcomeSubtitleVisible)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                            welcomeSubtitleVisible = true
+                        }
+                    }
             }
 
             VStack(alignment: .leading, spacing: 14) {
                 FeatureRow(icon: "trophy.fill", color: AppColors.amber, title: "Compete Globally", subtitle: "Climb leaderboards & challenge friends")
-                FeatureRow(icon: "brain.head.profile", color: CognitiveDomain.memory.color, title: "8 Brain Games", subtitle: "Memory, speed, focus & problem solving")
+                FeatureRow(icon: "brain.head.profile", color: CognitiveDomain.memory.color, title: "10 Brain Games", subtitle: "Memory, speed, focus & problem solving")
                 FeatureRow(icon: "chart.line.uptrend.xyaxis", color: AppColors.accent, title: "Track Your Brain Score", subtitle: "See how you stack up against everyone")
             }
             .padding(.horizontal, 36)
+            .opacity(welcomeSubtitleVisible ? 1 : 0)
+            .offset(y: welcomeSubtitleVisible ? 0 : 15)
+            .animation(.easeOut(duration: 0.6).delay(0.2), value: welcomeSubtitleVisible)
 
             Spacer()
 
@@ -127,7 +166,7 @@ struct OnboardingView: View {
                     .font(.system(size: 64))
 
                 VStack(spacing: 10) {
-                    Text("What should we\ncall you?")
+                    TypewriterText(fullText: "What should we\ncall you?")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
                     Text("Used for greetings and leaderboards")
@@ -335,17 +374,37 @@ struct OnboardingView: View {
                 .frame(height: 180)
 
             VStack(spacing: 8) {
-                (Text("Doomscrolling is frying\nyour ")
+                VStack(spacing: 4) {
+                    TypewriterText(fullText: "Doomscrolling is frying") {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            badNewsTypingDone = true
+                        }
+                    }
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                + Text("memory")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(.red))
                     .multilineTextAlignment(.center)
+
+                    Text("your memory")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.red)
+                        .opacity(badNewsTypingDone ? 1 : 0)
+                        .scaleEffect(badNewsTypingDone ? 1 : 0.5)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: badNewsTypingDone)
+                }
 
                 Text("Heavy phone users have the attention span\nof a goldfish. Literally.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .opacity(badNewsSubtitleVisible ? 1 : 0)
+                    .offset(y: badNewsSubtitleVisible ? 0 : 10)
+                    .animation(.easeOut(duration: 0.5), value: badNewsSubtitleVisible)
+                    .onChange(of: badNewsTypingDone) { _, done in
+                        if done {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                badNewsSubtitleVisible = true
+                            }
+                        }
+                    }
             }
 
             Spacer()
@@ -373,22 +432,44 @@ struct OnboardingView: View {
                 .frame(height: 180)
 
             VStack(spacing: 8) {
-                (Text("But your brain can\n")
+                VStack(spacing: 4) {
+                    TypewriterText(fullText: "But your brain can") {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            goodNewsTypingDone = true
+                        }
+                    }
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                + Text("bounce back")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.accent))
                     .multilineTextAlignment(.center)
+
+                    Text("bounce back")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.accent)
+                        .opacity(goodNewsTypingDone ? 1 : 0)
+                        .scaleEffect(goodNewsTypingDone ? 1 : 0.5)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: goodNewsTypingDone)
+                }
 
                 Text("Just 5 minutes a day of brain training\ncan improve memory, focus, and reaction time.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .opacity(goodNewsSubtitleVisible ? 1 : 0)
+                    .offset(y: goodNewsSubtitleVisible ? 0 : 10)
+                    .animation(.easeOut(duration: 0.5), value: goodNewsSubtitleVisible)
+                    .onChange(of: goodNewsTypingDone) { _, done in
+                        if done {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                goodNewsSubtitleVisible = true
+                            }
+                        }
+                    }
 
                 Text("Let's see where you stand.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.top, 4)
+                    .opacity(goodNewsSubtitleVisible ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5).delay(0.2), value: goodNewsSubtitleVisible)
             }
 
             Spacer()
@@ -445,12 +526,43 @@ struct OnboardingView: View {
 
             // Commitment bullets
             VStack(alignment: .leading, spacing: 16) {
-                commitmentBullet("I'll train my brain for ", bold: "5 minutes a day")
-                commitmentBullet("I'll ", bold: "build my streak", suffix: " and not break it")
-                commitmentBullet("I'll ", bold: "put down the scroll", suffix: " and pick up the games")
-                commitmentBullet("I'll ", bold: "sharpen my mind", suffix: " every single day")
+                if commitmentBullet1Visible {
+                    TypewriterText(fullText: "• I'll train my brain for 5 minutes a day")
+                        .font(.subheadline)
+                        .transition(.opacity)
+                }
+                if commitmentBullet2Visible {
+                    TypewriterText(fullText: "• I'll build my streak and not break it")
+                        .font(.subheadline)
+                        .transition(.opacity)
+                }
+                if commitmentBullet3Visible {
+                    TypewriterText(fullText: "• I'll put down the scroll and pick up the games")
+                        .font(.subheadline)
+                        .transition(.opacity)
+                }
+                if commitmentBullet4Visible {
+                    TypewriterText(fullText: "• I'll sharpen my mind every single day")
+                        .font(.subheadline)
+                        .transition(.opacity)
+                }
             }
             .padding(.horizontal, 32)
+            .onAppear {
+                let delays = [0.3, 1.8, 3.3, 4.8]
+                DispatchQueue.main.asyncAfter(deadline: .now() + delays[0]) {
+                    withAnimation { commitmentBullet1Visible = true }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + delays[1]) {
+                    withAnimation { commitmentBullet2Visible = true }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + delays[2]) {
+                    withAnimation { commitmentBullet3Visible = true }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + delays[3]) {
+                    withAnimation { commitmentBullet4Visible = true }
+                }
+            }
 
             Spacer()
 

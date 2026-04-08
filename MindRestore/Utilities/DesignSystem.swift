@@ -230,6 +230,33 @@ extension View {
     }
 }
 
+// MARK: - Pulsing Button (breathing idle animation for Start buttons)
+
+struct PulsingButton: ViewModifier {
+    @State private var isPulsing = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPulsing ? 1.03 : 1.0)
+            .animation(
+                .easeInOut(duration: 1.5)
+                .repeatForever(autoreverses: true),
+                value: isPulsing
+            )
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    isPulsing = true
+                }
+            }
+    }
+}
+
+extension View {
+    func pulsingWhenIdle() -> some View {
+        modifier(PulsingButton())
+    }
+}
+
 // MARK: - Section Header (clean, subtle)
 
 struct SectionHeader: View {
@@ -353,23 +380,40 @@ struct StreakWeekView: View {
 
 struct StaggeredEntrance: ViewModifier {
     let index: Int
+    let delay: Double
     @State private var appeared = false
+
+    init(index: Int, delay: Double = 0.15) {
+        self.index = index
+        self.delay = delay
+    }
 
     func body(content: Content) -> some View {
         content
             .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : 16)
+            .offset(y: appeared ? 0 : 20)
+            .animation(
+                .spring(response: 0.5, dampingFraction: 0.75)
+                .delay(Double(index) * delay),
+                value: appeared
+            )
             .onAppear {
-                withAnimation(.easeOut(duration: 0.35).delay(Double(index) * 0.06)) {
+                appeared = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     appeared = true
                 }
             }
+            .onDisappear { appeared = false }
     }
 }
 
 extension View {
     func staggeredEntrance(index: Int) -> some View {
         modifier(StaggeredEntrance(index: index))
+    }
+
+    func staggered(index: Int, delay: Double = 0.06) -> some View {
+        modifier(StaggeredEntrance(index: index, delay: delay))
     }
 }
 
@@ -446,9 +490,10 @@ struct StreakRingView: View {
 struct PressButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.5), value: configuration.isPressed)
     }
 }
 

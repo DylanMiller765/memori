@@ -13,22 +13,38 @@ private func brainTypeSwiftColor(_ type: BrainType) -> Color {
 
 // MARK: - Shared Components (Warm Light Design)
 
-/// Warm cream background matching the app's pageBg
+/// Adaptive background — warm cream in light mode, deep purple-black in dark mode
 private struct CardBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.969, green: 0.961, blue: 0.941), // #F7F5F0
-                Color(red: 0.955, green: 0.945, blue: 0.925), // slightly warmer
-                Color(red: 0.969, green: 0.961, blue: 0.941)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        if colorScheme == .dark {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.06, blue: 0.14),
+                    Color(red: 0.12, green: 0.08, blue: 0.20),
+                    Color(red: 0.08, green: 0.06, blue: 0.14)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.969, green: 0.961, blue: 0.941),
+                    Color(red: 0.955, green: 0.945, blue: 0.925),
+                    Color(red: 0.969, green: 0.961, blue: 0.941)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
     }
 }
 
 private struct BrandingHeader: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "brain.fill")
@@ -37,16 +53,18 @@ private struct BrandingHeader: View {
             Text("MEMORI")
                 .font(.system(size: 12, weight: .heavy))
                 .tracking(3)
-                .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40))
+                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : Color(red: 0.45, green: 0.43, blue: 0.40))
         }
     }
 }
 
 private struct BrandingFooter: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         Text("Test yours free \u{2014} Memori")
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+            .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.4) : Color(red: 0.62, green: 0.60, blue: 0.58))
     }
 }
 
@@ -108,8 +126,9 @@ private struct ScoreBar: View {
     }
 }
 
-/// Inner card surface (white card on cream bg)
+/// Inner card surface — white on cream in light, subtle dark surface in dark mode
 private struct ShareCardSurface<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -117,8 +136,8 @@ private struct ShareCardSurface<Content: View>: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+                    .fill(colorScheme == .dark ? Color.white.opacity(0.08) : Color.white)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 12, y: 4)
             )
     }
 }
@@ -162,7 +181,7 @@ struct TikTokBrainScoreCard: View {
                         Text("BRAIN SCORE")
                             .font(.system(size: 13, weight: .heavy))
                             .tracking(4)
-                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+                            .foregroundStyle(.secondary)
 
                         // Brain Age
                         Text("Brain Age: \(brainAge)")
@@ -257,7 +276,7 @@ struct TikTokChallengeCard: View {
                         Text(challengeType.uppercased())
                             .font(.system(size: 13, weight: .heavy))
                             .tracking(3)
-                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+                            .foregroundStyle(.secondary)
 
                         Divider()
 
@@ -352,7 +371,7 @@ struct TikTokDuelResultCard: View {
                         Text(exerciseType.uppercased())
                             .font(.system(size: 13, weight: .heavy))
                             .tracking(3)
-                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+                            .foregroundStyle(.secondary)
 
                         Divider()
 
@@ -497,7 +516,7 @@ struct ReactionTimeShareCard: View {
                         Text("MILLISECONDS")
                             .font(.system(size: 13, weight: .heavy))
                             .tracking(4)
-                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+                            .foregroundStyle(.secondary)
 
                         // Rating
                         RatingPill(color: ratingColor) {
@@ -592,7 +611,7 @@ struct ExerciseShareCard: View {
                         Text(mainLabel.uppercased())
                             .font(.system(size: 13, weight: .heavy))
                             .tracking(4)
-                            .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
+                            .foregroundStyle(.secondary)
 
                         // Rating
                         RatingPill(color: accentColor) {

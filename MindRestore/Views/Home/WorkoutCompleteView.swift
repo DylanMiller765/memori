@@ -186,6 +186,7 @@ struct WorkoutCompleteView: View {
                     Text("\(newBrainAge)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColors.textPrimary)
+                        .contentTransition(.numericText())
 
                     if ageDelta != 0 {
                         Text(ageDelta < 0 ? "\(ageDelta)" : "+\(ageDelta)")

@@ -185,7 +185,10 @@ struct ProfileShareCard: View {
 extension View {
     @MainActor
     func renderAsImage(size: CGSize = CGSize(width: 300, height: 400), scale: CGFloat? = nil) -> UIImage {
-        let renderer = ImageRenderer(content: self)
+        // Detect current color scheme and pass it to the renderer
+        let isDark = UITraitCollection.current.userInterfaceStyle == .dark
+        let content = self.environment(\.colorScheme, isDark ? .dark : .light)
+        let renderer = ImageRenderer(content: content)
         renderer.proposedSize = .init(size)
         renderer.scale = scale ?? UIScreen.main.scale
         return renderer.uiImage ?? UIImage()

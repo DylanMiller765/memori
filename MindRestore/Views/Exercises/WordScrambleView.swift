@@ -438,6 +438,7 @@ struct WordScrambleView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }

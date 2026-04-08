@@ -185,6 +185,7 @@ struct DualNBackView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -210,10 +211,12 @@ struct DualNBackView: View {
                 Text("N = \(viewModel.currentN)")
                     .font(.headline)
                     .foregroundStyle(AppColors.accent)
+                    .contentTransition(.numericText())
                 Spacer()
                 Text("Trial \(viewModel.trialIndex + 1) / \(viewModel.totalTrials)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
             .padding(.horizontal)
 
@@ -393,6 +396,7 @@ struct DualNBackView: View {
                         Text("\(viewModel.nextN)")
                             .font(.title3.weight(.bold).monospacedDigit())
                             .foregroundStyle(AppColors.accent)
+                            .contentTransition(.numericText())
                     }
                 }
                 .glowingCard(color: AppColors.accent, intensity: 0.08)

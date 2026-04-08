@@ -702,7 +702,7 @@ struct TrainingView: View {
                         .padding(.horizontal)
 
                     // Game Categories
-                    ForEach(Array(Self.gameCategories.enumerated()), id: \.offset) { _, category in
+                    ForEach(Array(Self.gameCategories.enumerated()), id: \.offset) { index, category in
                         VStack(alignment: .leading, spacing: 10) {
                             // Section header
                             HStack(spacing: 8) {
@@ -726,7 +726,7 @@ struct TrainingView: View {
                             // Horizontal scroll of game cards
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
-                                    ForEach(category.games, id: \.type) { game in
+                                    ForEach(Array(category.games.enumerated()), id: \.element.type) { offset, game in
                                         Button {
                                             if hasReachedLimit {
                                                 showingPaywall = true
@@ -748,6 +748,7 @@ struct TrainingView: View {
                                 .padding(.horizontal, 16)
                             }
                         }
+                        .staggeredEntrance(index: index)
                     }
                 }
                 .navigationDestination(item: $selectedExercise) { type in

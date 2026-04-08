@@ -127,8 +127,8 @@ final class ChimpTestViewModel {
                 // Level complete!
                 HapticService.correct()
                 SoundService.shared.playCorrect()
-                currentLevel += 1
                 bestLevel = max(bestLevel, currentLevel)
+                currentLevel += 1
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.setupLevel()
@@ -156,11 +156,7 @@ final class ChimpTestViewModel {
     }
 
     private func finishGame() {
-        // bestLevel is the highest level they completed + 1 (i.e. the level they reached)
-        // But since they failed at currentLevel, best is currentLevel - 1 if they never beat it
-        // Actually bestLevel tracks max(bestLevel, currentLevel) on completion, so it's already correct
-        // The score is the highest level they successfully completed
-        bestLevel = max(4, bestLevel - 1) // They didn't complete the current level
+        // bestLevel now tracks the highest level actually completed (set before currentLevel increments)
         phase = .finished
         SoundService.shared.playComplete()
         HapticService.complete()
@@ -271,6 +267,7 @@ struct ChimpTestView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -309,6 +306,7 @@ struct ChimpTestView: View {
                 Text("Level \(viewModel.currentLevel)")
                     .font(.headline)
                     .foregroundStyle(AppColors.amber)
+                    .contentTransition(.numericText())
                 Spacer()
                 HStack(spacing: 4) {
                     ForEach(0..<3, id: \.self) { i in
@@ -406,8 +404,7 @@ struct ChimpTestView: View {
                 Text(viewModel.bestLevel >= 7 ? "\u{1F435}" : "\u{1F435}")
                     .font(.system(size: 64))
                     .padding(.top, 20)
-                    .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.05), value: resultsAppeared)
+                    .staggeredEntrance(index: 0)
 
                 VStack(spacing: 4) {
                     Text(viewModel.bestLevel >= 7 ? "You beat the chimp!" : "The chimp wins this time!")
@@ -419,27 +416,25 @@ struct ChimpTestView: View {
                             .foregroundStyle(AppColors.amber)
                     }
                 }
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
+                .staggeredEntrance(index: 1)
 
                 // Big score number
                 VStack(spacing: 4) {
                     Text("\(viewModel.bestLevel)")
                         .font(.system(size: 72, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColors.amber)
+                        .contentTransition(.numericText())
                     Text("NUMBERS REMEMBERED")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.secondary)
                         .tracking(1.5)
                 }
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                .staggeredEntrance(index: 2)
 
                 Text(viewModel.ratingText)
                     .font(.headline)
                     .foregroundStyle(AppColors.amber)
-                    .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
+                    .staggeredEntrance(index: 3)
 
                 // Stats card
                 VStack(spacing: 12) {
@@ -449,26 +444,14 @@ struct ChimpTestView: View {
                 }
                 .glowingCard(color: AppColors.amber, intensity: 0.08)
                 .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25), value: resultsAppeared)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Why Chimp Test?")
-                        .font(.subheadline.weight(.bold))
-                    Text("Chimpanzees have been shown to outperform humans on short-term memory tasks. This exercise trains your spatial working memory and sequential recall under pressure.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .appCard()
-                .padding(.horizontal, 20)
+                .staggeredEntrance(index: 4)
 
                 LeaderboardRankCard(
                     exerciseType: .chimpTest,
                     userScore: viewModel.bestLevel
                 )
                 .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
+                .staggeredEntrance(index: 5)
 
                 // Buttons
                 VStack(spacing: 12) {
@@ -507,11 +490,9 @@ struct ChimpTestView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.35), value: resultsAppeared)
+                .staggeredEntrance(index: 6)
             }
         }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

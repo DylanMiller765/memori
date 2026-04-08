@@ -382,6 +382,7 @@ struct MathSpeedView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -409,10 +410,12 @@ struct MathSpeedView: View {
                 Text("\(viewModel.currentProblemIndex + 1) / \(viewModel.totalProblems)")
                     .font(.headline.weight(.bold).monospacedDigit())
                     .foregroundStyle(AppColors.amber)
+                    .contentTransition(.numericText())
                 Spacer()
                 Text(String(format: "%.1fs", viewModel.elapsedSeconds))
                     .font(.caption.weight(.medium).monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
                     .accessibilityLabel("Elapsed time: \(Int(viewModel.elapsedSeconds)) seconds")
             }
             .padding(.horizontal)
@@ -426,9 +429,11 @@ struct MathSpeedView: View {
                 Label("\(viewModel.correctCount)", systemImage: "checkmark.circle.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.teal)
+                    .contentTransition(.numericText())
                 Label("\(viewModel.wrongCount)", systemImage: "xmark.circle.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.coral)
+                    .contentTransition(.numericText())
             }
 
             Spacer()

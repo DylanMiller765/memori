@@ -419,6 +419,7 @@ struct HomeView: View {
                 Text("\(user.level)")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColors.accent)
+                    .contentTransition(.numericText())
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -431,6 +432,7 @@ struct HomeView: View {
                     Text("\(user.totalXP) XP")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppColors.accent)
+                        .contentTransition(.numericText())
                 }
 
                 // XP Progress bar
@@ -503,6 +505,7 @@ struct HomeView: View {
                                 Text("\(data.currentScore)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
                                     .foregroundStyle(AppColors.accent)
+                                    .contentTransition(.numericText())
                                 if data.previousScore > 0 && scoreDelta != 0 {
                                     Text(scoreDelta > 0 ? "+\(scoreDelta)" : "\(scoreDelta)")
                                         .font(.system(size: 12, weight: .bold, design: .rounded))
@@ -544,6 +547,7 @@ struct HomeView: View {
                                 .foregroundStyle(AppColors.coral)
                             Text("\(data.streak)")
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .contentTransition(.numericText())
                         }
                         Text("Streak")
                             .font(.system(size: 10, weight: .semibold))
@@ -559,6 +563,7 @@ struct HomeView: View {
                                 .foregroundStyle(AppColors.teal)
                             Text("\(data.gamesPlayed)")
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .contentTransition(.numericText())
                         }
                         Text("Games")
                             .font(.system(size: 10, weight: .semibold))
@@ -852,6 +857,7 @@ struct HomeView: View {
                         .foregroundStyle(viewModel.currentStreak > 0 ? AppColors.coral : .secondary)
                     Text("\(viewModel.currentStreak) day streak")
                         .font(.headline.weight(.bold))
+                        .contentTransition(.numericText())
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(viewModel.currentStreak) day streak")
@@ -896,6 +902,7 @@ struct HomeView: View {
                         .tracking(1.2)
                     Text("\(viewModel.todaySessionCount) of \(viewModel.dailyGoal) complete")
                         .font(.subheadline.weight(.medium))
+                        .contentTransition(.numericText())
                 }
                 .accessibilityElement(children: .combine)
 
@@ -914,6 +921,7 @@ struct HomeView: View {
                         .rotationEffect(.degrees(-90))
                     Text("\(viewModel.todaySessionCount)")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
                 }
                 .frame(width: 44, height: 44)
             }

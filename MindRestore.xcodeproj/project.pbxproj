@@ -82,6 +82,8 @@
 		DD000001000000000000DD03 /* MixedTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD03 /* MixedTrainingView.swift */; };
 		DD000001000000000000DD04 /* TrainingSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD04 /* TrainingSessionManager.swift */; };
 		DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD05 /* TrainingLimitBanner.swift */; };
+		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
+		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
 		DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD06 /* MemoryPalaceView.swift */; };
 		DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD07 /* ChunkingTrainingView.swift */; };
 		DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD08 /* ProspectiveMemoryView.swift */; };
@@ -236,6 +238,8 @@
 		DD000002000000000000DD03 /* MixedTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixedTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD04 /* TrainingSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingSessionManager.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD05 /* TrainingLimitBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingLimitBanner.swift; sourceTree = "<group>"; };
+		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
+		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD06 /* MemoryPalaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPalaceView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD07 /* ChunkingTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkingTrainingView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD08 /* ProspectiveMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectiveMemoryView.swift; sourceTree = "<group>"; };
@@ -550,6 +554,8 @@
 				WR01000200000000000000A1 /* WeeklyReportShareCard.swift */,
 				WK000002000000000000WK04 /* WorkoutShareCard.swift */,
 				DD000002000000000000DD05 /* TrainingLimitBanner.swift */,
+				GCNT0002000000000000GC01 /* GameCountdown.swift */,
+				TWRT0002000000000000TW01 /* TypewriterText.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -816,6 +822,8 @@
 				DD000001000000000000DD02 /* StrategyTipService.swift in Sources */,
 				DD000001000000000000DD04 /* TrainingSessionManager.swift in Sources */,
 				DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */,
+				GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */,
+				TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */,
 				HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */,
 				HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */,
 				II000001000000000000II03 /* StreakCelebrationView.swift in Sources */,

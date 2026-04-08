@@ -319,6 +319,7 @@ struct VerbalMemoryView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -447,20 +448,19 @@ struct VerbalMemoryView: View {
                     }
                 }
                 .padding(.top, 20)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: resultsAppeared)
+                .staggeredEntrance(index: 0)
 
                 // Big score
                 VStack(spacing: 4) {
                     Text("\(viewModel.bestStreak)")
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColors.violet)
+                        .contentTransition(.numericText())
                     Text(viewModel.ratingText)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: resultsAppeared)
+                .staggeredEntrance(index: 1)
 
                 // Stats card
                 VStack(spacing: 12) {
@@ -470,8 +470,7 @@ struct VerbalMemoryView: View {
                 }
                 .glowingCard(color: AppColors.violet, intensity: 0.08)
                 .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: resultsAppeared)
+                .staggeredEntrance(index: 2)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Why Verbal Memory?")
@@ -488,8 +487,7 @@ struct VerbalMemoryView: View {
                     userScore: viewModel.bestStreak
                 )
                 .padding(.horizontal)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: resultsAppeared)
+                .staggeredEntrance(index: 3)
 
                 // Buttons
                 VStack(spacing: 12) {
@@ -528,11 +526,9 @@ struct VerbalMemoryView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
-                .opacity(resultsAppeared ? 1 : 0).offset(y: resultsAppeared ? 0 : 20)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.4), value: resultsAppeared)
+                .staggeredEntrance(index: 4)
             }
         }
-        .onAppear { resultsAppeared = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { resultsAppeared = true } }
     }
 
     private func resultRow(label: String, value: String) -> some View {

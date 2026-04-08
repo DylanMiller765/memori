@@ -423,6 +423,7 @@ struct ChunkingTrainingView: View {
                 Text("\(Int(viewModel.timeRemaining))s")
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(viewModel.timeRemaining <= 3 ? AppColors.error : AppColors.teal)
+                    .contentTransition(.numericText())
                     .accessibilityLabel("Time remaining: \(Int(viewModel.timeRemaining)) seconds")
             }
             .padding(.horizontal)
@@ -553,6 +554,7 @@ struct ChunkingTrainingView: View {
                 Text("\(entered) / \(viewModel.totalDigits) digits entered")
                     .font(.caption)
                     .foregroundStyle(entered == viewModel.totalDigits ? AppColors.teal : .secondary)
+                    .contentTransition(.numericText())
             }
 
             Spacer()

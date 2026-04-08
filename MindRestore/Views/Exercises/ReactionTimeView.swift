@@ -253,6 +253,7 @@ struct ReactionTimeView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -292,6 +293,7 @@ struct ReactionTimeView: View {
                     Text("Round \(viewModel.currentRound + 1) of \(viewModel.rounds)")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.white.opacity(0.5))
+                        .contentTransition(.numericText())
 
                     Text("Wait for green...")
                         .font(.title.weight(.bold))
@@ -369,6 +371,7 @@ struct ReactionTimeView: View {
             Text("\(viewModel.lastReactionMs)")
                 .font(.system(size: 72, weight: .bold, design: .monospaced))
                 .foregroundStyle(AppColors.accent)
+                .contentTransition(.numericText())
                 .accessibilityLabel("Reaction time: \(viewModel.lastReactionMs) milliseconds")
 
             Text("milliseconds")
@@ -379,6 +382,7 @@ struct ReactionTimeView: View {
             Text("Round \(viewModel.currentRound) of \(viewModel.rounds)")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
 
             Spacer()
 

@@ -352,6 +352,7 @@ struct ColorMatchView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -390,10 +391,12 @@ struct ColorMatchView: View {
                 Text("Round \(viewModel.currentRound + 1)")
                     .font(.headline)
                     .foregroundStyle(AppColors.accent)
+                    .contentTransition(.numericText())
                 Spacer()
                 Text("\(viewModel.currentRound) / \(viewModel.totalRounds)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
             .padding(.horizontal)
 
@@ -435,9 +438,11 @@ struct ColorMatchView: View {
                 Label("\(viewModel.correctCount)", systemImage: "checkmark.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColors.mint)
+                    .contentTransition(.numericText())
                 Label("\(viewModel.currentRound - viewModel.correctCount)", systemImage: "xmark.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColors.coral)
+                    .contentTransition(.numericText())
             }
 
             Spacer()

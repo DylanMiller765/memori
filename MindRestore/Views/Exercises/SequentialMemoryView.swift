@@ -289,6 +289,7 @@ struct SequentialMemoryView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -326,10 +327,12 @@ struct SequentialMemoryView: View {
                 Text("Level \(viewModel.currentLength)")
                     .font(.headline)
                     .foregroundStyle(AppColors.teal)
+                    .contentTransition(.numericText())
                 Spacer()
                 Text("Round \(viewModel.round + 1)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
             .padding(.horizontal)
 
@@ -383,6 +386,7 @@ struct SequentialMemoryView: View {
             Text("Level \(viewModel.currentLength)")
                 .font(.headline)
                 .foregroundStyle(AppColors.teal)
+                .contentTransition(.numericText())
 
             Spacer()
 
@@ -411,6 +415,7 @@ struct SequentialMemoryView: View {
                 Text("\(viewModel.userInput.count) / \(viewModel.currentLength) digits")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
 
                 Button {
                     viewModel.submitAnswer()

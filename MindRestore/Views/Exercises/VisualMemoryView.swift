@@ -300,6 +300,7 @@ struct VisualMemoryView: View {
                 Text("Start")
                     .accentButton()
             }
+            .pulsingWhenIdle()
             .accessibilityHint("Starts the exercise")
             .padding(.horizontal, 32)
         }
@@ -337,6 +338,7 @@ struct VisualMemoryView: View {
             Text("Level \(viewModel.level)")
                 .font(.headline)
                 .foregroundStyle(AppColors.accent)
+                .contentTransition(.numericText())
                 .padding(.horizontal)
 
             // Grid size indicator
@@ -352,6 +354,7 @@ struct VisualMemoryView: View {
                 Text("Tap the squares (\(viewModel.selectedCells.count)/\(viewModel.highlightCount))")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
 
             Spacer()
@@ -431,6 +434,7 @@ struct VisualMemoryView: View {
 
             Text("Level \(viewModel.level) Complete!")
                 .font(.title2.weight(.bold))
+                .contentTransition(.numericText())
 
             Spacer()
         }
