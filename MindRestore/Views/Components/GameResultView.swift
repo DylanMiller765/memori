@@ -36,42 +36,37 @@ struct GameResultView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 24) {
-                    Spacer().frame(height: 20)
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer().frame(height: 20)
 
-                    // Hero Score Zone
-                    heroSection
+                // Hero Score Zone
+                heroSection
 
-                    // Personal Best Banner
-                    if isNewPersonalBest {
-                        personalBestBanner
-                    }
-
-                    // Stats Card
-                    statsCard
-
-                    // Leaderboard
-                    if let type = exerciseType {
-                        LeaderboardRankCard(
-                            exerciseType: type,
-                            userScore: leaderboardScore
-                        )
-                        .padding(.horizontal)
-                        .opacity(phase == .complete ? 1 : 0)
-                        .offset(y: phase == .complete ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: phase)
-                    }
+                // Personal Best Banner
+                if isNewPersonalBest {
+                    personalBestBanner
                 }
-                .padding(.bottom, 16)
-            }
 
-            // CTAs pinned to bottom with glass background
-            ctaButtons
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-                .background(.ultraThinMaterial)
+                // Stats Card
+                statsCard
+
+                // Leaderboard
+                if let type = exerciseType {
+                    LeaderboardRankCard(
+                        exerciseType: type,
+                        userScore: leaderboardScore
+                    )
+                    .padding(.horizontal)
+                    .opacity(phase == .complete ? 1 : 0)
+                    .offset(y: phase == .complete ? 0 : 20)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: phase)
+                }
+
+                // CTAs
+                ctaButtons
+            }
+            .padding(.bottom, 32)
         }
         .background(resultsBackground)
         .confettiCannon(counter: $confettiCounter, num: 60, colors: confettiColors, rainHeight: 600, radius: 400)
