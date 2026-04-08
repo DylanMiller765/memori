@@ -9,6 +9,8 @@ struct PaywallView: View {
     var isPersonalBest: Bool = false
     var gamesPlayedToday: Int = 0
 
+    var triggerSource: String = "unknown"
+
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
 
@@ -217,7 +219,7 @@ struct PaywallView: View {
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) { appeared = true }
-            Analytics.paywallShown()
+            Analytics.paywallShown(trigger: triggerSource)
         }
     }
 
@@ -346,7 +348,7 @@ struct PaywallView: View {
         if let product = storeService.products.first(where: { $0.id == productID }) {
             await storeService.purchase(product)
             if storeService.isProUser {
-                Analytics.paywallConverted(plan: productID)
+                Analytics.paywallConverted(plan: productID, price: NSDecimalNumber(decimal: product.price).doubleValue)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 SoundService.shared.playComplete()
                 dismiss()
@@ -356,7 +358,7 @@ struct PaywallView: View {
             if let product = storeService.products.first(where: { $0.id == productID }) {
                 await storeService.purchase(product)
                 if storeService.isProUser {
-                    Analytics.paywallConverted(plan: productID)
+                    Analytics.paywallConverted(plan: productID, price: NSDecimalNumber(decimal: product.price).doubleValue)
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     SoundService.shared.playComplete()
                     dismiss()

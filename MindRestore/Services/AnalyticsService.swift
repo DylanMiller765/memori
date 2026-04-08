@@ -1,77 +1,164 @@
 import Foundation
-import TelemetryDeck
+import PostHog
 
 enum Analytics {
-    static let appID = "07CABBEB-051B-4AC3-937F-FD0A276D09C7"
+    static let apiKey = "phc_mAu7DCNXJbqro9iG6KzYbxhTqa4s442BAmS3tCt7vPJu"
+    static let host = "https://us.i.posthog.com"
 
     static func configure() {
-        let config = TelemetryDeck.Config(appID: appID)
-        TelemetryDeck.initialize(config: config)
+        let config = PostHogConfig(apiKey: apiKey, host: host)
+        config.captureApplicationLifecycleEvents = true
+        #if DEBUG
+        config.debug = true
+        #endif
+        PostHogSDK.shared.setup(config)
+    }
+
+    // MARK: - User Identification
+
+    /// Identify the current user and set their properties for segmentation
+    static func identify(userId: String, isProUser: Bool, brainAge: Int?, streak: Int, gamesPlayed: Int) {
+        var properties: [String: Any] = [
+            "is_pro_user": isProUser,
+            "streak": streak,
+            "games_played": gamesPlayed
+        ]
+        if let brainAge {
+            properties["brain_age"] = brainAge
+        }
+        PostHogSDK.shared.identify(userId, userProperties: properties)
+    }
+
+    /// Update user properties without re-identifying (call after subscription changes, brain score updates, etc.)
+    static func updateUserProperties(isProUser: Bool? = nil, brainAge: Int? = nil, streak: Int? = nil) {
+        var properties: [String: Any] = [:]
+        if let isProUser { properties["is_pro_user"] = isProUser }
+        if let brainAge { properties["brain_age"] = brainAge }
+        if let streak { properties["streak"] = streak }
+        guard !properties.isEmpty else { return }
+        PostHogSDK.shared.capture("$set", userProperties: properties)
+    }
+
+    // MARK: - Session Tracking
+
+    static func appOpened(daysSinceLastOpen: Int, currentStreak: Int, isProUser: Bool) {
+        PostHogSDK.shared.capture("app.opened", properties: [
+            "days_since_last_open": daysSinceLastOpen,
+            "current_streak": currentStreak,
+            "is_pro_user": isProUser
+        ])
+    }
+
+    static func appOpenedFromNotification(notificationType: String) {
+        PostHogSDK.shared.capture("app.opened_from_notification", properties: [
+            "notification_type": notificationType
+        ])
     }
 
     // MARK: - Onboarding
 
+    static func onboardingDroppedOff(lastStep: String, totalSteps: Int) {
+        PostHogSDK.shared.capture("onboarding.dropped_off", properties: [
+            "last_step": lastStep,
+            "steps_completed": totalSteps
+        ])
+    }
+
     static func onboardingCompleted(goals: [String]) {
-        TelemetryDeck.signal("onboarding.completed", parameters: [
-            "goalCount": "\(goals.count)",
+        PostHogSDK.shared.capture("onboarding.completed", properties: [
+            "goalCount": goals.count,
             "goals": goals.joined(separator: ",")
         ])
     }
 
     static func onboardingStep(step: String) {
-        TelemetryDeck.signal("onboarding.step", parameters: [
+        PostHogSDK.shared.capture("onboarding.step", properties: [
             "step": step
+        ])
+    }
+
+    // MARK: - Navigation
+
+    static func tabViewed(tab: String) {
+        PostHogSDK.shared.capture("tab.viewed", properties: [
+            "tab": tab
         ])
     }
 
     // MARK: - Exercises
 
     static func exerciseStarted(game: String) {
-        TelemetryDeck.signal("exercise.started", parameters: [
+        PostHogSDK.shared.capture("exercise.started", properties: [
             "game": game
         ])
     }
 
     static func exerciseCompleted(game: String, score: Double, difficulty: Int) {
-        TelemetryDeck.signal("exercise.completed", parameters: [
+        PostHogSDK.shared.capture("exercise.completed", properties: [
             "game": game,
-            "score": String(format: "%.2f", score),
-            "difficulty": "\(difficulty)"
+            "score": score,
+            "difficulty": difficulty
         ])
     }
 
     static func personalBest(game: String, score: Int) {
-        TelemetryDeck.signal("exercise.personalBest", parameters: [
+        PostHogSDK.shared.capture("exercise.personalBest", properties: [
             "game": game,
-            "score": "\(score)"
+            "score": score
+        ])
+    }
+
+    static func exerciseAbandoned(game: String, roundReached: Int) {
+        PostHogSDK.shared.capture("exercise.abandoned", properties: [
+            "game": game,
+            "round_reached": roundReached
         ])
     }
 
     // MARK: - Brain Score
 
     static func brainScoreCompleted(score: Int, brainAge: Int) {
-        TelemetryDeck.signal("brainScore.completed", parameters: [
-            "score": "\(score)",
-            "brainAge": "\(brainAge)"
+        PostHogSDK.shared.capture("brainScore.completed", properties: [
+            "score": score,
+            "brainAge": brainAge
+        ])
+        // Also update the user property so we always have their latest brain age
+        updateUserProperties(brainAge: brainAge)
+    }
+
+    static func brainScoreDecayed(pointsLost: Int, newScore: Int) {
+        PostHogSDK.shared.capture("brainScore.decayed", properties: [
+            "pointsLost": pointsLost,
+            "newScore": newScore
+        ])
+    }
+
+    // MARK: - Daily Limit
+
+    static func dailyLimitReached(exercisesToday: Int) {
+        PostHogSDK.shared.capture("dailyLimit.reached", properties: [
+            "exercisesToday": exercisesToday
         ])
     }
 
     // MARK: - Paywall
 
     static func paywallShown(trigger: String = "unknown") {
-        TelemetryDeck.signal("paywall.shown", parameters: [
+        PostHogSDK.shared.capture("paywall.shown", properties: [
             "trigger": trigger
         ])
     }
 
-    static func paywallConverted(plan: String) {
-        TelemetryDeck.signal("paywall.converted", parameters: [
-            "plan": plan
-        ])
+    static func paywallConverted(plan: String, price: Double? = nil) {
+        var properties: [String: Any] = ["plan": plan]
+        if let price { properties["$revenue"] = price }
+        PostHogSDK.shared.capture("paywall.converted", properties: properties)
+        // Update pro status
+        updateUserProperties(isProUser: true)
     }
 
     static func paywallDismissed(trigger: String = "unknown") {
-        TelemetryDeck.signal("paywall.dismissed", parameters: [
+        PostHogSDK.shared.capture("paywall.dismissed", properties: [
             "trigger": trigger
         ])
     }
@@ -79,7 +166,7 @@ enum Analytics {
     // MARK: - Sharing
 
     static func shareTapped(game: String) {
-        TelemetryDeck.signal("share.tapped", parameters: [
+        PostHogSDK.shared.capture("share.tapped", properties: [
             "game": game
         ])
     }
@@ -87,19 +174,20 @@ enum Analytics {
     // MARK: - Engagement
 
     static func streakMilestone(streak: Int) {
-        TelemetryDeck.signal("streak.milestone", parameters: [
-            "streak": "\(streak)"
+        PostHogSDK.shared.capture("streak.milestone", properties: [
+            "streak": streak
         ])
+        updateUserProperties(streak: streak)
     }
 
     static func achievementUnlocked(achievement: String) {
-        TelemetryDeck.signal("achievement.unlocked", parameters: [
+        PostHogSDK.shared.capture("achievement.unlocked", properties: [
             "achievement": achievement
         ])
     }
 
     static func leaderboardViewed(category: String) {
-        TelemetryDeck.signal("leaderboard.viewed", parameters: [
+        PostHogSDK.shared.capture("leaderboard.viewed", properties: [
             "category": category
         ])
     }
@@ -107,14 +195,14 @@ enum Analytics {
     // MARK: - Referrals
 
     static func trackReferralShared() {
-        TelemetryDeck.signal("referral.shared")
+        PostHogSDK.shared.capture("referral.shared")
     }
 
     static func trackReferralRedeemed() {
-        TelemetryDeck.signal("referral.redeemed")
+        PostHogSDK.shared.capture("referral.redeemed")
     }
 
     static func trackReferralTrialStarted() {
-        TelemetryDeck.signal("referral.trial.started")
+        PostHogSDK.shared.capture("referral.trial.started")
     }
 }

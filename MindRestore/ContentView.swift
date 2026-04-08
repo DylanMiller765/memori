@@ -79,6 +79,29 @@ struct ContentView: View {
                 let newUser = User()
                 modelContext.insert(newUser)
             }
+            // Identify user for PostHog analytics
+            if let user {
+                let latestBrainAge = brainScoreResults.first?.brainAge
+                let totalGames = (try? modelContext.fetchCount(FetchDescriptor<Exercise>())) ?? 0
+                Analytics.identify(
+                    userId: user.id.uuidString,
+                    isProUser: storeService.isProUser,
+                    brainAge: latestBrainAge,
+                    streak: user.currentStreak,
+                    gamesPlayed: totalGames
+                )
+            }
+            // Track app open
+            if let user {
+                let daysSince = user.lastSessionDate.map {
+                    Calendar.current.dateComponents([.day], from: $0, to: Date()).day ?? 0
+                } ?? -1
+                Analytics.appOpened(
+                    daysSinceLastOpen: daysSince,
+                    currentStreak: user.currentStreak,
+                    isProUser: storeService.isProUser
+                )
+            }
             gameCenterService.authenticate()
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
@@ -94,6 +117,7 @@ struct ContentView: View {
             if decayed > 0 {
                 decayPointsLost = decayed
                 NotificationService.shared.scheduleDecayWarning(pointsLost: decayed)
+                Analytics.brainScoreDecayed(pointsLost: decayed, newScore: brainScoreResults.first?.brainScore ?? 0)
             }
             // Sync widget data on app launch (off the main thread)
             Task { syncWidgetData() }
@@ -140,6 +164,12 @@ struct ContentView: View {
             }
             .tint(AppColors.accent)
             .symbolRenderingMode(.hierarchical)
+            .onChange(of: selectedTab) { _, newTab in
+                let tabNames = ["Home", "Train", "Compete", "Insights", "Profile"]
+                if newTab >= 0 && newTab < tabNames.count {
+                    Analytics.tabViewed(tab: tabNames[newTab])
+                }
+            }
 
             // Achievement toast overlay
             if let firstUnlocked = achievementService.newlyUnlocked.first {
@@ -183,7 +213,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $paywallTrigger.shouldShowPaywall) {
-            PaywallView()
+            PaywallView(triggerSource: paywallTrigger.triggerContext.rawValue)
         }
         .fullScreenCover(isPresented: $showingStreakCelebration) {
             StreakCelebrationView(streak: celebrationStreak) {
