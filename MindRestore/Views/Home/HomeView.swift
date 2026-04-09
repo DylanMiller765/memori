@@ -733,17 +733,17 @@ struct HomeView: View {
     private var mascotMoodText: String {
         switch mascotMood {
         case .happy:
-            return ["My brain cells are thriving rn", "We're locked in today", "Neurons firing on all cylinders"][todayExerciseCount % 3]
+            return ["Memo is thriving rn", "Memo is locked in today", "Memo's neurons are on fire"][todayExerciseCount % 3]
         case .neutral:
             let remaining = 3 - todayExerciseCount
             if remaining == 1 {
-                return "One more... don't leave me hanging"
+                return "One more... don't leave Memo hanging"
             } else if remaining == 2 {
-                return "Good start, keep going tho"
+                return "Good start, Memo wants more"
             }
-            return "I'm bored... entertain my neurons"
+            return "Memo is bored... entertain it"
         case .sad:
-            return ["Hello?? I'm losing brain cells", "TikTok won again huh", "My neurons are collecting dust"][Int.random(in: 0...2)]
+            return ["Memo is losing brain cells", "Memo thinks you forgot about it", "Memo's neurons are collecting dust"][Int.random(in: 0...2)]
         }
     }
 

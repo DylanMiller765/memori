@@ -17,16 +17,16 @@ final class NotificationService: Sendable {
     // MARK: - Daily Reminder
 
     private static let reminderMessages: [(title: String, body: String)] = [
-        ("Your brain buddy is waiting", "3 games to make it happy. Don't leave it hanging."),
-        ("Your mascot is getting bored...", "It's been staring at the wall all day. Play a game."),
-        ("Feed your brain 🧠", "3 games = happy mascot. 0 games = sad mascot. Your choice."),
-        ("Your brain buddy misses you", "It's sitting there doing nothing. Give it a workout."),
-        ("Don't let your brain get sad", "Play 3 games today. It takes 5 minutes."),
-        ("Your mascot is judging you", "It knows you've been on TikTok. Train instead."),
-        ("Quick brain check", "Your score won't improve itself. Your mascot is waiting."),
-        ("The leaderboard moved", "Did you move with it? Your brain buddy wants to climb."),
-        ("Your brain called", "It wants its daily workout. 3 games, let's go."),
-        ("Brain training time", "Your mascot is counting on you. Don't ghost it."),
+        ("Memo is waiting for you", "3 games to make Memo happy. Don't leave it hanging."),
+        ("Memo is getting bored...", "It's been staring at the wall all day. Play a game."),
+        ("Feed Memo 🧠", "3 games = happy Memo. 0 games = sad Memo. Your choice."),
+        ("Memo misses you", "It's sitting there doing nothing. Give it a workout."),
+        ("Don't let Memo get sad", "Play 3 games today. It takes 5 minutes."),
+        ("Memo is judging you", "It knows you've been on TikTok. Train instead."),
+        ("Memo needs attention", "Your score won't improve itself. Memo is waiting."),
+        ("The leaderboard moved", "Did you move with it? Memo wants to climb."),
+        ("Memo called", "It wants its daily workout. 3 games, let's go."),
+        ("Don't ghost Memo", "It's counting on you. 3 games. 5 minutes."),
     ]
 
     func scheduleDailyReminder(hour: Int, minute: Int, streak: Int) {
@@ -57,11 +57,11 @@ final class NotificationService: Sendable {
 
     private static func streakRiskMessages(streak: Int) -> [(title: String, body: String)] {
         [
-            ("Your mascot is panicking", "Your \(streak)-day streak dies at midnight. One game saves it."),
-            ("\(streak)-day streak on the line", "Your brain buddy doesn't want to cry tonight. Play now."),
-            ("Don't break your mascot's heart", "\(streak) days straight. It vanishes at midnight."),
-            ("Your brain buddy is begging you", "\(streak)-day streak needs one game to survive. 2 minutes."),
-            ("Last chance today", "Your mascot's happiness depends on this \(streak)-day streak."),
+            ("Memo is panicking", "Your \(streak)-day streak dies at midnight. One game saves it."),
+            ("\(streak)-day streak on the line", "Memo doesn't want to cry tonight. Play now."),
+            ("Don't break Memo's heart", "\(streak) days straight. It vanishes at midnight."),
+            ("Memo is begging you", "\(streak)-day streak needs one game to survive. 2 minutes."),
+            ("Last chance today", "Memo's happiness depends on this \(streak)-day streak."),
         ]
     }
 
@@ -126,10 +126,10 @@ final class NotificationService: Sendable {
         guard lastTrainedDaysAgo >= 2 else { return }
 
         let messages: [(title: String, body: String)] = [
-            ("Your brain buddy is sad", "It's been \(lastTrainedDaysAgo) days. It's collecting dust in there."),
-            ("Your mascot is crying", "You haven't played in \(lastTrainedDaysAgo) days. It thinks you forgot."),
-            ("Your brain buddy looks terrible", "Neurons are withering. \(lastTrainedDaysAgo) days without training."),
-            ("Remember your brain buddy?", "It remembers you. It's been waiting \(lastTrainedDaysAgo) days."),
+            ("Memo is sad", "It's been \(lastTrainedDaysAgo) days. Memo is collecting dust in there."),
+            ("Memo is crying", "You haven't played in \(lastTrainedDaysAgo) days. It thinks you forgot."),
+            ("Memo looks terrible", "Neurons are withering. \(lastTrainedDaysAgo) days without training."),
+            ("Remember Memo?", "It remembers you. It's been waiting \(lastTrainedDaysAgo) days."),
         ]
 
         let message = messages[lastTrainedDaysAgo % messages.count]
@@ -260,8 +260,8 @@ final class NotificationService: Sendable {
 
     func scheduleDecayWarning(pointsLost: Int) {
         let content = UNMutableNotificationContent()
-        content.title = "Your brain buddy lost \(pointsLost) brain cells"
-        content.body = "It's getting weaker without you. Play today to recover."
+        content.title = "Memo lost \(pointsLost) brain cells"
+        content.body = "Memo is getting weaker without you. Play today to recover."
         content.sound = .default
 
         // Schedule for 2 hours from now (give them time to play first)
@@ -365,7 +365,7 @@ final class NotificationService: Sendable {
 
     func scheduleDecayPreview() {
         let content = UNMutableNotificationContent()
-        content.title = "Your brain buddy is getting worried"
+        content.title = "Memo is getting worried"
         content.body = "Your score starts dropping tomorrow if you don't train today."
         content.sound = .default
 
