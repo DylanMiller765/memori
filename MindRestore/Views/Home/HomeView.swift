@@ -128,73 +128,21 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // Personalized greeting header
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(greeting)
-                                .font(.title2.weight(.bold))
-                            if let user {
-                                Text("Level \(user.level) \u{00B7} \(user.levelName)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        if let user {
-                            Text("Lv\(user.level)")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColors.accent)
-                                .frame(width: 44, height: 44)
-                                .background(AppColors.accent.opacity(0.1), in: Circle())
-                        }
-                    }
-                    .staggeredEntrance(index: 0)
+                VStack(spacing: 16) {
+                    // Compact header: greeting + streak + level
+                    compactHeader
+                        .staggeredEntrance(index: 0)
 
-                    // Weekly Brain Report card (shows on Mondays until dismissed)
-                    if shouldShowWeeklyReport {
-                        weeklyReportCard
-                            .staggeredEntrance(index: 1)
-                    }
-
-                    // Mascot Hero — the emotional center of the app
-                    mascotHeroSection
-                        .staggeredEntrance(index: 2)
-
-                    // Brain Score actions (Retake + Share)
-                    brainScoreCard
-                        .staggeredEntrance(index: 3)
-
-                    // Score decay warning banner
+                    // Score decay warning (urgent, above mascot)
                     if decayPointsLost > 0 {
-                        HStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(AppColors.coral)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Your brain score dropped \(decayPointsLost) points")
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(AppColors.textPrimary)
-                                Text("Play today to stop the decline!")
-                                    .font(.caption)
-                                    .foregroundStyle(AppColors.textSecondary)
-                            }
-                            Spacer()
-                            Button {
-                                withAnimation {
-                                    decayPointsLost = 0
-                                }
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.caption)
-                                    .foregroundStyle(AppColors.textSecondary)
-                            }
-                        }
-                        .padding(12)
-                        .background(AppColors.coral.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        decayBanner
                     }
 
-                    // Smart Daily Workout
+                    // Mascot Hero — dominates the screen
+                    mascotHeroSection
+                        .staggeredEntrance(index: 1)
+
+                    // Smart Daily Workout (feeds the mascot)
                     if let workout = workoutEngine.todaysWorkout {
                         WorkoutCard(
                             workout: workout,
@@ -204,11 +152,9 @@ struct HomeView: View {
                             },
                             onSeeResults: {
                                 if workoutScoreSaved {
-                                    // Already saved — show saved values without recomputing
                                     showingWorkoutComplete = true
                                     return
                                 }
-                                // Use workoutEngine.todaysWorkout directly (not captured struct)
                                 let games = workoutEngine.todaysWorkout?.games ?? []
                                 let result = workoutEngine.computeRollingBrainScore(
                                     oldScore: latestBrainScore,
@@ -222,7 +168,17 @@ struct HomeView: View {
                                 showingWorkoutComplete = true
                             }
                         )
-                        .staggeredEntrance(index: 4)
+                        .staggeredEntrance(index: 2)
+                    }
+
+                    // Brain Score + Brain Age compact stat pills
+                    brainStatPills
+                        .staggeredEntrance(index: 3)
+
+                    // Weekly Brain Report (contextual)
+                    if shouldShowWeeklyReport {
+                        weeklyReportCard
+                            .staggeredEntrance(index: 4)
                     }
 
                     // Streak Week Calendar
@@ -233,7 +189,6 @@ struct HomeView: View {
                         getStartedCard
                             .staggeredEntrance(index: 6)
                     } else {
-                        // Brain Score History Chart
                         if brainScores.count >= 2 {
                             BrainScoreChart(scores: brainScores, height: 150, showHeader: true)
                                 .glowingCard(color: AppColors.accent, intensity: 0.15)
@@ -242,7 +197,6 @@ struct HomeView: View {
 
                         TrainingLimitBanner(trainingMinutes: trainingManager.todayTrainingMinutes)
                     }
-
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -251,7 +205,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
             }
             .pageBackground()
-            .navigationTitle("Memori")
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $workoutGameToPlay) { type in
                 exerciseView(for: type)
             }
@@ -801,21 +755,200 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Compact Header
+
+    private var compactHeader: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(greeting)
+                    .font(.title3.weight(.bold))
+                if let user {
+                    Text("Level \(user.level) \u{00B7} \(user.levelName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Streak flame badge
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .symbolEffect(.variableColor.iterative, options: .repeating, value: streakAnimating)
+                    .foregroundStyle(viewModel.currentStreak > 0 ? streakGradient : AnyShapeStyle(.secondary))
+                Text("\(viewModel.currentStreak)")
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .contentTransition(.numericText())
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .onAppear { streakAnimating = true }
+        }
+    }
+
+    // MARK: - Decay Banner
+
+    private var decayBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(AppColors.coral)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Your brain score dropped \(decayPointsLost) points")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("Play today to stop the decline!")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            Spacer()
+            Button {
+                withAnimation { decayPointsLost = 0 }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+        }
+        .padding(12)
+        .background(AppColors.coral.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    // MARK: - Mascot Hero Section
+
     private var mascotHeroSection: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 8) {
+            // Big animated mascot — the star of the show
             RiveMascotView(
                 mood: mascotMood,
-                size: 130
+                size: 280
             )
-            .frame(height: 120)
+            .frame(height: 250)
 
+            // Mood text
             Text(mascotMoodText)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(mascotMoodColor)
                 .multilineTextAlignment(.center)
+
+            // Progress dots — 3 games to make mascot happy
+            HStack(spacing: 8) {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(i < todayExerciseCount ? AppColors.accent : AppColors.accent.opacity(0.2))
+                        .frame(width: 10, height: 10)
+                        .scaleEffect(i < todayExerciseCount ? 1.0 : 0.8)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: todayExerciseCount)
+                }
+            }
+            .padding(.top, 2)
         }
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Brain Stat Pills
+
+    private var brainStatPills: some View {
+        Group {
+            if let score = latestBrainScore {
+                HStack(spacing: 12) {
+                    // Brain Score pill
+                    VStack(spacing: 4) {
+                        Text("\(score.brainScore)")
+                            .font(.system(size: 28, weight: .black, design: .rounded))
+                            .foregroundStyle(AppColors.accent)
+                            .contentTransition(.numericText(value: Double(score.brainScore)))
+                        Text("Brain Score")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+
+                        // Share button
+                        if let shareImage = brainScoreShareImage {
+                            ShareLink(item: Image(uiImage: shareImage), preview: SharePreview("Brain Score", image: Image(uiImage: shareImage))) {
+                                Text("Share")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
+                    )
+
+                    // Brain Age pill
+                    VStack(spacing: 4) {
+                        Text("\(score.brainAge)")
+                            .font(.system(size: 28, weight: .black, design: .rounded))
+                            .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
+                            .contentTransition(.numericText(value: Double(score.brainAge)))
+                        Text("Brain Age")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+
+                        // Retake button
+                        Button {
+                            if storeService.isProUser {
+                                showingAssessment = true
+                            } else {
+                                showingPaywall = true
+                            }
+                        } label: {
+                            HStack(spacing: 3) {
+                                if !storeService.isProUser {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 8))
+                                }
+                                Text("Retake")
+                                    .font(.system(size: 11, weight: .bold))
+                            }
+                            .foregroundStyle(storeService.isProUser ? AppColors.accent : AppColors.amber)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                    )
+                }
+            } else {
+                // No brain score yet — CTA
+                VStack(spacing: 16) {
+                    Image("mascot-no-score")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 80)
+
+                    VStack(spacing: 4) {
+                        Text("Discover Your Brain Score")
+                            .font(.headline)
+                        Text("2-minute assessment")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button {
+                        showingAssessment = true
+                    } label: {
+                        Text("Start Assessment")
+                            .accentButton()
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity)
+                .appCard()
+            }
+        }
     }
 
     private func domainPill(label: String, score: Int, color: Color) -> some View {
