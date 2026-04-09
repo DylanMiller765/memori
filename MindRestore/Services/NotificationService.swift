@@ -17,16 +17,16 @@ final class NotificationService: Sendable {
     // MARK: - Daily Reminder
 
     private static let reminderMessages: [(title: String, body: String)] = [
-        ("Your Brain Score awaits", "3 games. 5 minutes. See if you improved."),
-        ("Quick brain check", "Your score won't improve itself. Play today."),
-        ("Train your brain", "Yesterday's you set the bar. Beat it."),
-        ("Brain training time", "Your ranking is live. Climb higher."),
-        ("Don't let your brain slack", "5 minutes today = sharper tomorrow."),
+        ("Your brain buddy is waiting", "3 games to make it happy. Don't leave it hanging."),
+        ("Your mascot is getting bored...", "It's been staring at the wall all day. Play a game."),
+        ("Feed your brain 🧠", "3 games = happy mascot. 0 games = sad mascot. Your choice."),
+        ("Your brain buddy misses you", "It's sitting there doing nothing. Give it a workout."),
+        ("Don't let your brain get sad", "Play 3 games today. It takes 5 minutes."),
+        ("Your mascot is judging you", "It knows you've been on TikTok. Train instead."),
+        ("Quick brain check", "Your score won't improve itself. Your mascot is waiting."),
+        ("The leaderboard moved", "Did you move with it? Your brain buddy wants to climb."),
         ("Your brain called", "It wants its daily workout. 3 games, let's go."),
-        ("Score check", "Your Brain Score is waiting. Did it go up?"),
-        ("Daily brain reps", "Even 3 games makes a difference."),
-        ("Quick session?", "Your brain gets sharper every day you train."),
-        ("The leaderboard moved", "Did you move with it? Play now."),
+        ("Brain training time", "Your mascot is counting on you. Don't ghost it."),
     ]
 
     func scheduleDailyReminder(hour: Int, minute: Int, streak: Int) {
@@ -57,11 +57,11 @@ final class NotificationService: Sendable {
 
     private static func streakRiskMessages(streak: Int) -> [(title: String, body: String)] {
         [
-            ("Your streak is at risk!", "You've trained \(streak) days straight. Don't break it now."),
-            ("\(streak)-day streak on the line", "One quick game saves it. 2 minutes."),
-            ("Don't lose \(streak) days!", "Your streak vanishes at midnight. Play now."),
-            ("Streak alert", "\(streak) days of brain training. Keep the chain alive."),
-            ("Last chance today", "Your \(streak)-day streak needs you. One game."),
+            ("Your mascot is panicking", "Your \(streak)-day streak dies at midnight. One game saves it."),
+            ("\(streak)-day streak on the line", "Your brain buddy doesn't want to cry tonight. Play now."),
+            ("Don't break your mascot's heart", "\(streak) days straight. It vanishes at midnight."),
+            ("Your brain buddy is begging you", "\(streak)-day streak needs one game to survive. 2 minutes."),
+            ("Last chance today", "Your mascot's happiness depends on this \(streak)-day streak."),
         ]
     }
 
@@ -126,10 +126,10 @@ final class NotificationService: Sendable {
         guard lastTrainedDaysAgo >= 2 else { return }
 
         let messages: [(title: String, body: String)] = [
-            ("Your brain misses training", "It's been a while. See where you rank now."),
-            ("Brain Score check-in", "Come back and see if your score held up."),
-            ("Your leaderboard rank dropped", "Other players are training. Are you?"),
-            ("Quick comeback session?", "3 games. Your brain remembers how to play."),
+            ("Your brain buddy is sad", "It's been \(lastTrainedDaysAgo) days. It's collecting dust in there."),
+            ("Your mascot is crying", "You haven't played in \(lastTrainedDaysAgo) days. It thinks you forgot."),
+            ("Your brain buddy looks terrible", "Neurons are withering. \(lastTrainedDaysAgo) days without training."),
+            ("Remember your brain buddy?", "It remembers you. It's been waiting \(lastTrainedDaysAgo) days."),
         ]
 
         let message = messages[lastTrainedDaysAgo % messages.count]
@@ -260,8 +260,8 @@ final class NotificationService: Sendable {
 
     func scheduleDecayWarning(pointsLost: Int) {
         let content = UNMutableNotificationContent()
-        content.title = "Your Brain Score dropped \(pointsLost) points"
-        content.body = "Play today to recover. Your brain needs consistent training."
+        content.title = "Your brain buddy lost \(pointsLost) brain cells"
+        content.body = "It's getting weaker without you. Play today to recover."
         content.sound = .default
 
         // Schedule for 2 hours from now (give them time to play first)
@@ -365,8 +365,8 @@ final class NotificationService: Sendable {
 
     func scheduleDecayPreview() {
         let content = UNMutableNotificationContent()
-        content.title = "Your brain score starts dropping tomorrow"
-        content.body = "Train today to keep your score safe."
+        content.title = "Your brain buddy is getting worried"
+        content.body = "Your score starts dropping tomorrow if you don't train today."
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 24 * 60 * 60, repeats: false)
