@@ -18,6 +18,8 @@ struct SettingsView: View {
     @State private var debugTapCount = 0
     @State private var showingDebugBrainAge = false
     @State private var showingDebugAssessment = false
+    @State private var showingDebugGoodBrainAge = false
+    @State private var showingDebugBadBrainAge = false
     @State private var editingName = false
     @State private var editedName = ""
     @State private var showingAgePicker = false
@@ -99,6 +101,34 @@ struct SettingsView: View {
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
                                 Button { showingDebugAssessment = false } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showingDebugGoodBrainAge) {
+                NavigationStack {
+                    debugGoodBrainAgeReveal
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { showingDebugGoodBrainAge = false } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showingDebugBadBrainAge) {
+                NavigationStack {
+                    debugBadBrainAgeReveal
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { showingDebugBadBrainAge = false } label: {
                                     Image(systemName: "xmark.circle.fill")
                                         .font(.title3)
                                         .foregroundStyle(.secondary)
@@ -749,6 +779,16 @@ struct SettingsView: View {
                 showingDebugBrainAge = true
             }
 
+            // Good Brain Age (25)
+            debugRow(icon: "brain.head.profile.fill", color: AppColors.teal, title: "Good Brain Age (25)", subtitle: "Score 820 · Age 25 · 90th percentile") {
+                showingDebugGoodBrainAge = true
+            }
+
+            // Bad Brain Age (67)
+            debugRow(icon: "brain.head.profile.fill", color: AppColors.coral, title: "Bad Brain Age (67)", subtitle: "Score 180 · Age 67 · 12th percentile") {
+                showingDebugBadBrainAge = true
+            }
+
             // Jump to assessment
             debugRow(icon: "list.clipboard.fill", color: AppColors.teal, title: "Start Assessment", subtitle: "Skip to brain assessment flow") {
                 showingDebugAssessment = true
@@ -880,6 +920,52 @@ struct SettingsView: View {
             previousScore: brainScores.first,
             userAge: user?.userAge ?? 25,
             onDone: { showingDebugBrainAge = false }
+        )
+    }
+
+    // Debug Good Brain Age Reveal — brain age 25, score 820
+    private var debugGoodBrainAgeReveal: some View {
+        let vm = BrainAssessmentViewModel()
+        let _ = {
+            vm.brainScore = 820
+            vm.brainAge = 25
+            vm.brainType = .balancedBrain
+            vm.percentile = 90
+            vm.digitScore = 85
+            vm.reactionScore = 78
+            vm.visualScore = 90
+            vm.digitMaxCorrect = 9
+            vm.avgReactionMs = 220
+            vm.visualMaxCorrect = 7
+        }()
+        return ScoreRevealView(
+            viewModel: vm,
+            previousScore: brainScores.first,
+            userAge: user?.userAge ?? 25,
+            onDone: { showingDebugGoodBrainAge = false }
+        )
+    }
+
+    // Debug Bad Brain Age Reveal — brain age 67, score 180
+    private var debugBadBrainAgeReveal: some View {
+        let vm = BrainAssessmentViewModel()
+        let _ = {
+            vm.brainScore = 180
+            vm.brainAge = 67
+            vm.brainType = .lightningReflex
+            vm.percentile = 12
+            vm.digitScore = 25
+            vm.reactionScore = 35
+            vm.visualScore = 20
+            vm.digitMaxCorrect = 5
+            vm.avgReactionMs = 380
+            vm.visualMaxCorrect = 3
+        }()
+        return ScoreRevealView(
+            viewModel: vm,
+            previousScore: brainScores.first,
+            userAge: user?.userAge ?? 25,
+            onDone: { showingDebugBadBrainAge = false }
         )
     }
 
