@@ -115,6 +115,8 @@ enum ScreenshotDataGenerator {
             (.sequentialMemory, 9),    // 9 digits
             (.mathSpeed, 16),          // 16 correct
             (.dualNBack, 4),           // N=4
+            (.chimpTest, 8),           // level 8 (beat the chimp!)
+            (.verbalMemory, 42),       // 42 word streak
         ]
         for (type, score) in bests {
             PersonalBestTracker.shared.forceSet(score: score, for: type)

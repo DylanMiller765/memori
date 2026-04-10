@@ -762,10 +762,9 @@ struct SettingsView: View {
             }
 
             // Set mascot mood
-            debugRow(icon: "face.smiling.fill", color: AppColors.teal, title: "Memo Happy", subtitle: "Set 3+ exercises today") {
+            debugRow(icon: "face.smiling.fill", color: AppColors.teal, title: "Memo Happy", subtitle: "Add 3 exercises today") {
                 if let user {
                     user.lastSessionDate = Date()
-                    // Add 3 dummy exercises for today to trigger happy
                     for _ in 0..<3 {
                         let ex = Exercise(type: .reactionTime, difficulty: 1, score: 50, durationSeconds: 30)
                         modelContext.insert(ex)
@@ -773,12 +772,27 @@ struct SettingsView: View {
                 }
             }
 
-            debugRow(icon: "face.smiling.inverse", color: AppColors.amber, title: "Memo Neutral", subtitle: "Set last session to yesterday") {
-                if let user { user.lastSessionDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) }
+            debugRow(icon: "face.smiling.inverse", color: AppColors.amber, title: "Memo Neutral", subtitle: "Clear today's exercises") {
+                if let user {
+                    user.lastSessionDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+                }
+                // Delete today's exercises so todayExerciseCount = 0
+                let startOfDay = Calendar.current.startOfDay(for: Date())
+                let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.completedAt >= startOfDay })
+                if let todayExercises = try? modelContext.fetch(descriptor) {
+                    for ex in todayExercises { modelContext.delete(ex) }
+                }
             }
 
-            debugRow(icon: "face.dashed.fill", color: AppColors.coral, title: "Memo Sad", subtitle: "Set last session to 3 days ago") {
-                if let user { user.lastSessionDate = Calendar.current.date(byAdding: .day, value: -3, to: Date()) }
+            debugRow(icon: "face.dashed.fill", color: AppColors.coral, title: "Memo Sad", subtitle: "Clear exercises + set 3 days ago") {
+                if let user {
+                    user.lastSessionDate = Calendar.current.date(byAdding: .day, value: -3, to: Date())
+                }
+                let startOfDay = Calendar.current.startOfDay(for: Date())
+                let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.completedAt >= startOfDay })
+                if let todayExercises = try? modelContext.fetch(descriptor) {
+                    for ex in todayExercises { modelContext.delete(ex) }
+                }
             }
 
             // Load screenshot data
