@@ -377,6 +377,9 @@ struct ScoreRevealView: View {
         let ageColor = brainAgeColor(for: countUpFinished ? finalAge : displayedBrainAge)
 
         return ZStack {
+            // Full-screen gradient — ignoresSafeArea on ZStack level
+            revealGradient(for: finalAge).ignoresSafeArea()
+
             // Floating orbs
             if countUpFinished {
                 Circle()
@@ -393,86 +396,85 @@ struct ScoreRevealView: View {
                     .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: pulseGlow)
             }
 
-            // STRIPPED DOWN: mascot → number → roast → share
+            // Content — fixed positions to prevent layout shifts
             VStack(spacing: 0) {
                 Spacer()
 
-                // Rive mascot
-                if countUpFinished {
-                    RiveMascotView(mood: mascotRevealMood, size: 140)
-                        .frame(height: 120)
-                        .transition(.scale(scale: 0.3).combined(with: .opacity))
-                        .padding(.bottom, 8)
-                }
+                // Rive mascot — always reserve space, animate opacity
+                RiveMascotView(mood: mascotRevealMood, size: 140)
+                    .frame(height: 120)
+                    .padding(.bottom, 8)
+                    .opacity(countUpFinished ? 1 : 0)
+                    .scaleEffect(countUpFinished ? 1 : 0.3)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: countUpFinished)
 
-                // Label
-                if showBrainAgeLabel {
-                    Text("YOUR BRAIN AGE")
-                        .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .tracking(6)
-                }
+                // Label — always reserve space
+                Text("YOUR BRAIN AGE")
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .tracking(6)
+                    .opacity(showBrainAgeLabel ? 1 : 0)
+                    .animation(.easeIn(duration: 0.4), value: showBrainAgeLabel)
 
-                // THE NUMBER — massive
-                if isCountingUp || countUpFinished {
-                    Text("\(displayedBrainAge)")
-                        .font(.system(size: 140, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: ageColor.opacity(0.8), radius: 40, y: 0)
-                        .shadow(color: ageColor.opacity(0.4), radius: 80, y: 0)
-                        .contentTransition(.numericText(value: Double(displayedBrainAge)))
-                        .scaleEffect(countUpFinished ? 1.0 : 0.8)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
-                        .minimumScaleFactor(0.5)
-                        .padding(.vertical, -16)
-                }
+                // THE NUMBER — massive, always reserve space
+                Text("\(displayedBrainAge)")
+                    .font(.system(size: 140, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .shadow(color: ageColor.opacity(0.8), radius: 40, y: 0)
+                    .shadow(color: ageColor.opacity(0.4), radius: 80, y: 0)
+                    .contentTransition(.numericText(value: Double(displayedBrainAge)))
+                    .scaleEffect(countUpFinished ? 1.0 : 0.8)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
+                    .minimumScaleFactor(0.5)
+                    .padding(.vertical, -16)
+                    .opacity(isCountingUp || countUpFinished ? 1 : 0)
 
                 // THE ROAST
-                if showBrainAgeSubtitle {
+                VStack(spacing: 8) {
                     Text(brainAgeVerdict(viewModel.brainAge))
                         .font(.system(size: 24, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                         .padding(.top, 4)
-                        .transition(.scale(scale: 0.7).combined(with: .opacity))
 
                     if let comparison = ageComparisonText {
                         Text(comparison)
                             .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundStyle(ageColor)
-                            .padding(.top, 8)
                     }
                 }
+                .opacity(showBrainAgeSubtitle ? 1 : 0)
+                .offset(y: showBrainAgeSubtitle ? 0 : 20)
+                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: showBrainAgeSubtitle)
 
                 Spacer()
 
                 // Share + continue
-                if showBrainAgeShare {
-                    VStack(spacing: 12) {
-                        if let shareImage {
-                            ShareLink(
-                                item: Image(uiImage: shareImage),
-                                preview: SharePreview("Brain Age: \(finalAge)", image: Image(uiImage: shareImage))
-                            ) { revealShareButton(color: ageColor) }
-                        } else {
-                            ShareLink(item: brainAgeShareText) { revealShareButton(color: ageColor) }
-                        }
-
-                        Button { dismissBrainAgeOverlay() } label: {
-                            Text("See Full Results →")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.35))
-                        }
+                VStack(spacing: 12) {
+                    if let shareImage {
+                        ShareLink(
+                            item: Image(uiImage: shareImage),
+                            preview: SharePreview("Brain Age: \(finalAge)", image: Image(uiImage: shareImage))
+                        ) { revealShareButton(color: ageColor) }
+                    } else {
+                        ShareLink(item: brainAgeShareText) { revealShareButton(color: ageColor) }
                     }
-                    .padding(.horizontal, 36)
-                    .padding(.bottom, 28)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+
+                    Button { dismissBrainAgeOverlay() } label: {
+                        Text("See Full Results →")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.35))
+                    }
                 }
+                .padding(.horizontal, 36)
+                .padding(.bottom, 28)
+                .opacity(showBrainAgeShare ? 1 : 0)
+                .offset(y: showBrainAgeShare ? 0 : 30)
+                .animation(.easeOut(duration: 0.4), value: showBrainAgeShare)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(revealGradient(for: finalAge).ignoresSafeArea())
+        .ignoresSafeArea()
         .onAppear { if countUpFinished { pulseGlow = true } }
         .onChange(of: countUpFinished) { _, finished in if finished { pulseGlow = true } }
     }
