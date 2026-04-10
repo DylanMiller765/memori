@@ -234,7 +234,7 @@ struct BrainAssessmentView: View {
                     Text(viewModel.currentDisplayDigit)
                         .font(.system(size: 96, weight: .bold, design: .monospaced))
                         .foregroundStyle(AppColors.accent)
-                        .id("digit-\(viewModel.displayDigitIndex)")
+                        .id("assess-digit-\(viewModel.displayDigitIndex)")
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
 
                     HStack(spacing: 6) {
@@ -249,8 +249,9 @@ struct BrainAssessmentView: View {
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
             } else {
-                Text(" ")
-                    .font(.system(size: 96, weight: .bold, design: .monospaced))
+                Text("...")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()

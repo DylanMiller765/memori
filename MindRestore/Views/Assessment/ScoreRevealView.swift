@@ -56,6 +56,16 @@ struct ScoreRevealView: View {
     }
 
     var body: some View {
+        // If brain age overlay is showing, it takes over the ENTIRE screen
+        if showBrainAgeOverlay && !brainAgeOverlayDismissed {
+            brainAgeOverlayView
+                .toolbar(.hidden, for: .navigationBar)
+        } else {
+            mainResultsView
+        }
+    }
+
+    private var mainResultsView: some View {
         ZStack {
             AppColors.pageBg.ignoresSafeArea()
 
@@ -321,34 +331,12 @@ struct ScoreRevealView: View {
             if showConfetti {
                 ConfettiView()
             }
-
-            // MARK: - Dramatic Brain Age Overlay
-            if showBrainAgeOverlay && !brainAgeOverlayDismissed {
-                brainAgeOverlayView
-                    .transition(.opacity)
-            }
         }
-        .onAppear { startRevealSequence() }
         .task { await fetchRealPercentile() }
-        /*
-        .sheet(isPresented: $showChallenge) {
-            ChallengeView(
-                challengeType: .brainScore(
-                    brainAge: viewModel.brainAge,
-                    brainType: viewModel.brainType,
-                    digitScore: viewModel.digitScore,
-                    reactionScore: viewModel.reactionScore,
-                    visualScore: viewModel.visualScore
-                ),
-                playerScore: viewModel.brainScore,
-                playerName: "Me",
-                percentile: viewModel.percentile
-            )
-        }
-        */
         .sheet(isPresented: $showingPaywall) {
             PaywallView(isHighIntent: true)
         }
+        .onAppear { startRevealSequence() }
     }
 
     // MARK: - Brain Age Overlay View
@@ -364,28 +352,22 @@ struct ScoreRevealView: View {
     // Background gradient based on brain age
     private func revealGradient(for age: Int) -> LinearGradient {
         if age <= 25 {
-            // Young — electric blue → teal → deep navy
             return LinearGradient(colors: [
-                Color(red: 0.0, green: 0.15, blue: 0.35),
-                Color(red: 0.0, green: 0.25, blue: 0.45),
-                Color(red: 0.0, green: 0.35, blue: 0.40),
-                Color(red: 0.0, green: 0.10, blue: 0.20),
+                Color(red: 0.0, green: 0.18, blue: 0.38),
+                Color(red: 0.0, green: 0.28, blue: 0.48),
+                Color(red: 0.0, green: 0.12, blue: 0.25),
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
         } else if age <= 40 {
-            // Average — deep purple → violet → indigo
             return LinearGradient(colors: [
-                Color(red: 0.15, green: 0.05, blue: 0.30),
+                Color(red: 0.15, green: 0.05, blue: 0.32),
                 Color(red: 0.25, green: 0.10, blue: 0.45),
-                Color(red: 0.18, green: 0.08, blue: 0.35),
-                Color(red: 0.08, green: 0.03, blue: 0.18),
+                Color(red: 0.10, green: 0.04, blue: 0.20),
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
         } else {
-            // Old — deep crimson → orange → dark
             return LinearGradient(colors: [
-                Color(red: 0.30, green: 0.05, blue: 0.05),
-                Color(red: 0.45, green: 0.10, blue: 0.08),
-                Color(red: 0.35, green: 0.08, blue: 0.05),
-                Color(red: 0.15, green: 0.03, blue: 0.03),
+                Color(red: 0.32, green: 0.06, blue: 0.06),
+                Color(red: 0.45, green: 0.12, blue: 0.08),
+                Color(red: 0.18, green: 0.04, blue: 0.04),
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
@@ -394,176 +376,104 @@ struct ScoreRevealView: View {
         let finalAge = viewModel.brainAge
         let ageColor = brainAgeColor(for: countUpFinished ? finalAge : displayedBrainAge)
 
-        return GeometryReader { geo in
-            ZStack {
-                // FULL SCREEN GRADIENT — covers everything including safe areas
-                revealGradient(for: finalAge)
-                    .ignoresSafeArea(.all)
+        return ZStack {
+            // Floating orbs
+            if countUpFinished {
+                Circle()
+                    .fill(ageColor.opacity(0.18))
+                    .blur(radius: 100)
+                    .frame(width: 300, height: 300)
+                    .offset(x: -80, y: -120)
 
-                // Floating orbs for depth
+                Circle()
+                    .fill(ageColor.opacity(pulseGlow ? 0.12 : 0.06))
+                    .blur(radius: 80)
+                    .frame(width: 200, height: 200)
+                    .offset(x: 100, y: 80)
+                    .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: pulseGlow)
+            }
+
+            // STRIPPED DOWN: mascot → number → roast → share
+            VStack(spacing: 0) {
+                Spacer()
+
+                // Rive mascot
                 if countUpFinished {
-                    Circle()
-                        .fill(ageColor.opacity(0.2))
-                        .blur(radius: 100)
-                        .frame(width: 300, height: 300)
-                        .offset(x: -80, y: -geo.size.height * 0.15)
-
-                    Circle()
-                        .fill(ageColor.opacity(pulseGlow ? 0.15 : 0.08))
-                        .blur(radius: 80)
-                        .frame(width: 200, height: 200)
-                        .offset(x: 100, y: geo.size.height * 0.1)
-                        .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: pulseGlow)
-                }
-
-                // Content
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-
-                    // Rive mascot — animated reaction
-                    if countUpFinished {
-                        RiveMascotView(
-                            mood: mascotRevealMood,
-                            size: 120
-                        )
-                        .frame(height: 100)
+                    RiveMascotView(mood: mascotRevealMood, size: 140)
+                        .frame(height: 120)
                         .transition(.scale(scale: 0.3).combined(with: .opacity))
-                        .padding(.bottom, 2)
-                    }
+                        .padding(.bottom, 8)
+                }
 
-                    // "YOUR BRAIN AGE"
-                    if showBrainAgeLabel {
-                        Text("YOUR BRAIN AGE")
-                            .font(.system(size: 11, weight: .heavy))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .tracking(6)
-                    }
+                // Label
+                if showBrainAgeLabel {
+                    Text("YOUR BRAIN AGE")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .tracking(6)
+                }
 
-                    // THE MASSIVE NUMBER
-                    if isCountingUp || countUpFinished {
-                        Text("\(displayedBrainAge)")
-                            .font(.system(size: geo.size.height * 0.16, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                            .shadow(color: ageColor.opacity(0.8), radius: 40, y: 0)
-                            .shadow(color: ageColor.opacity(0.4), radius: 80, y: 0)
-                            .contentTransition(.numericText(value: Double(displayedBrainAge)))
-                            .scaleEffect(countUpFinished ? 1.0 : 0.8)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
-                            .padding(.vertical, -4)
-                    }
+                // THE NUMBER — massive
+                if isCountingUp || countUpFinished {
+                    Text("\(displayedBrainAge)")
+                        .font(.system(size: 140, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .shadow(color: ageColor.opacity(0.8), radius: 40, y: 0)
+                        .shadow(color: ageColor.opacity(0.4), radius: 80, y: 0)
+                        .contentTransition(.numericText(value: Double(displayedBrainAge)))
+                        .scaleEffect(countUpFinished ? 1.0 : 0.8)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: countUpFinished)
+                        .minimumScaleFactor(0.5)
+                        .padding(.vertical, -16)
+                }
 
-                    // VERDICT
-                    if showBrainAgeSubtitle {
-                        Text(brainAgeVerdict(viewModel.brainAge))
-                            .font(.system(size: 22, weight: .black, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 2)
-                            .transition(.scale(scale: 0.7).combined(with: .opacity))
+                // THE ROAST
+                if showBrainAgeSubtitle {
+                    Text(brainAgeVerdict(viewModel.brainAge))
+                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 4)
+                        .transition(.scale(scale: 0.7).combined(with: .opacity))
 
-                        if let comparison = ageComparisonText {
-                            Text(comparison)
-                                .font(.system(size: 18, weight: .black, design: .rounded))
-                                .foregroundStyle(ageColor)
-                                .padding(.top, 4)
-                        }
-                    }
-
-                    // Thin separator
-                    if showDomainBars {
-                        Rectangle()
-                            .fill(.white.opacity(0.08))
-                            .frame(width: 60, height: 2)
-                            .clipShape(Capsule())
-                            .padding(.vertical, 14)
-                    }
-
-                    // Domain scores — pill cards
-                    if showDomainBars {
-                        HStack(spacing: 8) {
-                            domainPillReveal(label: "MEM", value: Int(viewModel.digitScore), color: AppColors.violet)
-                            domainPillReveal(label: "SPD", value: Int(viewModel.reactionScore), color: AppColors.coral)
-                            domainPillReveal(label: "VIS", value: Int(viewModel.visualScore), color: AppColors.sky)
-                        }
-                        .padding(.horizontal, 32)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-
-                    // Percentile
-                    if showBrainAgePercentile {
-                        Text(percentileRoast)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 12)
-                    }
-
-                    // Brain type + fact
-                    if showBrainAgePercentile {
-                        VStack(spacing: 10) {
-                            HStack(spacing: 8) {
-                                Image(systemName: viewModel.brainType.icon)
-                                    .font(.system(size: 13, weight: .bold))
-                                Text(viewModel.brainType.displayName)
-                                    .font(.system(size: 13, weight: .black, design: .rounded))
-                            }
-                            .foregroundStyle(.white.opacity(0.6))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 7)
-                            .background(.white.opacity(0.07), in: Capsule())
-
-                            Text(brainAgeFunFact)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.3))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 44)
-                                .lineSpacing(2)
-                        }
-                        .padding(.top, 12)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    // Share — uses result color, not generic blue
-                    if showBrainAgeShare {
-                        VStack(spacing: 10) {
-                            if let shareImage {
-                                ShareLink(
-                                    item: Image(uiImage: shareImage),
-                                    preview: SharePreview("Brain Age: \(finalAge)", image: Image(uiImage: shareImage))
-                                ) { revealShareButton(color: ageColor) }
-                            } else {
-                                ShareLink(item: brainAgeShareText) { revealShareButton(color: ageColor) }
-                            }
-
-                            Button { dismissBrainAgeOverlay() } label: {
-                                Text("See Brain Score →")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white.opacity(0.35))
-                            }
-
-                        }
-                        .padding(.horizontal, 36)
-                        .padding(.bottom, geo.safeAreaInsets.bottom + 12)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    if let comparison = ageComparisonText {
+                        Text(comparison)
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundStyle(ageColor)
+                            .padding(.top, 8)
                     }
                 }
-                .frame(maxWidth: .infinity)
+
+                Spacer()
+
+                // Share + continue
+                if showBrainAgeShare {
+                    VStack(spacing: 12) {
+                        if let shareImage {
+                            ShareLink(
+                                item: Image(uiImage: shareImage),
+                                preview: SharePreview("Brain Age: \(finalAge)", image: Image(uiImage: shareImage))
+                            ) { revealShareButton(color: ageColor) }
+                        } else {
+                            ShareLink(item: brainAgeShareText) { revealShareButton(color: ageColor) }
+                        }
+
+                        Button { dismissBrainAgeOverlay() } label: {
+                            Text("See Full Results →")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.35))
+                        }
+                    }
+                    .padding(.horizontal, 36)
+                    .padding(.bottom, 28)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
-        .ignoresSafeArea()
+        .background(revealGradient(for: finalAge).ignoresSafeArea())
         .onAppear { if countUpFinished { pulseGlow = true } }
         .onChange(of: countUpFinished) { _, finished in if finished { pulseGlow = true } }
-    }
-
-    private var brainAgeFunFact: String {
-        let age = viewModel.brainAge
-        if age <= 20 { return "Your brain processes information faster than 99% of people. Scientists would love to study you." }
-        if age <= 25 { return "Peak cognitive performance typically occurs between 18-25. You're right in the sweet spot." }
-        if age <= 30 { return "Your working memory is still near peak capacity. Most people start declining after 30." }
-        if age <= 40 { return "The average American's brain age is 38. You still have time to train it younger." }
-        if age <= 50 { return "Your brain creates 700 new neurons daily in the hippocampus. Training keeps them alive longer." }
-        return "Neuroplasticity never stops — consistent training can reverse up to 10 years of cognitive aging."
     }
 
     private var percentileRoast: String {
@@ -650,13 +560,13 @@ struct ScoreRevealView: View {
 
     private func brainAgeVerdict(_ age: Int) -> String {
         switch age {
-        case ...20: return "Basically a supercomputer"
-        case 21...25: return "Your brain is cracked"
-        case 26...30: return "Not bad, not bad at all"
-        case 31...35: return "Average — you can do better"
-        case 36...45: return "Your brain needs a gym membership"
-        case 46...55: return "Did you forget to train?"
-        default: return "Your brain just filed for retirement"
+        case ...20: return "Your brain is actually built different"
+        case 21...25: return "OK you're sharp... for now"
+        case 26...30: return "Average. TikTok hasn't fully won yet"
+        case 31...35: return "Your attention span left the chat"
+        case 36...45: return "More screen time than brain time"
+        case 46...55: return "The doomscrolling is showing"
+        default: return "Your brain is rotting. Not a joke."
         }
     }
 

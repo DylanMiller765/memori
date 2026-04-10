@@ -92,9 +92,13 @@ final class BrainAssessmentViewModel {
         showNextDigit()
     }
 
+    // Counter that always increments — forces SwiftUI to re-animate even repeated digits
+    var digitRevealCounter: Int = 0
+
     private func showNextDigit() {
         digitTimer?.invalidate()
         displayDigitIndex += 1
+        digitRevealCounter += 1
 
         if displayDigitIndex >= currentDigits.count {
             digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
