@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import SwiftUI
 
 enum AssessmentPhase: Equatable {
     case intro
@@ -97,8 +98,10 @@ final class BrainAssessmentViewModel {
 
     private func showNextDigit() {
         digitTimer?.invalidate()
-        displayDigitIndex += 1
-        digitRevealCounter += 1
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            displayDigitIndex += 1
+            digitRevealCounter += 1
+        }
 
         if displayDigitIndex >= currentDigits.count {
             digitTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in

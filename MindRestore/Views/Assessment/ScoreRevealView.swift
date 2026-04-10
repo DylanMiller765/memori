@@ -471,6 +471,7 @@ struct ScoreRevealView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(revealGradient(for: finalAge).ignoresSafeArea())
         .onAppear { if countUpFinished { pulseGlow = true } }
         .onChange(of: countUpFinished) { _, finished in if finished { pulseGlow = true } }

@@ -16,6 +16,8 @@ struct SettingsView: View {
     @State private var showingScreenshotDataConfirmation = false
     @State private var screenshotDataLoaded = false
     @State private var debugTapCount = 0
+    @State private var showingDebugBrainAge = false
+    @State private var showingDebugAssessment = false
     @State private var editingName = false
     @State private var editedName = ""
     @State private var showingAgePicker = false
@@ -76,6 +78,34 @@ struct SettingsView: View {
             .navigationTitle("Profile")
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
+            }
+            .fullScreenCover(isPresented: $showingDebugBrainAge) {
+                NavigationStack {
+                    debugBrainAgeReveal
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { showingDebugBrainAge = false } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showingDebugAssessment) {
+                NavigationStack {
+                    BrainAssessmentView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { showingDebugAssessment = false } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                }
             }
             .alert("Reset All Data", isPresented: $showingResetConfirmation) {
                 Button("Reset Everything", role: .destructive) { resetAllData() }
@@ -714,6 +744,32 @@ struct SettingsView: View {
                 UserDefaults.standard.removeObject(forKey: "daily_exercise_date")
             }
 
+            // Jump to Brain Age Reveal
+            debugRow(icon: "brain.head.profile.fill", color: AppColors.violet, title: "Brain Age Reveal", subtitle: "Jump directly to score reveal screen") {
+                showingDebugBrainAge = true
+            }
+
+            // Jump to assessment
+            debugRow(icon: "list.clipboard.fill", color: AppColors.teal, title: "Start Assessment", subtitle: "Skip to brain assessment flow") {
+                showingDebugAssessment = true
+            }
+
+            // Reset onboarding
+            debugRow(icon: "arrow.counterclockwise.circle.fill", color: .orange, title: "Reset Onboarding", subtitle: "Re-show onboarding on next launch") {
+                if let user {
+                    user.hasCompletedOnboarding = false
+                }
+            }
+
+            // Set mascot mood
+            debugRow(icon: "face.smiling.fill", color: AppColors.teal, title: "Memo Happy", subtitle: "Set last session to today") {
+                if let user { user.lastSessionDate = Date() }
+            }
+
+            debugRow(icon: "face.dashed.fill", color: AppColors.coral, title: "Memo Sad", subtitle: "Set last session to 3 days ago") {
+                if let user { user.lastSessionDate = Calendar.current.date(byAdding: .day, value: -3, to: Date()) }
+            }
+
             // Load screenshot data
             Button {
                 showingScreenshotDataConfirmation = true
@@ -752,6 +808,53 @@ struct SettingsView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.accent.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    // Debug row helper
+    private func debugRow(icon: String, color: Color, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(color, in: RoundedRectangle(cornerRadius: 7))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { action() }
+    }
+
+    // Debug Brain Age Reveal — skips assessment, shows reveal directly
+    private var debugBrainAgeReveal: some View {
+        let vm = BrainAssessmentViewModel()
+        let _ = {
+            vm.brainScore = 420
+            vm.brainAge = 35
+            vm.brainType = .balancedBrain
+            vm.percentile = 62
+            vm.digitScore = 55
+            vm.reactionScore = 48
+            vm.visualScore = 65
+        }()
+        return ScoreRevealView(
+            viewModel: vm,
+            previousScore: brainScores.first,
+            userAge: user?.userAge ?? 25,
+            onDone: { showingDebugBrainAge = false }
         )
     }
 

@@ -229,14 +229,22 @@ struct BrainAssessmentView: View {
 
             Spacer()
 
-            if viewModel.isShowingDigit {
-                VStack(spacing: 16) {
+            // VStack always present so .animation() context persists across digit changes
+            VStack(spacing: 16) {
+                if viewModel.isShowingDigit {
                     Text(viewModel.currentDisplayDigit)
                         .font(.system(size: 96, weight: .bold, design: .monospaced))
                         .foregroundStyle(AppColors.accent)
-                        .id("assess-digit-\(viewModel.displayDigitIndex)")
+                        .id("assess-digit-\(viewModel.digitRevealCounter)")
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
+                } else {
+                    Text("...")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .transition(.opacity)
+                }
 
+                if viewModel.isShowingDigit {
                     HStack(spacing: 6) {
                         ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
                             Circle()
@@ -247,12 +255,8 @@ struct BrainAssessmentView: View {
                         }
                     }
                 }
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.displayDigitIndex)
-            } else {
-                Text("...")
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundStyle(.secondary)
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.digitRevealCounter)
 
             Spacer()
 
@@ -524,4 +528,121 @@ struct BrainAssessmentView: View {
     }
 
     @Query private var users: [User]
+}
+
+// MARK: - Previews
+
+#Preview("Digit Show") {
+    let vm = BrainAssessmentViewModel()
+    let _ = {
+        vm.phase = .digitShow
+        vm.currentDigits = [3, 7, 2, 7, 5]
+        vm.displayDigitIndex = 0
+        vm.digitRound = 0
+    }()
+    BrainAssessmentView.DigitShowPreview(viewModel: vm)
+}
+
+#Preview("Digit Input") {
+    let vm = BrainAssessmentViewModel()
+    let _ = {
+        vm.phase = .digitInput
+        vm.currentDigits = [3, 7, 2, 7, 5]
+        vm.digitRound = 0
+    }()
+    BrainAssessmentView.DigitInputPreview(viewModel: vm)
+}
+
+// Helper views for previews that need environment objects
+extension BrainAssessmentView {
+    struct DigitShowPreview: View {
+        @State var viewModel: BrainAssessmentViewModel
+        var body: some View {
+            NavigationStack {
+                ZStack {
+                    AppColors.pageBg.ignoresSafeArea()
+                    VStack(spacing: 24) {
+                        HStack {
+                            Text("\(viewModel.currentDigits.count) digits")
+                                .font(.headline)
+                                .foregroundStyle(AppColors.accent)
+                            Spacer()
+                            Text("Round \(viewModel.digitRound + 1)")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal)
+
+                        Spacer()
+
+                        if viewModel.isShowingDigit {
+                            VStack(spacing: 16) {
+                                Text(viewModel.currentDisplayDigit)
+                                    .font(.system(size: 96, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(AppColors.accent)
+                                    .id("preview-digit-\(viewModel.digitRevealCounter)")
+                                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+
+                                HStack(spacing: 6) {
+                                    ForEach(0..<viewModel.currentDigits.count, id: \.self) { i in
+                                        Circle()
+                                            .fill(i == viewModel.displayDigitIndex ? AppColors.accent : AppColors.accent.opacity(0.2))
+                                            .frame(width: 8, height: 8)
+                                    }
+                                }
+                            }
+                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.digitRevealCounter)
+                        }
+
+                        Spacer()
+
+                        // Manual controls for testing
+                        HStack(spacing: 16) {
+                            Button("Prev") {
+                                if viewModel.displayDigitIndex > 0 {
+                                    viewModel.displayDigitIndex -= 1
+                                    viewModel.digitRevealCounter += 1
+                                }
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button("Next") {
+                                viewModel.displayDigitIndex += 1
+                                viewModel.digitRevealCounter += 1
+                                if viewModel.displayDigitIndex >= viewModel.currentDigits.count {
+                                    viewModel.displayDigitIndex = 0
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.bottom, 32)
+                    }
+                }
+            }
+        }
+    }
+
+    struct DigitInputPreview: View {
+        @State var viewModel: BrainAssessmentViewModel
+        var body: some View {
+            NavigationStack {
+                ZStack {
+                    AppColors.pageBg.ignoresSafeArea()
+                    VStack(spacing: 20) {
+                        Text("Enter the digits")
+                            .font(.headline)
+                        Text("Expected: \(viewModel.currentDigits.map(String.init).joined())")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        TextField("Your answer", text: $viewModel.digitInput)
+                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                            .multilineTextAlignment(.center)
+                            .keyboardType(.numberPad)
+                            .padding()
+                    }
+                }
+            }
+        }
+    }
 }
