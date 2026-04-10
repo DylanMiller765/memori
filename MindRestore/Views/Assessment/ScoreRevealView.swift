@@ -353,22 +353,22 @@ struct ScoreRevealView: View {
     private func revealGradient(for age: Int) -> LinearGradient {
         if age <= 25 {
             return LinearGradient(colors: [
-                Color(red: 0.0, green: 0.18, blue: 0.38),
-                Color(red: 0.0, green: 0.28, blue: 0.48),
-                Color(red: 0.0, green: 0.12, blue: 0.25),
-            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Color(red: 0.0, green: 0.15, blue: 0.35),
+                Color(red: 0.0, green: 0.25, blue: 0.45),
+                Color(red: 0.0, green: 0.15, blue: 0.30),
+            ], startPoint: .top, endPoint: .bottom)
         } else if age <= 40 {
             return LinearGradient(colors: [
-                Color(red: 0.15, green: 0.05, blue: 0.32),
-                Color(red: 0.25, green: 0.10, blue: 0.45),
-                Color(red: 0.10, green: 0.04, blue: 0.20),
-            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Color(red: 0.12, green: 0.04, blue: 0.30),
+                Color(red: 0.22, green: 0.08, blue: 0.42),
+                Color(red: 0.12, green: 0.04, blue: 0.25),
+            ], startPoint: .top, endPoint: .bottom)
         } else {
             return LinearGradient(colors: [
-                Color(red: 0.32, green: 0.06, blue: 0.06),
+                Color(red: 0.35, green: 0.08, blue: 0.08),
                 Color(red: 0.45, green: 0.12, blue: 0.08),
-                Color(red: 0.18, green: 0.04, blue: 0.04),
-            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Color(red: 0.28, green: 0.06, blue: 0.06),
+            ], startPoint: .top, endPoint: .bottom)
         }
     }
 
