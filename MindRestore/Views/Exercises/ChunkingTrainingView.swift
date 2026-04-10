@@ -567,7 +567,10 @@ struct ChunkingTrainingView: View {
             }
 
             Spacer()
-
+        }
+        .padding(.vertical, 24)
+        .modifier(ShakeEffect(animatableData: shakeAmount))
+        .safeAreaInset(edge: .bottom) {
             Button {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.submitRecall()
@@ -576,9 +579,9 @@ struct ChunkingTrainingView: View {
                     .accentButton(color: AppColors.teal)
             }
             .padding(.horizontal, 32)
+            .padding(.bottom, 16)
+            .background(AppColors.pageBg)
         }
-        .padding(.vertical, 24)
-        .modifier(ShakeEffect(animatableData: shakeAmount))
     }
 
     // MARK: - Results

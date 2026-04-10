@@ -439,19 +439,27 @@ struct ChimpTestView: View {
     // MARK: - Share Card
 
     private func generateShareCard() {
-        let card = ExerciseShareCard(
-            exerciseName: "Chimp Test",
-            exerciseIcon: "pawprint.fill",
-            accentColor: AppColors.amber,
-            mainValue: "\(viewModel.bestLevel)",
-            mainLabel: "NUMBERS REMEMBERED",
-            ratingText: viewModel.ratingText,
-            stats: [
-                ("Time", "\(viewModel.durationSeconds)s")
-            ],
-            ctaText: "Can you beat the chimp?"
-        )
-        shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+        if shareImage == nil {
+            let card = ExerciseShareCard(
+                exerciseName: "Chimp Test",
+                exerciseIcon: "pawprint.fill",
+                accentColor: AppColors.amber,
+                mainValue: "\(viewModel.bestLevel)",
+                mainLabel: "NUMBERS REMEMBERED",
+                ratingText: viewModel.ratingText,
+                stats: [
+                    ("Time", "\(viewModel.durationSeconds)s")
+                ],
+                ctaText: "Can you beat the chimp?"
+            )
+            shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+        }
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
+        }
     }
 
     // MARK: - Save

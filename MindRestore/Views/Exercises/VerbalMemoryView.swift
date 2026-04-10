@@ -516,7 +516,7 @@ struct VerbalMemoryView: View {
 
     // MARK: - Share Card
 
-    private func generateShareCard() {
+    private func prerenderShareCard() {
         let card = ExerciseShareCard(
             exerciseName: "Verbal Memory",
             exerciseIcon: "text.book.closed.fill",
@@ -531,5 +531,15 @@ struct VerbalMemoryView: View {
             ctaText: "How many words can you remember?"
         )
         shareImage = card.renderAsImage(size: CGSize(width: 360, height: 640), scale: 3)
+    }
+
+    private func generateShareCard() {
+        if shareImage == nil { prerenderShareCard() }
+        guard let image = shareImage else { return }
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = windowScene.windows.first?.rootViewController {
+            root.present(activityVC, animated: true)
+        }
     }
 }
