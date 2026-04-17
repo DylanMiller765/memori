@@ -811,8 +811,16 @@ struct TrainingView: View {
             }
             .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
                 if case .game(let type) = destination {
-                    selectedExercise = type
                     deepLinkRouter.pendingDestination = nil
+                    // Pop back first if already in a game, then push the new one
+                    if selectedExercise != nil {
+                        selectedExercise = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            selectedExercise = type
+                        }
+                    } else {
+                        selectedExercise = type
+                    }
                 }
             }
         }
