@@ -125,6 +125,7 @@
 		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
 		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
 		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
+		V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V15T0001000000000000TS00 /* V1_5FeatureTests.swift */; };
 		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
 		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
 		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
@@ -286,6 +287,7 @@
 		TEST0001000000000000TS00 /* ChallengeLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS01 /* SeededGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGeneratorTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
+		V15T0001000000000000TS00 /* V1_5FeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V1_5FeatureTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
 		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
@@ -657,6 +659,7 @@
 				TEST0001000000000000TS01 /* SeededGeneratorTests.swift */,
 				TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */,
 				RFRRL0000000000000006 /* ReferralServiceTests.swift */,
+				V15T0001000000000000TS00 /* V1_5FeatureTests.swift */,
 			);
 			path = MindRestoreTests;
 			sourceTree = "<group>";
@@ -913,6 +916,7 @@
 				TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */,
 				TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */,
 				RFRRL0000000000000005 /* ReferralServiceTests.swift in Sources */,
+				V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
