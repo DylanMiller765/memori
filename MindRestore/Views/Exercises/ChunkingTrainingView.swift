@@ -604,10 +604,6 @@ struct ChunkingTrainingView: View {
             personalBest: PersonalBestTracker.shared.best(for: .chunkingTraining),
             exerciseType: .chunkingTraining,
             leaderboardScore: viewModel.correctDigits,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.startChallenge()

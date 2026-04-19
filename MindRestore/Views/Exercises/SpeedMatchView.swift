@@ -648,10 +648,6 @@ struct SpeedMatchView: View {
             personalBest: PersonalBestTracker.shared.best(for: .speedMatch),
             exerciseType: .speedMatch,
             leaderboardScore: viewModel.leaderboardScore,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

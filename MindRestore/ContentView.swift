@@ -616,6 +616,8 @@ struct TrainingView: View {
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToDailyChallenge = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
+    @AppStorage("has_seen_free_play_popup") private var hasSeenFreePlayPopup = false
+    @State private var showFreePlayPopup = false
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -809,6 +811,22 @@ struct TrainingView: View {
                     gamesPlayedToday: paywallTrigger.exercisesToday
                 )
             }
+            .sheet(isPresented: $showFreePlayPopup) {
+                FreePlayPopup {
+                    showFreePlayPopup = false
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.clear)
+            }
+            .onAppear {
+                if !isProUser && !hasSeenFreePlayPopup {
+                    hasSeenFreePlayPopup = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showFreePlayPopup = true
+                    }
+                }
+            }
             .onChange(of: deepLinkRouter.pendingDestination) { _, destination in
                 if case .game(let type) = destination {
                     selectedExercise = type
@@ -872,6 +890,7 @@ struct TrainingView: View {
                 )
         )
         .padding(.horizontal)
+
     }
 
     @ViewBuilder

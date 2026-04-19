@@ -512,10 +512,6 @@ struct SequentialMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),
             exerciseType: .sequentialMemory,
             leaderboardScore: viewModel.maxCorrectLength,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

@@ -110,6 +110,8 @@
 		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
 		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
 		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
+		FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FPOP0002000000000000FP01 /* FreePlayPopup.swift */; };
+		RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = RIRL0002000000000000RI01 /* ReferralInlineRow.swift */; };
 		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
 		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
@@ -271,6 +273,8 @@
 		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
 		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
 		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
+		FPOP0002000000000000FP01 /* FreePlayPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePlayPopup.swift; sourceTree = "<group>"; };
+		RIRL0002000000000000RI01 /* ReferralInlineRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralInlineRow.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
@@ -565,6 +569,8 @@
 				GCNT0002000000000000GC01 /* GameCountdown.swift */,
 				TWRT0002000000000000TW01 /* TypewriterText.swift */,
 				GRSV0002000000000000GR01 /* GameResultView.swift */,
+				FPOP0002000000000000FP01 /* FreePlayPopup.swift */,
+				RIRL0002000000000000RI01 /* ReferralInlineRow.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -836,6 +842,8 @@
 				GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */,
 				TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */,
 				GRSV0001000000000000GR01 /* GameResultView.swift in Sources */,
+				FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */,
+				RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */,
 				HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */,
 				HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */,
 				II000001000000000000II03 /* StreakCelebrationView.swift in Sources */,

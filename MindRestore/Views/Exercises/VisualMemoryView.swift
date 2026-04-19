@@ -515,10 +515,6 @@ struct VisualMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .visualMemory),
             exerciseType: .visualMemory,
             leaderboardScore: viewModel.maxLevelReached,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

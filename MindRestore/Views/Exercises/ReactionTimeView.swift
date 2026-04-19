@@ -419,10 +419,6 @@ struct ReactionTimeView: View {
             personalBest: PersonalBestTracker.shared.best(for: .reactionTime),
             exerciseType: .reactionTime,
             leaderboardScore: viewModel.averageMs,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

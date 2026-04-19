@@ -554,10 +554,6 @@ struct ColorMatchView: View {
             personalBest: PersonalBestTracker.shared.best(for: .colorMatch),
             exerciseType: .colorMatch,
             leaderboardScore: viewModel.leaderboardScore,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.colorMatch.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

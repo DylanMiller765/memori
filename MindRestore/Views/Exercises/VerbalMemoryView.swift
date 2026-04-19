@@ -456,10 +456,6 @@ struct VerbalMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .verbalMemory),
             exerciseType: .verbalMemory,
             leaderboardScore: viewModel.bestStreak,
-            onShare: {
-                generateShareCard()
-                Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue)
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

@@ -382,10 +382,6 @@ struct DualNBackView: View {
             personalBest: PersonalBestTracker.shared.best(for: .dualNBack),
             exerciseType: .dualNBack,
             leaderboardScore: viewModel.currentN,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 selectedN = viewModel.nextN

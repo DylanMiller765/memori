@@ -424,10 +424,6 @@ struct ChimpTestView: View {
             leaderboardScore: viewModel.bestLevel,
             emoji: "🐵",
             subtitleText: viewModel.bestLevel > 7 ? "You beat the chimp!" : viewModel.bestLevel == 7 ? "Tied with the chimp!" : "The chimp wins this time!",
-            onShare: {
-                generateShareCard()
-                Analytics.shareTapped(game: ExerciseType.chimpTest.rawValue)
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

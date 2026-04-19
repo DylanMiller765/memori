@@ -544,10 +544,6 @@ struct MathSpeedView: View {
             personalBest: PersonalBestTracker.shared.best(for: .mathSpeed),
             exerciseType: .mathSpeed,
             leaderboardScore: viewModel.leaderboardScore,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()
