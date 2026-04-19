@@ -23,10 +23,12 @@ struct ContentView: View {
     @State private var deepLinkRouter = DeepLinkRouter()
     @State private var workoutEngine = WorkoutEngine()
     @State private var referralService = ReferralService()
+    @State private var focusModeService = FocusModeService()
 
     // Challenge accept flow
     @State private var showingChallengeAccept = false
     @State private var showReferralWelcome = false
+    @State private var showQuickGame = false
 
     // Toast state
     @State private var showingXPToast = false
@@ -71,6 +73,7 @@ struct ContentView: View {
         .environment(deepLinkRouter)
         .environment(workoutEngine)
         .environment(referralService)
+        .environment(focusModeService)
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
@@ -267,6 +270,7 @@ struct ContentView: View {
                 selectedTab = 4
                 deepLinkRouter.pendingDestination = nil
             case .focusUnlock:
+                showQuickGame = true
                 deepLinkRouter.pendingDestination = nil
             case .referral(let code):
                 // Don't process self-referrals
@@ -305,6 +309,12 @@ struct ContentView: View {
                         deepLinkRouter.pendingChallenge = nil
                     }
                 )
+            }
+        }
+        .fullScreenCover(isPresented: $showQuickGame) {
+            QuickGameView(unlockDurationMinutes: focusModeService.unlockDuration) {
+                focusModeService.temporaryUnlock()
+                showQuickGame = false
             }
         }
         .alert("Welcome to Memori!", isPresented: $showReferralWelcome) {
