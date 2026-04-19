@@ -62,6 +62,7 @@
 		B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1091C68DA4412E2434189 /* EducationFeedView.swift */; };
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
 		BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB01 /* PaywallTriggerService.swift */; };
+		FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSV0002000000000000FM01 /* FocusModeService.swift */; };
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
 		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
@@ -222,6 +223,7 @@
 		B0EF9610B969A47D9CF45857 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
+		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
@@ -448,6 +450,7 @@
 				RFRRL0000000000000002 /* ReferralService.swift */,
 				DEEP0001000000000000DD01 /* DeepLinkRouter.swift */,
 				BB000002000000000000BB01 /* PaywallTriggerService.swift */,
+				FMSV0002000000000000FM01 /* FocusModeService.swift */,
 				DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */,
 				49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */,
 				4ABD9792A0473A14E54F8F87 /* StoreService.swift */,
@@ -854,6 +857,7 @@
 				BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */,
 				E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */,
 				BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */,
+				FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */,
 				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
 				CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */,
