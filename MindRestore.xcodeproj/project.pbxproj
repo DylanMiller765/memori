@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMCD0002000000000000FC01 /* FocusModeCard.swift */; };
 		FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSU0002000000000000FS01 /* FocusModeSetupView.swift */; };
 		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C755FB45F2C7F2138DB6779 /* Assets.xcassets */; };
@@ -226,6 +227,7 @@
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
+		FMCD0002000000000000FC01 /* FocusModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeCard.swift; sourceTree = "<group>"; };
 		FMSU0002000000000000FS01 /* FocusModeSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSetupView.swift; sourceTree = "<group>"; };
 		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
@@ -603,6 +605,7 @@
 		QGVW0003000000000000QG01 /* FocusMode */ = {
 			isa = PBXGroup;
 			children = (
+				FMCD0002000000000000FC01 /* FocusModeCard.swift */,
 				FMSU0002000000000000FS01 /* FocusModeSetupView.swift */,
 				QGVW0002000000000000QG01 /* QuickGameView.swift */,
 			);
@@ -914,6 +917,7 @@
 				VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */,
 				CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */,
 				QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */,
+				FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */,
 				FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -150,6 +150,10 @@ struct HomeView: View {
                     mascotHeroSection
                         .staggeredEntrance(index: 1)
 
+                    // Focus Mode card
+                    FocusModeCard()
+                        .staggeredEntrance(index: 2)
+
                     // Smart Daily Workout (feeds the mascot)
                     if let workout = workoutEngine.todaysWorkout {
                         WorkoutCard(
@@ -176,31 +180,31 @@ struct HomeView: View {
                                 showingWorkoutComplete = true
                             }
                         )
-                        .staggeredEntrance(index: 2)
+                        .staggeredEntrance(index: 3)
                     }
 
                     // Brain Score + Brain Age compact stat pills
                     brainStatPills
-                        .staggeredEntrance(index: 3)
+                        .staggeredEntrance(index: 4)
 
                     // Weekly Brain Report (contextual)
                     if shouldShowWeeklyReport {
                         weeklyReportCard
-                            .staggeredEntrance(index: 4)
+                            .staggeredEntrance(index: 5)
                     }
 
                     // Streak Week Calendar
                     streakWeekCard
-                        .staggeredEntrance(index: 5)
+                        .staggeredEntrance(index: 6)
 
                     if isNewUser {
                         getStartedCard
-                            .staggeredEntrance(index: 6)
+                            .staggeredEntrance(index: 7)
                     } else {
                         if brainScores.count >= 2 {
                             BrainScoreChart(scores: brainScores, height: 150, showHeader: true)
                                 .glowingCard(color: AppColors.accent, intensity: 0.15)
-                                .staggeredEntrance(index: 6)
+                                .staggeredEntrance(index: 7)
                         }
 
                         TrainingLimitBanner(trainingMinutes: trainingManager.todayTrainingMinutes)
