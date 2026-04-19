@@ -10,6 +10,7 @@ enum DeepLinkDestination: Equatable {
     case dailyChallenge
     case challenge(ChallengeLink)
     case referral(String)
+    case focusUnlock
 }
 
 @MainActor @Observable
@@ -52,6 +53,7 @@ final class DeepLinkRouter {
             } else {
                 pendingDestination = .train
             }
+        case "focus-unlock": pendingDestination = .focusUnlock
         case "refer":
             if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
                let code = components.queryItems?.first(where: { $0.name == "code" })?.value {

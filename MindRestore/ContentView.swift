@@ -266,6 +266,8 @@ struct ContentView: View {
             case .profile:
                 selectedTab = 4
                 deepLinkRouter.pendingDestination = nil
+            case .focusUnlock:
+                deepLinkRouter.pendingDestination = nil
             case .referral(let code):
                 // Don't process self-referrals
                 if let myCode = referralService.getReferralCode(modelContext: modelContext),
