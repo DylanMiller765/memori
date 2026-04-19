@@ -1,6 +1,10 @@
 import SwiftUI
 import StoreKit
 
+enum SubscriptionTier {
+    case pro, ultra
+}
+
 struct PaywallView: View {
     /// Only show the exit offer on high-intent triggers (daily limit, post-assessment)
     var isHighIntent: Bool = false
@@ -14,7 +18,8 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
 
-    @State private var selectedPlan: String = StoreService.annualProductID
+    @State private var selectedTier: SubscriptionTier = .ultra
+    @State private var selectedPlan: String = StoreService.annualUltraProductID
     @State private var showExitOffer = false
     @State private var hasSeenExitOffer = false
     @State private var appeared = false
@@ -50,6 +55,63 @@ struct PaywallView: View {
                     .frame(height: 100)
                     .padding(.bottom, 6)
 
+                // Tier selector
+                HStack(spacing: 0) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTier = .pro
+                            selectedPlan = StoreService.annualProductID
+                        }
+                    } label: {
+                        Text("Pro")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(selectedTier == .pro ? .white : .secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(selectedTier == .pro ? AppColors.accent : Color.clear, in: Capsule())
+                    }
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTier = .ultra
+                            selectedPlan = StoreService.annualUltraProductID
+                        }
+                    } label: {
+                        Text("Ultra")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(selectedTier == .ultra ? .white : .secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(selectedTier == .ultra ? AppColors.violet : Color.clear, in: Capsule())
+                    }
+                }
+                .padding(3)
+                .background(AppColors.cardElevated, in: Capsule())
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+
+                // Tier feature summary
+                Group {
+                    if selectedTier == .pro {
+                        Text("Unlimited brain training")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        HStack(spacing: 6) {
+                            Text("Unlimited training + Focus Mode")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            Text("RECOMMENDED")
+                                .font(.system(size: 9, weight: .bold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(AppColors.violet, in: Capsule())
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+                .padding(.bottom, 14)
+
                 // Benefits
                 HStack(spacing: 8) {
                     benefitCard(
@@ -76,45 +138,89 @@ struct PaywallView: View {
 
                 // Plans
                 VStack(spacing: 8) {
-                    PlanCard(
-                        title: "Annual",
-                        price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
-                        detail: annualPerMonthDetail,
-                        trialText: trialLabel(for: storeService.annualProduct),
-                        badge: "Best Value",
-                        isSelected: selectedPlan == StoreService.annualProductID,
-                        accentColor: AppColors.violet
-                    ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedPlan = StoreService.annualProductID
+                    if selectedTier == .pro {
+                        PlanCard(
+                            title: "Annual",
+                            price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
+                            detail: annualPerMonthDetail,
+                            trialText: trialLabel(for: storeService.annualProduct),
+                            badge: "Best Value",
+                            isSelected: selectedPlan == StoreService.annualProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.annualProductID
+                            }
                         }
-                    }
 
-                    PlanCard(
-                        title: "Monthly",
-                        price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
-                        detail: "Billed monthly",
-                        trialText: trialLabel(for: storeService.monthlyProduct),
-                        badge: nil,
-                        isSelected: selectedPlan == StoreService.monthlyProductID,
-                        accentColor: AppColors.violet
-                    ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedPlan = StoreService.monthlyProductID
+                        PlanCard(
+                            title: "Monthly",
+                            price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
+                            detail: "Billed monthly",
+                            trialText: trialLabel(for: storeService.monthlyProduct),
+                            badge: nil,
+                            isSelected: selectedPlan == StoreService.monthlyProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.monthlyProductID
+                            }
                         }
-                    }
 
-                    PlanCard(
-                        title: "Weekly",
-                        price: storeService.weeklyProduct?.displayPrice ?? "$1.99/wk",
-                        detail: "Billed weekly",
-                        trialText: trialLabel(for: storeService.weeklyProduct),
-                        badge: nil,
-                        isSelected: selectedPlan == StoreService.weeklyProductID,
-                        accentColor: AppColors.violet
-                    ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedPlan = StoreService.weeklyProductID
+                        PlanCard(
+                            title: "Weekly",
+                            price: storeService.weeklyProduct?.displayPrice ?? "$1.99/wk",
+                            detail: "Billed weekly",
+                            trialText: trialLabel(for: storeService.weeklyProduct),
+                            badge: nil,
+                            isSelected: selectedPlan == StoreService.weeklyProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.weeklyProductID
+                            }
+                        }
+                    } else {
+                        PlanCard(
+                            title: "Annual",
+                            price: storeService.annualUltraProduct?.displayPrice ?? "$29.99/yr",
+                            detail: ultraAnnualPerMonthDetail,
+                            trialText: trialLabel(for: storeService.annualUltraProduct),
+                            badge: "Best Value",
+                            isSelected: selectedPlan == StoreService.annualUltraProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.annualUltraProductID
+                            }
+                        }
+
+                        PlanCard(
+                            title: "Monthly",
+                            price: storeService.monthlyUltraProduct?.displayPrice ?? "$5.99/mo",
+                            detail: "Billed monthly",
+                            trialText: trialLabel(for: storeService.monthlyUltraProduct),
+                            badge: nil,
+                            isSelected: selectedPlan == StoreService.monthlyUltraProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.monthlyUltraProductID
+                            }
+                        }
+
+                        PlanCard(
+                            title: "Weekly",
+                            price: storeService.weeklyUltraProduct?.displayPrice ?? "$2.99/wk",
+                            detail: "Billed weekly",
+                            trialText: trialLabel(for: storeService.weeklyUltraProduct),
+                            badge: nil,
+                            isSelected: selectedPlan == StoreService.weeklyUltraProductID,
+                            accentColor: AppColors.violet
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedPlan = StoreService.weeklyUltraProductID
+                            }
                         }
                     }
                 }
@@ -343,6 +449,19 @@ struct PaywallView: View {
         return "Just $1.67/month — Save 58%"
     }
 
+    private var ultraAnnualPerMonthDetail: String {
+        if let annualProduct = storeService.annualUltraProduct,
+           let monthlyProduct = storeService.monthlyUltraProduct {
+            let monthlyFromAnnual = annualProduct.price / 12
+            let formatted = monthlyFromAnnual.formatted(.currency(code: annualProduct.priceFormatStyle.currencyCode ?? "USD"))
+            let diff = NSDecimalNumber(decimal: monthlyProduct.price - monthlyFromAnnual)
+            let total = NSDecimalNumber(decimal: monthlyProduct.price)
+            let savings = Int((diff.doubleValue / total.doubleValue * 100).rounded())
+            return "Just \(formatted)/month — Save \(savings)%"
+        }
+        return "Just $2.50/month — Save 58%"
+    }
+
     private func purchase() async {
         let productID = selectedPlan
         if let product = storeService.products.first(where: { $0.id == productID }) {
@@ -388,10 +507,13 @@ struct PaywallView: View {
 
     private var selectedProduct: Product? {
         switch selectedPlan {
-        case StoreService.annualProductID: return storeService.annualProduct
-        case StoreService.monthlyProductID: return storeService.monthlyProduct
-        case StoreService.weeklyProductID: return storeService.weeklyProduct
-        default: return storeService.annualProduct
+        case StoreService.annualProductID:       return storeService.annualProduct
+        case StoreService.monthlyProductID:      return storeService.monthlyProduct
+        case StoreService.weeklyProductID:       return storeService.weeklyProduct
+        case StoreService.annualUltraProductID:  return storeService.annualUltraProduct
+        case StoreService.monthlyUltraProductID: return storeService.monthlyUltraProduct
+        case StoreService.weeklyUltraProductID:  return storeService.weeklyUltraProduct
+        default:                                 return storeService.annualUltraProduct
         }
     }
 
