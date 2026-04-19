@@ -205,4 +205,55 @@ enum Analytics {
     static func trackReferralTrialStarted() {
         PostHogSDK.shared.capture("referral.trial.started")
     }
+
+    // MARK: - Focus Mode
+
+    static func focusModeEnabled() {
+        PostHogSDK.shared.capture("focus_mode_enabled")
+    }
+
+    static func focusModeDisabled() {
+        PostHogSDK.shared.capture("focus_mode_disabled")
+    }
+
+    static func focusShieldShown(attemptCount: Int) {
+        PostHogSDK.shared.capture("focus_shield_shown", properties: [
+            "attempt_count": attemptCount
+        ])
+    }
+
+    static func focusUnlockGameStarted(gameType: String) {
+        PostHogSDK.shared.capture("focus_unlock_game_started", properties: [
+            "game_type": gameType
+        ])
+    }
+
+    static func focusUnlockGameCompleted(gameType: String, score: Int) {
+        PostHogSDK.shared.capture("focus_unlock_game_completed", properties: [
+            "game_type": gameType,
+            "score": score
+        ])
+    }
+
+    static func focusUnlockGranted(durationMinutes: Int) {
+        PostHogSDK.shared.capture("focus_unlock_granted", properties: [
+            "duration_minutes": durationMinutes
+        ])
+    }
+
+    static func focusStayedFocused() {
+        PostHogSDK.shared.capture("focus_stayed_focused")
+    }
+
+    static func focusSetupCompleted() {
+        PostHogSDK.shared.capture("focus_setup_completed")
+    }
+
+    static func focusSetupSkipped() {
+        PostHogSDK.shared.capture("focus_setup_skipped")
+    }
+
+    static func focusCooldownInitiated() {
+        PostHogSDK.shared.capture("focus_cooldown_initiated")
+    }
 }
