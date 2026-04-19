@@ -10,7 +10,8 @@ struct HomeView: View {
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
-    @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
+    @Query(sort: \Exercise.completedAt, order: .reverse) private var allExercises: [Exercise]
+    private var exercises: [Exercise] { Array(allExercises.prefix(50)) }
 
     @Environment(WorkoutEngine.self) private var workoutEngine
 
@@ -36,11 +37,17 @@ struct HomeView: View {
     @State private var weeklyReportShareImage: UIImage?
     @State private var streakAnimating = false
     @State private var streakBounce = false
+    @State private var cachedTodayExerciseCount: Int = 0
+    @State private var cachedWeeklyReport: (weekStart: Date, weekEnd: Date, currentScore: Int, previousScore: Int, currentAge: Int, previousAge: Int, streak: Int, bestGame: String, gamesPlayed: Int)?
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     private var hasDoneDailyChallenge: Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return dailyChallengeCompletedDate == formatter.string(from: Date.now)
+        dailyChallengeCompletedDate == Self.dayFormatter.string(from: Date.now)
     }
 
     private var user: User? { users.first }
@@ -75,9 +82,7 @@ struct HomeView: View {
         // weekday: 1=Sun, 2=Mon, ...
         let daysFromMonday = (weekday + 5) % 7 // Mon=0, Tue=1, ..., Sun=6
         let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today) ?? today
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: monday)
+        return Self.dayFormatter.string(from: monday)
     }
 
     private var shouldShowWeeklyReport: Bool {
@@ -90,6 +95,10 @@ struct HomeView: View {
     }
 
     private var weeklyReportData: (weekStart: Date, weekEnd: Date, currentScore: Int, previousScore: Int, currentAge: Int, previousAge: Int, streak: Int, bestGame: String, gamesPlayed: Int) {
+        cachedWeeklyReport ?? (.now, .now, 0, 0, 0, 0, 0, "", 0)
+    }
+
+    private func refreshWeeklyReport() {
         let cal = Calendar.current
         let now = Date.now
         let weekAgo = cal.date(byAdding: .day, value: -7, to: now) ?? now
@@ -103,13 +112,12 @@ struct HomeView: View {
         let weekExercises = exercises.filter { $0.completedAt >= weekAgo }
         let gamesPlayed = weekExercises.count
 
-        // Best game = exercise with highest score this week
         let bestExercise = weekExercises.max(by: { $0.score < $1.score })
         let bestGame = bestExercise?.type.displayName ?? ""
 
         let streak = user?.currentStreak ?? 0
 
-        return (weekAgo, now, currentScore, previousScore, currentAge, previousAge, streak, bestGame, gamesPlayed)
+        cachedWeeklyReport = (weekAgo, now, currentScore, previousScore, currentAge, previousAge, streak, bestGame, gamesPlayed)
     }
 
     private var greeting: String {
@@ -256,14 +264,22 @@ struct HomeView: View {
                     }
                 )
             }
+            .task {
+                renderBrainScoreShareImage()
+            }
             .onAppear {
                 viewModel.refresh(user: user, sessions: sessions)
-                renderBrainScoreShareImage()
+                refreshTodayExerciseCount()
+                refreshWeeklyReport()
                 // Generate today's workout
                 workoutEngine.generateWorkout(
                     exercises: exercises,
                     userGoals: user?.focusGoals ?? []
                 )
+            }
+            .onChange(of: exercises.count) {
+                refreshTodayExerciseCount()
+                refreshWeeklyReport()
             }
             .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
                 guard let typeRaw = notification.userInfo?["exerciseType"] as? String,
@@ -577,7 +593,7 @@ struct HomeView: View {
                         .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
                 )
         )
-        .onAppear {
+        .task {
             renderWeeklyReportShareImage()
         }
     }
@@ -710,9 +726,11 @@ struct HomeView: View {
 
     // MARK: - Mascot Hero Section
 
-    private var todayExerciseCount: Int {
+    private var todayExerciseCount: Int { cachedTodayExerciseCount }
+
+    private func refreshTodayExerciseCount() {
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        return exercises.filter { $0.completedAt >= startOfDay }.count
+        cachedTodayExerciseCount = exercises.filter { $0.completedAt >= startOfDay }.count
     }
 
     private var mascotMood: MascotRiveMood {
@@ -743,7 +761,7 @@ struct HomeView: View {
             }
             return "Memo is bored... entertain it"
         case .sad:
-            return ["Memo is losing brain cells", "Memo thinks you forgot about it", "Memo's neurons are collecting dust"][Int.random(in: 0...2)]
+            return ["Memo is losing brain cells", "Memo thinks you forgot about it", "Memo's neurons are collecting dust"][Calendar.current.component(.hour, from: .now) % 3]
         }
     }
 

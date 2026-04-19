@@ -398,9 +398,10 @@ extension ContentView {
 
         // Update widget data centrally after every exercise completion
         let exercisesToday: Int = {
-            let descriptor = FetchDescriptor<DailySession>()
-            let allSessions = (try? modelContext.fetch(descriptor)) ?? []
-            let todaySession = allSessions.first { Calendar.current.isDateInToday($0.date) }
+            let startOfDay = Calendar.current.startOfDay(for: Date())
+            var descriptor = FetchDescriptor<DailySession>(predicate: #Predicate { $0.date >= startOfDay })
+            descriptor.fetchLimit = 1
+            let todaySession = (try? modelContext.fetch(descriptor))?.first
             return todaySession?.exercisesCompleted.count ?? 0
         }()
 
@@ -491,6 +492,8 @@ extension ContentView {
                         userInfo: ["delta": delta, "newScore": newBrainScore]
                     )
                     NotificationService.shared.scheduleBrainScoreFollowUp(currentScore: newBrainScore)
+                    // Report improved brain score to Game Center leaderboard
+                    gameCenterService?.reportScore(newBrainScore, leaderboardID: GameCenterService.brainScoreLeaderboard)
                 }
             }
         }
@@ -606,17 +609,22 @@ struct TrainingView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
-    @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
+    @Query(sort: \Exercise.completedAt, order: .reverse) private var allExercises: [Exercise]
+    private var exercises: [Exercise] { Array(allExercises.prefix(20)) }
 
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToDailyChallenge = false
     @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
 
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     private var hasDoneDailyChallenge: Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return dailyChallengeCompletedDate == formatter.string(from: Date.now)
+        dailyChallengeCompletedDate == Self.dayFormatter.string(from: Date.now)
     }
 
     private var user: User? { users.first }
@@ -758,7 +766,7 @@ struct TrainingView: View {
                                 HStack(spacing: 12) {
                                     ForEach(Array(category.games.enumerated()), id: \.element.type) { offset, game in
                                         Button {
-                                            if hasReachedLimit {
+                                            if hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type) {
                                                 showingPaywall = true
                                             } else {
                                                 selectedExercise = game.type
@@ -768,7 +776,7 @@ struct TrainingView: View {
                                                 title: game.title,
                                                 type: game.type,
                                                 color: game.color,
-                                                isLocked: hasReachedLimit,
+                                                isLocked: hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type),
                                                 lastPlayedText: lastPlayedText(for: game.type)
                                             )
                                         }

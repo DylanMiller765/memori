@@ -545,7 +545,7 @@ struct VisualMemoryView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .visualMemory)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

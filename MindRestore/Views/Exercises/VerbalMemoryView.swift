@@ -473,7 +473,7 @@ struct VerbalMemoryView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .verbalMemory)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

@@ -574,7 +574,7 @@ struct MathSpeedView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .mathSpeed)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

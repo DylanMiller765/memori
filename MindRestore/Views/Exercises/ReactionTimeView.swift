@@ -449,7 +449,7 @@ struct ReactionTimeView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .reactionTime)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

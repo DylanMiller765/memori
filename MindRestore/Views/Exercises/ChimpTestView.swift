@@ -467,7 +467,7 @@ struct ChimpTestView: View {
     private func saveExercise() {
         guard !exerciseSaved else { return }
         exerciseSaved = true
-        paywallTrigger.recordExerciseCompleted()
+        paywallTrigger.recordExerciseCompleted(gameType: .chimpTest)
         trainingManager.addTrainingTime(viewModel.durationSeconds)
 
         let exercise = Exercise(

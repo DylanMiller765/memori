@@ -11,6 +11,7 @@ final class PaywallTriggerService {
     private let lastPaywallDateKey = "last_paywall_date"
     private let dailyExerciseCountKey = "daily_exercise_count"
     private let dailyExerciseDateKey = "daily_exercise_date"
+    private let triedGameTypesKey = "tried_game_types"
 
     enum PaywallContext: String {
         case generic
@@ -22,6 +23,17 @@ final class PaywallTriggerService {
         case progressAnalytics
         case brainScoreHistory
         case leaderboard
+    }
+
+    // MARK: - Try Each Game Once
+
+    private var triedGameTypes: Set<String> {
+        get { Set(defaults.stringArray(forKey: triedGameTypesKey) ?? []) }
+        set { defaults.set(Array(newValue), forKey: triedGameTypesKey) }
+    }
+
+    func isFirstTimeGame(_ type: ExerciseType) -> Bool {
+        !triedGameTypes.contains(type.rawValue)
     }
 
     // MARK: - Daily Exercise Limit (Free = 3/day)
@@ -42,7 +54,14 @@ final class PaywallTriggerService {
         exercisesToday >= Constants.Defaults.freeExercisesPerDay
     }
 
-    func recordExerciseCompleted() {
+    func recordExerciseCompleted(gameType: ExerciseType? = nil) {
+        if let gameType, isFirstTimeGame(gameType) {
+            var tried = triedGameTypes
+            tried.insert(gameType.rawValue)
+            triedGameTypes = tried
+            return
+        }
+
         let today = Date.now
         if let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
            Calendar.current.isDateInToday(savedDate) {
