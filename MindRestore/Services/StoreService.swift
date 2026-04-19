@@ -5,6 +5,7 @@ import SwiftUI
 @Observable
 final class StoreService {
     var isProUser = false
+    var isUltraUser = false
     var products: [Product] = []
     var purchaseError: String?
     var isLoading = false
@@ -12,6 +13,10 @@ final class StoreService {
     static let weeklyProductID = "com.memori.pro.weekly"
     static let monthlyProductID = "com.memori.pro.monthly"
     static let annualProductID = "com.memori.pro.annual"
+
+    static let weeklyUltraProductID = "com.memori.ultra.weekly"
+    static let monthlyUltraProductID = "com.memori.ultra.monthly"
+    static let annualUltraProductID = "com.memori.ultra.annual"
 
     private var updateListenerTask: Task<Void, Error>?
 
@@ -31,7 +36,10 @@ final class StoreService {
             products = try await Product.products(for: [
                 Self.weeklyProductID,
                 Self.monthlyProductID,
-                Self.annualProductID
+                Self.annualProductID,
+                Self.weeklyUltraProductID,
+                Self.monthlyUltraProductID,
+                Self.annualUltraProductID
             ])
             products.sort { $0.price < $1.price }
         } catch {
@@ -72,14 +80,19 @@ final class StoreService {
     }
 
     func updateSubscriptionStatus() async {
-        var hasActiveEntitlement = false
+        var hasActiveProEntitlement = false
+        var hasActiveUltraEntitlement = false
 
         for await result in Transaction.currentEntitlements {
             if let transaction = try? checkVerified(result) {
                 if transaction.productID == Self.weeklyProductID ||
                    transaction.productID == Self.monthlyProductID ||
                    transaction.productID == Self.annualProductID {
-                    hasActiveEntitlement = true
+                    hasActiveProEntitlement = true
+                } else if transaction.productID == Self.weeklyUltraProductID ||
+                          transaction.productID == Self.monthlyUltraProductID ||
+                          transaction.productID == Self.annualUltraProductID {
+                    hasActiveUltraEntitlement = true
                 }
             }
         }
@@ -88,7 +101,8 @@ final class StoreService {
         let referralExpiry = UserDefaults.standard.object(forKey: "referral_trial_expiry") as? Date
         let hasReferralTrial = referralExpiry.map { $0 > Date.now } ?? false
 
-        isProUser = hasActiveEntitlement || hasReferralTrial
+        isUltraUser = hasActiveUltraEntitlement
+        isProUser = hasActiveProEntitlement || hasActiveUltraEntitlement || hasReferralTrial
     }
 
     private func listenForTransactions() -> Task<Void, Error> {
@@ -124,7 +138,9 @@ final class StoreService {
         products.first { $0.id == Self.annualProductID }
     }
 
-
+    var weeklyUltraProduct: Product? { products.first { $0.id == Self.weeklyUltraProductID } }
+    var monthlyUltraProduct: Product? { products.first { $0.id == Self.monthlyUltraProductID } }
+    var annualUltraProduct: Product? { products.first { $0.id == Self.annualUltraProductID } }
 }
 
 enum StoreServiceError: Error {
