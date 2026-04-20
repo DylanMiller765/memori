@@ -143,8 +143,7 @@ struct FocusModeSetupView: View {
                 get: { focusModeService.activitySelection },
                 set: { focusModeService.updateActivitySelection($0) }
             ))
-            .frame(maxHeight: 340)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .frame(maxHeight: 400)
             .padding(.horizontal, 16)
 
             Spacer()
