@@ -147,6 +147,78 @@
           "referenceName" : "Annual Pro",
           "subscriptionGroupID" : "memori_pro",
           "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 6,
+          "internalID" : "ultra_weekly_001",
+          "localizations" : [
+            {
+              "description" : "Unlimited games + block distracting apps",
+              "displayName" : "Ultra Weekly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memori.ultra.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Ultra Weekly",
+          "subscriptionGroupID" : "memori_pro",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "6.99",
+          "familyShareable" : false,
+          "groupNumber" : 5,
+          "internalID" : "ultra_monthly_001",
+          "localizations" : [
+            {
+              "description" : "Unlimited games + block distracting apps",
+              "displayName" : "Ultra Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memori.ultra.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Ultra Monthly",
+          "subscriptionGroupID" : "memori_pro",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "ultra_annual_001",
+          "localizations" : [
+            {
+              "description" : "Unlimited games + block distracting apps",
+              "displayName" : "Ultra Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memori.ultra.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Ultra Annual",
+          "subscriptionGroupID" : "memori_pro",
+          "type" : "RecurringSubscription"
         }
       ]
     }

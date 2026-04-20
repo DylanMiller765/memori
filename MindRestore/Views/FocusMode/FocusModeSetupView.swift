@@ -206,15 +206,12 @@ struct FocusModeSetupView: View {
                     action: { withAnimation(.spring(response: 0.3)) { scheduleEnabled = true } }
                 )
             }
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(AppColors.cardSurface)
-            )
+            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(AppColors.cardBorder, lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Time pickers — shown only when schedule is enabled
             if scheduleEnabled {
@@ -267,19 +264,25 @@ struct FocusModeSetupView: View {
     // MARK: - Step 3: Duration + Enable
 
     private var durationStep: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 32)
+        VStack(spacing: 20) {
+            Spacer().frame(height: 20)
 
-            VStack(spacing: 8) {
-                Text("Unlock duration")
+            // Mascot
+            Image("mascot-goal")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 120)
+
+            VStack(spacing: 6) {
+                Text("Almost there!")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
-                Text("How long can you unlock Focus Mode after a game?")
+                Text("How long should apps unlock\nafter a brain game?")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
             }
 
             // Duration button row
@@ -323,13 +326,10 @@ struct FocusModeSetupView: View {
                 summaryRow(icon: "bolt.fill", label: "Unlock: \(unlockDuration) min per game")
             }
             .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(AppColors.cardSurface)
-            )
+            .background(AppColors.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(AppColors.cardBorder, lineWidth: 1)
+                    .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
             )
             .padding(.horizontal, 24)
 
