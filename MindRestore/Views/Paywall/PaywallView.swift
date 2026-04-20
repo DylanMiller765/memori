@@ -29,6 +29,27 @@ struct PaywallView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Tier selector — at the very top
+                HStack(spacing: 0) {
+                    tierTab("Pro", isSelected: selectedTier == .pro) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTier = .pro
+                            selectedPlan = StoreService.annualProductID
+                        }
+                    }
+                    tierTab("Ultra", isSelected: selectedTier == .ultra) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTier = .ultra
+                            selectedPlan = StoreService.annualUltraProductID
+                        }
+                    }
+                }
+                .padding(3)
+                .background(AppColors.cardElevated, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
                 Spacer()
 
                 // Hero — contextual copy
@@ -45,149 +66,32 @@ struct PaywallView: View {
                         .multilineTextAlignment(.center)
                         .opacity(appeared ? 1 : 0)
                 }
-                .padding(.bottom, 18)
+                .padding(.bottom, 14)
 
                 // Mascot
                 Image("mascot-locked-sad")
                     .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 100)
+                    .frame(height: 90)
                     .padding(.bottom, 6)
 
-                // Tier selector
-                ZStack(alignment: .top) {
-                    // Outer border container
-                    HStack(spacing: 0) {
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                selectedTier = .pro
-                                selectedPlan = StoreService.annualProductID
-                            }
-                        } label: {
-                            ZStack {
-                                if selectedTier == .pro {
-                                    AppColors.accentGradient
-                                        .clipShape(Capsule())
-                                } else {
-                                    Color.clear
-                                }
-                                Text("Pro")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(selectedTier == .pro ? .white : .secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                        }
-
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                selectedTier = .ultra
-                                selectedPlan = StoreService.annualUltraProductID
-                            }
-                        } label: {
-                            ZStack {
-                                if selectedTier == .ultra {
-                                    LinearGradient(
-                                        colors: [AppColors.violet, AppColors.indigo],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                    .clipShape(Capsule())
-                                } else {
-                                    Color.clear
-                                }
-                                Text("Ultra")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(selectedTier == .ultra ? .white : .secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                        }
-                    }
-                    .padding(3)
-                    .background(AppColors.cardElevated, in: Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(
-                                selectedTier == .ultra
-                                    ? AppColors.violet.opacity(0.45)
-                                    : AppColors.accent.opacity(0.30),
-                                lineWidth: 1.5
-                            )
-                    )
-                    .padding(.horizontal, 20)
-
-                    // "BEST VALUE" badge floats above the Ultra segment
-                    GeometryReader { geo in
-                        let badgeX = geo.size.width * 0.75
-                        Text("BEST VALUE")
-                            .font(.system(size: 8, weight: .black))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                LinearGradient(
-                                    colors: [AppColors.violet, AppColors.indigo],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ),
-                                in: Capsule()
-                            )
-                            .shadow(color: AppColors.violet.opacity(0.5), radius: 4, y: 1)
-                            .position(x: badgeX, y: 0)
-                    }
-                    .frame(height: 0)
-                }
-                .padding(.bottom, 16)
-
-                // Benefits — animated swap between Pro and Ultra
+                // Benefits — same icons for shared features
                 HStack(spacing: 8) {
                     if selectedTier == .pro {
-                        benefitCard(
-                            icon: "infinity",
-                            title: "Unlimited",
-                            subtitle: "Brain training",
-                            color: AppColors.accent
-                        )
-                        benefitCard(
-                            icon: "chart.line.uptrend.xyaxis",
-                            title: "Track Progress",
-                            subtitle: "Detailed insights",
-                            color: AppColors.violet
-                        )
-                        benefitCard(
-                            icon: "trophy.fill",
-                            title: "Compete",
-                            subtitle: "Climb even higher",
-                            color: AppColors.amber
-                        )
+                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "No daily cap", color: AppColors.accent)
+                        benefitCard(icon: "chart.line.uptrend.xyaxis", title: "Insights", subtitle: "Track progress", color: AppColors.violet)
+                        benefitCard(icon: "trophy.fill", title: "Compete", subtitle: "Leaderboards", color: AppColors.amber)
                     } else {
-                        benefitCard(
-                            icon: "brain.head.profile",
-                            title: "Unlimited",
-                            subtitle: "Brain training",
-                            color: AppColors.violet
-                        )
-                        benefitCard(
-                            icon: "shield.fill",
-                            title: "Focus Mode",
-                            subtitle: "Block distracting apps",
-                            color: AppColors.indigo
-                        )
-                        benefitCard(
-                            icon: "chart.bar.fill",
-                            title: "Insights",
-                            subtitle: "Screen time stats",
-                            color: AppColors.teal
-                        )
+                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "No daily cap", color: AppColors.accent)
+                        benefitCard(icon: "shield.fill", title: "Focus Mode", subtitle: "Block apps", color: AppColors.violet)
+                        benefitCard(icon: "chart.bar.fill", title: "Screen Time", subtitle: "Stats & insights", color: AppColors.teal)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 18)
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 .id(selectedTier == .pro ? "pro-benefits" : "ultra-benefits")
-                .animation(.easeInOut(duration: 0.25), value: selectedTier)
+                .animation(.easeInOut(duration: 0.2), value: selectedTier)
 
                 // Plans
                 VStack(spacing: 8) {
@@ -422,6 +326,24 @@ struct PaywallView: View {
     }
 
     // MARK: - Benefit Card
+
+    private func tierTab(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(isSelected ? .white : .secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    isSelected
+                        ? AnyShapeStyle(title == "Ultra"
+                            ? LinearGradient(colors: [AppColors.violet, AppColors.indigo], startPoint: .leading, endPoint: .trailing)
+                            : AppColors.accentGradient)
+                        : AnyShapeStyle(Color.clear)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
 
     private func benefitCard(icon: String, title: String, subtitle: String, color: Color) -> some View {
         VStack(spacing: 6) {
