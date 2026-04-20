@@ -427,10 +427,6 @@ struct ReactionTimeView: View {
             leaderboardScore: viewModel.averageMs,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.reactionTime.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

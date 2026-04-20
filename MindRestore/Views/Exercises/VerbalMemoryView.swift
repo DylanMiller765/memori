@@ -472,10 +472,6 @@ struct VerbalMemoryView: View {
             leaderboardScore: viewModel.bestStreak,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                generateShareCard()
-                Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue)
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

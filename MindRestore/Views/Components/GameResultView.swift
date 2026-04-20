@@ -25,7 +25,6 @@ struct GameResultView: View {
     var challengeLink: ChallengeLink? = nil     // Set to enable "Challenge a Friend" button
 
     // Callbacks
-    var onShare: (() -> Void)? = nil
     var onPlayAgain: () -> Void
     var onDone: () -> Void
 
@@ -287,17 +286,6 @@ struct GameResultView: View {
 
     private var ctaButtons: some View {
         VStack(spacing: 12) {
-            if onShare != nil {
-                Button(action: { onShare?() }) {
-                    Label("Share Result", systemImage: "square.and.arrow.up")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                        .foregroundStyle(.primary)
-                }
-            }
-
             // Challenge a Friend (only when not responding to a challenge)
             if activeChallenge == nil, let link = challengeLink, let url = link.vercelURL {
                 ShareLink(item: url, subject: Text("Memori Challenge"), message: Text(link.shareMessage())) {
@@ -349,22 +337,22 @@ struct GameResultView: View {
     // MARK: - Reveal Sequence
 
     private func startRevealSequence() {
-        // 0.2s - Start counting + show icon
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // 0.1s - Start counting + show icon
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation { phase = .counting }
             animateScore()
         }
 
-        // 1.3s - Show rating
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+        // 0.7s - Show rating
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                 phase = .ratingVisible
             }
             HapticService.correct()
         }
 
-        // 1.5s - Show stats + PB + confetti
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // 0.85s - Show stats + PB + confetti
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
             statsVisible = true
             if isNewPersonalBest {
                 confettiCounter += 1
@@ -372,14 +360,14 @@ struct GameResultView: View {
             }
         }
 
-        // 2.0s - Show CTAs + leaderboard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        // 1.1s - Show CTAs + leaderboard
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             withAnimation { phase = .complete }
         }
     }
 
     private func animateScore() {
-        let duration = 1.0
+        let duration = 0.5
         let steps = min(mainScore, 60)
         guard steps > 0 else {
             displayedScore = mainScore

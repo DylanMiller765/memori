@@ -523,10 +523,6 @@ struct VisualMemoryView: View {
             leaderboardScore: viewModel.maxLevelReached,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

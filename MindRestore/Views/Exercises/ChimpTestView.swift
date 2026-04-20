@@ -440,10 +440,6 @@ struct ChimpTestView: View {
             subtitleText: viewModel.bestLevel > 7 ? "You beat the chimp!" : viewModel.bestLevel == 7 ? "Tied with the chimp!" : "The chimp wins this time!",
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                generateShareCard()
-                Analytics.shareTapped(game: ExerciseType.chimpTest.rawValue)
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

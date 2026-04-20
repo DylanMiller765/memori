@@ -562,10 +562,6 @@ struct ColorMatchView: View {
             leaderboardScore: viewModel.leaderboardScore,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.colorMatch.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

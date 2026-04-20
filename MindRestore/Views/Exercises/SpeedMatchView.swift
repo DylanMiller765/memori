@@ -656,10 +656,6 @@ struct SpeedMatchView: View {
             leaderboardScore: viewModel.leaderboardScore,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

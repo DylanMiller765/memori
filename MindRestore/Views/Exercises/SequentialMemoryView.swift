@@ -520,10 +520,6 @@ struct SequentialMemoryView: View {
             leaderboardScore: viewModel.maxCorrectLength,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

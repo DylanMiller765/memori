@@ -552,10 +552,6 @@ struct MathSpeedView: View {
             leaderboardScore: viewModel.leaderboardScore,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

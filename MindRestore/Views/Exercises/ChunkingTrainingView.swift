@@ -612,10 +612,6 @@ struct ChunkingTrainingView: View {
             leaderboardScore: viewModel.correctDigits,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.startChallenge()

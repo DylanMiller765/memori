@@ -390,10 +390,6 @@ struct DualNBackView: View {
             leaderboardScore: viewModel.currentN,
             activeChallenge: activeChallenge,
             challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 selectedN = viewModel.nextN
