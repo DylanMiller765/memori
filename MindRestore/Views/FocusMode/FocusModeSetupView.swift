@@ -168,14 +168,14 @@ struct FocusModeSetupView: View {
     // MARK: - Step 2: Schedule
 
     private var scheduleStep: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 20)
+        VStack(spacing: 20) {
+            Spacer().frame(height: 10)
 
             Image("mascot-thinking")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 110)
+                .frame(height: 160)
 
             VStack(spacing: 6) {
                 Text("When to block?")
@@ -188,26 +188,57 @@ struct FocusModeSetupView: View {
                     .multilineTextAlignment(.center)
             }
 
-            // Always on / Scheduled toggle
+            // Always on / Scheduled toggle — using onTapGesture for reliable taps
             VStack(spacing: 0) {
-                scheduleOptionRow(
-                    title: "Always on",
-                    subtitle: "Block apps 24/7",
-                    icon: "infinity",
-                    isSelected: !scheduleEnabled,
-                    action: { scheduleEnabled = false }
-                )
+                HStack(spacing: 14) {
+                    Image(systemName: "infinity")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(!scheduleEnabled ? AppColors.accent : .secondary)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Always on")
+                            .font(.body.weight(.semibold))
+                        Text("Block apps 24/7")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if !scheduleEnabled {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(AppColors.accent)
+                            .font(.system(size: 20))
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+                .onTapGesture { scheduleEnabled = false }
 
-                Divider()
-                    .padding(.horizontal, 16)
+                Divider().padding(.horizontal, 16)
 
-                scheduleOptionRow(
-                    title: "Set a schedule",
-                    subtitle: "Only during certain hours",
-                    icon: "clock.fill",
-                    isSelected: scheduleEnabled,
-                    action: { scheduleEnabled = true }
-                )
+                HStack(spacing: 14) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(scheduleEnabled ? AppColors.accent : .secondary)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Set a schedule")
+                            .font(.body.weight(.semibold))
+                        Text("Only during certain hours")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if scheduleEnabled {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(AppColors.accent)
+                            .font(.system(size: 20))
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+                .onTapGesture { scheduleEnabled = true }
             }
             .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
             .overlay(
