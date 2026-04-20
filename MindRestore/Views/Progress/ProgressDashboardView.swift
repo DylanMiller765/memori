@@ -22,6 +22,7 @@ private enum TimeRange: String, CaseIterable {
 
 struct ProgressDashboardView: View {
     @Environment(StoreService.self) private var storeService
+    @Environment(FocusModeService.self) private var focusModeService
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
@@ -83,11 +84,19 @@ struct ProgressDashboardView: View {
                     VStack(spacing: 28) {
                         trendlineSection
                         statsTableSection
-                        cognitiveDomainsSection
+
+                        // Focus Mode stats — visible to anyone with Focus Mode enabled
+                        if focusModeService.isEnabled || focusModeService.dailyAttemptCount > 0 {
+                            focusModeStatsSection
+                        }
 
                         if isProUser {
+                            cognitiveDomainsSection
                             personalBestsSection
                             trainingHeatmapSection
+                        } else {
+                            // Blurred teaser for pro sections
+                            proSectionsTeaser
                         }
                     }
                     .padding(.horizontal)
@@ -503,6 +512,127 @@ struct ProgressDashboardView: View {
             Text("/ 100")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(.tertiary)
+        }
+    }
+
+    // MARK: - Focus Mode Stats
+
+    private var focusModeStatsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("FOCUS MODE")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(AppColors.violet)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                if focusModeService.isEnabled {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(AppColors.violet)
+                            .frame(width: 6, height: 6)
+                        Text("Active")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(AppColors.violet)
+                    }
+                }
+            }
+
+            Divider().opacity(0.3)
+
+            VStack(spacing: 0) {
+                statsRow(
+                    label: "Shield blocks today",
+                    value: "\(focusModeService.dailyAttemptCount)",
+                    delta: nil,
+                    inverted: false
+                )
+                thinDivider
+
+                statsRow(
+                    label: "Apps blocked",
+                    value: "\(focusModeService.blockedAppCount)",
+                    delta: nil,
+                    inverted: false
+                )
+                thinDivider
+
+                statsRow(
+                    label: "Unlock duration",
+                    value: "\(focusModeService.unlockDuration) min",
+                    delta: nil,
+                    inverted: false
+                )
+
+                if focusModeService.isTemporarilyUnlocked, let until = focusModeService.unlockUntil {
+                    thinDivider
+                    let remaining = max(0, Int(until.timeIntervalSince(.now)) / 60)
+                    statsRow(
+                        label: "Currently unlocked",
+                        value: "\(remaining) min left",
+                        delta: nil,
+                        inverted: false
+                    )
+                }
+            }
+
+            if !focusModeService.isEnabled {
+                Button {
+                    showingPaywall = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 12))
+                        Text("Set up Focus Mode")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(AppColors.violet)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(AppColors.violet.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                }
+            }
+        }
+    }
+
+    // MARK: - Pro Sections Teaser (blurred)
+
+    private var proSectionsTeaser: some View {
+        ZStack {
+            VStack(spacing: 28) {
+                // Show a preview of cognitive domains + personal bests
+                cognitiveDomainsSection
+                personalBestsSection
+            }
+            .blur(radius: 6)
+            .allowsHitTesting(false)
+
+            VStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(.secondary)
+
+                Text("Detailed analytics")
+                    .font(.system(size: 15, weight: .semibold))
+
+                Text("Personal bests, training activity,\nand cognitive domain breakdown")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("Go Pro")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(AppColors.accent, in: Capsule())
+                }
+            }
         }
     }
 
