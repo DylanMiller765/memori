@@ -93,6 +93,11 @@ struct ProgressDashboardView: View {
             }
             .pageBackground()
             .navigationTitle("Insights")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    timeRangePicker
+                }
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -135,18 +140,12 @@ struct ProgressDashboardView: View {
 
     private var trendlineSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header: label + segmented toggle
-            HStack {
-                Text("BRAIN SCORE \u{00B7} \(selectedRange.rawValue)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-
-                Spacer()
-
-                timeRangePicker
-            }
+            // Header label
+            Text("BRAIN SCORE \u{00B7} \(selectedRange.rawValue)")
+                .font(.system(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
 
             // Large score + delta
             if let score = currentScore {
@@ -253,6 +252,11 @@ struct ProgressDashboardView: View {
                     }
                 }
             }
+        }
+        .chartPlotStyle { plotArea in
+            plotArea
+                .padding(.top, 8)
+                .padding(.bottom, 4)
         }
     }
 
