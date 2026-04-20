@@ -197,7 +197,7 @@ struct FocusModeSetupView: View {
                     subtitle: "Block apps 24/7",
                     icon: "infinity",
                     isSelected: !scheduleEnabled,
-                    action: { withAnimation(.spring(response: 0.3)) { scheduleEnabled = false } }
+                    action: { scheduleEnabled = false }
                 )
 
                 Divider()
@@ -208,7 +208,7 @@ struct FocusModeSetupView: View {
                     subtitle: "Only during certain hours",
                     icon: "clock.fill",
                     isSelected: scheduleEnabled,
-                    action: { withAnimation(.spring(response: 0.3)) { scheduleEnabled = true } }
+                    action: { scheduleEnabled = true }
                 )
             }
             .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
@@ -246,7 +246,6 @@ struct FocusModeSetupView: View {
                         .stroke(AppColors.cardBorder, lineWidth: 1)
                 )
                 .padding(.horizontal, 24)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             Spacer()
