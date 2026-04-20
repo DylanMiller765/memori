@@ -23,8 +23,13 @@ struct FocusModeSetupView: View {
     @State private var scheduleEnabled = false
     @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 9)) ?? Date()
     @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 17)) ?? Date()
+    @State private var scheduleDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7] // 1=Sun, 7=Sat
     @State private var unlockDuration = 15
     @State private var showingUltraPaywall = false
+    @State private var showingAppPicker = false
+
+    private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
+    private let dayIndices = [1, 2, 3, 4, 5, 6, 7] // Sunday=1 through Saturday=7
 
     private let totalSteps = 4
     private let durationOptions = [5, 15, 30, 60]
@@ -69,12 +74,6 @@ struct FocusModeSetupView: View {
     private var introStep: some View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
-
-            Text("FOCUS MODE")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(AppColors.violet)
-                .padding(.bottom, 8)
 
             Text("Take back your\nscreen time")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -145,42 +144,74 @@ struct FocusModeSetupView: View {
                     .padding(.horizontal, 32)
             }
 
-            // Free-user limit note
+            // Free-user limit note — tappable to open paywall
             if !storeService.isUltraUser {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.fill")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.amber)
-                    Text("Free plan: 1 app. Upgrade to Ultra for unlimited.")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.amber)
+                Button {
+                    showingUltraPaywall = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.amber)
+                        Text(storeService.isProUser ? "Pro plan: 1 app. Upgrade to Ultra for unlimited." : "Free plan: 1 app. Upgrade to Ultra for unlimited.")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.amber)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(AppColors.amber.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(AppColors.amber.opacity(0.3), lineWidth: 1)
+                            )
+                    )
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(AppColors.amber.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(AppColors.amber.opacity(0.3), lineWidth: 1)
-                        )
-                )
+                .buttonStyle(.plain)
                 .padding(.horizontal, 24)
             }
 
-            // FamilyActivityPicker — binds directly to focusModeService.activitySelection
-            FamilyActivityPickerWrapper(selection: Binding(
-                get: { focusModeService.activitySelection },
-                set: { focusModeService.updateActivitySelection($0) }
-            ))
-            .frame(maxHeight: 400)
+            // Selected apps summary
+            let appCount = focusModeService.activitySelection.applicationTokens.count
+            let catCount = focusModeService.activitySelection.categoryTokens.count
+            let totalSelected = appCount + catCount
+
+            Button {
+                showingAppPicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: totalSelected > 0 ? "checkmark.circle.fill" : "plus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(totalSelected > 0 ? AppColors.mint : AppColors.accent)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(totalSelected > 0 ? "\(totalSelected) selected" : "Tap to choose apps")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(totalSelected > 0 ? "Tap to change" : "Pick apps & categories to block")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(16)
+                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(totalSelected > 0 ? AppColors.mint.opacity(0.3) : AppColors.cardBorder, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
 
             Spacer()
 
             continueButton {
-                let appCount = focusModeService.activitySelection.applicationTokens.count
-                let catCount = focusModeService.activitySelection.categoryTokens.count
-                // Categories contain multiple apps — treat any category as exceeding the free limit
                 let exceedsLimit = appCount > 1 || catCount > 0
                 if !storeService.isUltraUser && exceedsLimit {
                     showingUltraPaywall = true
@@ -192,6 +223,10 @@ struct FocusModeSetupView: View {
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+        .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
+            get: { focusModeService.activitySelection },
+            set: { focusModeService.updateActivitySelection($0) }
+        ))
         .sheet(isPresented: $showingUltraPaywall) {
             PaywallView(triggerSource: "focus_mode_limit")
         }
@@ -202,12 +237,6 @@ struct FocusModeSetupView: View {
     private var scheduleStep: some View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
-
-            Text("STEP 3 / 4")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(AppColors.violet)
-                .padding(.bottom, 8)
 
             Text("When should\napps be blocked?")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -238,33 +267,67 @@ struct FocusModeSetupView: View {
             }
             .padding(.horizontal, 20)
 
-            // Time pickers when schedule is selected
+            // Time + day pickers when schedule is selected
             if scheduleEnabled {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Start")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        DatePicker("", selection: $scheduleStart, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
-                    }
+                VStack(spacing: 10) {
+                    // Time pickers
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Start")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            DatePicker("", selection: $scheduleStart, displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+                        }
 
-                    Spacer()
+                        Spacer()
 
-                    VStack(alignment: .trailing, spacing: 6) {
-                        Text("End")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        DatePicker("", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
+                        VStack(alignment: .trailing, spacing: 6) {
+                            Text("End")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            DatePicker("", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+                        }
                     }
+                    .padding(16)
+                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                    )
+
+                    // Day picker
+                    HStack(spacing: 6) {
+                        ForEach(Array(zip(dayIndices, dayLabels)), id: \.0) { index, label in
+                            let isActive = scheduleDays.contains(index)
+                            Text(label)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(isActive ? .white : .secondary)
+                                .frame(width: 38, height: 38)
+                                .background(
+                                    isActive ? AppColors.accent : Color.white.opacity(0.05),
+                                    in: Circle()
+                                )
+                                .onTapGesture {
+                                    if scheduleDays.contains(index) {
+                                        if scheduleDays.count > 1 {
+                                            scheduleDays.remove(index)
+                                        }
+                                    } else {
+                                        scheduleDays.insert(index)
+                                    }
+                                }
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                    )
                 }
-                .padding(16)
-                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(AppColors.cardBorder, lineWidth: 1)
-                )
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
             }
@@ -311,12 +374,6 @@ struct FocusModeSetupView: View {
     private var durationStep: some View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
-
-            Text("LAST STEP")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(AppColors.violet)
-                .padding(.bottom, 8)
 
             Text("Pick your pace")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -524,12 +581,38 @@ private struct FamilyActivityPickerWrapper: UIViewControllerRepresentable {
         let picker = FamilyActivityPicker(selection: $selection)
         let host = UIHostingController(rootView: picker)
         host.view.backgroundColor = .clear
+        // Recursively strip backgrounds after layout pass
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Self.clearBackgrounds(in: host.view)
+        }
         return host
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
         if let host = uiViewController as? UIHostingController<FamilyActivityPicker> {
             host.rootView = FamilyActivityPicker(selection: $selection)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Self.clearBackgrounds(in: host.view)
+            }
+        }
+    }
+
+    /// Recursively walks the view hierarchy to clear rounded-rect backgrounds
+    /// that the system applies to FamilyActivityPicker.
+    private static func clearBackgrounds(in view: UIView) {
+        view.backgroundColor = .clear
+        view.layer.cornerRadius = 0
+        view.layer.borderWidth = 0
+        view.layer.shadowOpacity = 0
+
+        // Clear any visual effect views or grouped-style table backgrounds
+        if let effectView = view as? UIVisualEffectView {
+            effectView.effect = nil
+            effectView.backgroundColor = .clear
+        }
+
+        for subview in view.subviews {
+            clearBackgrounds(in: subview)
         }
     }
 }
