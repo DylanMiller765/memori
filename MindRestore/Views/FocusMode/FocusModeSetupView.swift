@@ -344,15 +344,35 @@ struct FocusModeSetupView: View {
 
             // What you're setting up — visual summary
             VStack(spacing: 0) {
-                // Blocked apps row
-                HStack(spacing: 10) {
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppColors.coral)
-                        .frame(width: 24)
-                    Text("\(focusModeService.blockedAppCount) app\(focusModeService.blockedAppCount == 1 ? "" : "s") will be blocked")
-                        .font(.system(size: 14, weight: .medium))
-                    Spacer()
+                // Blocked apps row — show Apple's token labels
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(AppColors.coral)
+                            .frame(width: 24)
+                        Text("\(focusModeService.blockedAppCount) app\(focusModeService.blockedAppCount == 1 ? "" : "s") will be blocked")
+                            .font(.system(size: 14, weight: .medium))
+                        Spacer()
+                    }
+
+                    // Show app token labels (Apple renders name+icon)
+                    if !focusModeService.activitySelection.applicationTokens.isEmpty {
+                        HStack(spacing: 6) {
+                            ForEach(Array(focusModeService.activitySelection.applicationTokens.prefix(5)), id: \.self) { token in
+                                Label(token)
+                                    .labelStyle(.iconOnly)
+                                    .scaleEffect(1.4)
+                                    .frame(width: 28, height: 28)
+                            }
+                            if focusModeService.activitySelection.applicationTokens.count > 5 {
+                                Text("+\(focusModeService.activitySelection.applicationTokens.count - 5)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.leading, 34)
+                    }
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
