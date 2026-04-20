@@ -30,7 +30,7 @@ final class QuickAssessmentViewModel {
     private var reactionTimer: Timer?
 
     // Visual Memory (3x3 grid)
-    let gridSize: Int = 3
+    let gridSize: Int = 4
     var highlightedCells: Set<Int> = []
     var selectedCells: Set<Int> = []
     var visualRound: Int = 0
@@ -61,6 +61,8 @@ final class QuickAssessmentViewModel {
         }
     }
 
+    private var autoAdvanceTimer: Timer?
+
     func tapReaction() {
         if phase == .reactionWait {
             reactionTimer?.invalidate()
@@ -75,9 +77,20 @@ final class QuickAssessmentViewModel {
         reactionTimes.append(ms)
         reactionRound += 1
         phase = .reactionResult
+
+        // Auto-advance after 1.5 seconds
+        autoAdvanceTimer?.invalidate()
+        autoAdvanceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                guard self?.phase == .reactionResult else { return }
+                self?.tapReactionResult()
+            }
+        }
     }
 
     func tapReactionResult() {
+        autoAdvanceTimer?.invalidate()
+        autoAdvanceTimer = nil
         if reactionRound < totalReactionRounds {
             nextReactionRound()
         } else {
@@ -103,7 +116,7 @@ final class QuickAssessmentViewModel {
     }
 
     private func nextVisualRound() {
-        let count = 3 + visualRound // Round 0 = 3 cells, Round 1 = 4, Round 2 = 5
+        let count = 4 + (visualRound * 2) // Round 0 = 4 cells, Round 1 = 6, Round 2 = 8
         selectedCells = []
         highlightedCells = Set((0..<(gridSize * gridSize)).shuffled().prefix(count))
         phase = .visualShow
@@ -410,11 +423,6 @@ struct QuickAssessmentView: View {
                 .padding(.top, 8)
 
             Spacer()
-
-            Text("Tap to continue")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 32)
         }
         .contentShape(Rectangle())
         .onTapGesture { viewModel.tapReactionResult() }
@@ -444,7 +452,7 @@ struct QuickAssessmentView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "square.grid.3x3.fill")
+            Image(systemName: "square.grid.4x3.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.purple)
 

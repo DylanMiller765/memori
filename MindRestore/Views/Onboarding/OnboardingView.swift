@@ -28,10 +28,11 @@ struct OnboardingView: View {
     @State private var showingFocusModeSetup = false
     @State private var focusModeWasSetUp = false
     @State private var quickAssessmentBgColor: Color = AppColors.pageBg
+    @State private var showingOnboardingPaywall = false
 
     var onComplete: () -> Void
 
-    private let totalPages = 10
+    private let totalPages = 9
 
     var body: some View {
         ZStack {
@@ -46,9 +47,8 @@ struct OnboardingView: View {
                     scarePage.tag(4)
                     quickAssessmentPage.tag(5)
                     revealAndHopePage.tag(6)
-                    onboardingPaywallPage.tag(7)
-                    focusModePage.tag(8)
-                    commitmentPage.tag(9)
+                    focusModePage.tag(7)
+                    commitmentPage.tag(8)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .scrollDisabled(true)
@@ -73,7 +73,7 @@ struct OnboardingView: View {
                         goodNewsTypingDone = false
                         goodNewsSubtitleVisible = false
                     }
-                    if newPage != 9 {
+                    if newPage != 8 {
                         commitmentBullet1Visible = false
                         commitmentBullet2Visible = false
                         commitmentBullet3Visible = false
@@ -101,7 +101,7 @@ struct OnboardingView: View {
         }
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "reveal", "paywall", "focusMode", "commitment"]
+                let stepNames = ["welcome", "name", "goals", "age", "scare", "quickAssessment", "reveal", "focusMode", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -506,30 +506,35 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button {
-                Analytics.onboardingStep(step: "reveal")
-                withAnimation { currentPage = 7 }
-            } label: {
-                Text("Let's fix it")
-                    .gradientButton()
+            VStack(spacing: 12) {
+                Button {
+                    showingOnboardingPaywall = true
+                } label: {
+                    Text("Start Free Trial")
+                        .gradientButton()
+                }
+
+                Button {
+                    Analytics.onboardingStep(step: "reveal")
+                    withAnimation { currentPage = 7 }
+                } label: {
+                    Text("Maybe later")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                }
             }
             .padding(.horizontal, 32)
+            .sheet(isPresented: $showingOnboardingPaywall) {
+                PaywallView(
+                    isHighIntent: true,
+                    triggerSource: "onboarding"
+                )
+            }
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Onboarding Paywall Page
-
-    private var onboardingPaywallPage: some View {
-        OnboardingPaywallView(
-            brainAge: assessmentResult?.brainAge,
-            onContinue: {
-                Analytics.onboardingStep(step: "paywall")
-                withAnimation { currentPage = 8 }
-            }
-        )
     }
 
     // MARK: - Commitment Page
@@ -714,59 +719,34 @@ struct OnboardingView: View {
     // MARK: - Focus Mode Page
 
     private var focusModePage: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 60)
-
-            Image("mascot-goal")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 160)
-
-            VStack(spacing: 8) {
-                Text("Block the noise")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-
-                Text("Pick distracting apps to block.\nPlay a brain game to unlock them.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+        Color.clear
+            .onAppear {
+                showingFocusModeSetup = true
             }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                Button {
-                    showingFocusModeSetup = true
-                } label: {
-                    Text("Set up Focus Mode")
-                        .gradientButton()
-                }
-
-                Button {
-                    Analytics.onboardingStep(step: "focusModeSkipped")
-                    withAnimation { currentPage = 9 }
-                } label: {
-                    Text("Not now")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
+            .sheet(isPresented: $showingFocusModeSetup) {
+                FocusModeSetupView()
+                    .onDisappear {
+                        focusModeWasSetUp = true
+                        Analytics.onboardingStep(step: "focusModeCompleted")
+                        withAnimation { currentPage = 8 }
+                    }
+            }
+            .overlay {
+                VStack {
+                    Spacer()
+                    Button {
+                        showingFocusModeSetup = false
+                        Analytics.onboardingStep(step: "focusModeSkipped")
+                        withAnimation { currentPage = 8 }
+                    } label: {
+                        Text("Skip Focus Mode")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
+                    }
+                    .padding(.bottom, 40)
                 }
             }
-            .padding(.horizontal, 32)
-        }
-        .padding(.bottom, 8)
-        .responsiveContent(maxWidth: 500)
-        .frame(maxWidth: .infinity)
-        .sheet(isPresented: $showingFocusModeSetup) {
-            FocusModeSetupView()
-                .onDisappear {
-                    focusModeWasSetUp = true
-                    Analytics.onboardingStep(step: "focusModeCompleted")
-                    withAnimation { currentPage = 9 }
-                }
-        }
     }
 
     private func continueButton(action: @escaping () -> Void) -> some View {
@@ -877,6 +857,8 @@ struct GoalCard: View {
                 Text(goal.displayName)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
 
                 Spacer()
             }
