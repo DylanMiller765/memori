@@ -32,6 +32,7 @@ struct ProgressDashboardView: View {
     @State private var showingPaywall = false
 
     private var user: User? { users.first }
+    private var isProUser: Bool { storeService.isProUser }
 
     // MARK: - Filtered Data
 
@@ -83,6 +84,11 @@ struct ProgressDashboardView: View {
                         trendlineSection
                         statsTableSection
                         cognitiveDomainsSection
+
+                        if isProUser {
+                            personalBestsSection
+                            trainingHeatmapSection
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -95,7 +101,9 @@ struct ProgressDashboardView: View {
             .navigationTitle("Insights")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    timeRangePicker
+                    if isProUser {
+                        timeRangePicker
+                    }
                 }
             }
             .sheet(isPresented: $showingPaywall) {
@@ -154,23 +162,73 @@ struct ProgressDashboardView: View {
                         .font(.system(size: 48, weight: .black, design: .rounded))
                         .foregroundStyle(.primary)
 
-                    if scoreDelta != 0 {
+                    if isProUser, scoreDelta != 0 {
                         deltaLabel(value: scoreDelta, inverted: false)
                     }
                 }
             }
 
-            // Chart
+            // Chart — Pro gets full chart, free gets blurred teaser
+            if isProUser {
+                if filteredScores.count >= 2 {
+                    trendlineChart
+                        .frame(height: 160)
+                } else {
+                    Text("Not enough data for this period")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, minHeight: 80)
+                }
+            } else {
+                // Free user: blurred chart teaser
+                chartProTeaser
+            }
+        }
+    }
+
+    private var chartProTeaser: some View {
+        ZStack {
+            // Show actual chart if data exists, otherwise placeholder bars
             if filteredScores.count >= 2 {
                 trendlineChart
                     .frame(height: 160)
+                    .blur(radius: 8)
             } else {
-                Text("Not enough data for this period")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, minHeight: 80)
+                // Placeholder bars for visual effect
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(0..<12, id: \.self) { i in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(AppColors.accent.opacity(0.3))
+                            .frame(height: CGFloat([40, 60, 50, 80, 70, 90, 85, 65, 95, 75, 55, 100][i]))
+                    }
+                }
+                .frame(height: 160)
+                .blur(radius: 8)
+            }
+
+            // Overlay
+            VStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(.secondary)
+
+                Text("Unlock detailed insights")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("Go Pro")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(AppColors.accent, in: Capsule())
+                }
             }
         }
+        .frame(height: 160)
     }
 
     private var timeRangePicker: some View {
@@ -276,11 +334,19 @@ struct ProgressDashboardView: View {
 
                 Spacer()
 
-                Text("VALUE \u{00B7} \u{0394}\(selectedRange.rawValue)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                if isProUser {
+                    Text("VALUE \u{00B7} \u{0394}\(selectedRange.rawValue)")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(2)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                } else {
+                    Text("VALUE")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(2)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                }
             }
 
             Divider().opacity(0.3)
@@ -292,7 +358,7 @@ struct ProgressDashboardView: View {
                     statsRow(
                         label: "Brain Score",
                         value: "\(score.brainScore) / 1000",
-                        delta: scoreDelta,
+                        delta: isProUser ? scoreDelta : nil,
                         inverted: false
                     )
                     thinDivider
@@ -303,14 +369,14 @@ struct ProgressDashboardView: View {
                     statsRow(
                         label: "Brain Age",
                         value: "\(score.brainAge) yrs",
-                        delta: brainAgeDelta,
+                        delta: isProUser ? brainAgeDelta : nil,
                         inverted: true
                     )
                     thinDivider
                 }
 
-                // Best Rank
-                if let bestRank = bestPersonalRecord {
+                // Best Rank (Pro only)
+                if isProUser, let bestRank = bestPersonalRecord {
                     statsRow(
                         label: "Best Rank",
                         value: "\(bestRank.type.displayName) \u{00B7} \(personalBestDisplay(type: bestRank.type, value: bestRank.best))",
@@ -339,15 +405,17 @@ struct ProgressDashboardView: View {
                     delta: nil,
                     inverted: false
                 )
-                thinDivider
 
-                // Time Trained
-                statsRow(
-                    label: "Time Trained",
-                    value: formatTotalTime(),
-                    delta: nil,
-                    inverted: false
-                )
+                // Time Trained (Pro only)
+                if isProUser {
+                    thinDivider
+                    statsRow(
+                        label: "Time Trained",
+                        value: formatTotalTime(),
+                        delta: nil,
+                        inverted: false
+                    )
+                }
             }
         }
     }
@@ -438,6 +506,129 @@ struct ProgressDashboardView: View {
         }
     }
 
+    // MARK: - 4. Personal Bests (Pro only)
+
+    private var personalBestsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("PERSONAL BESTS")
+                .font(.system(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            Divider().opacity(0.3)
+
+            let bests = allPersonalBests
+            if bests.isEmpty {
+                Text("Play some games to see your personal bests")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, minHeight: 60)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(bests.enumerated()), id: \.offset) { index, record in
+                        statsRow(
+                            label: record.type.displayName,
+                            value: personalBestDisplay(type: record.type, value: record.best),
+                            delta: nil,
+                            inverted: false
+                        )
+                        if index < bests.count - 1 {
+                            thinDivider
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 5. Training Heatmap (Pro only)
+
+    private var trainingHeatmapSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("TRAINING ACTIVITY")
+                .font(.system(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            let days = heatmapDays
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+
+            // Day-of-week headers
+            HStack(spacing: 4) {
+                ForEach(["M", "T", "W", "T", "F", "S", "S"], id: \.self) { day in
+                    Text(day)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: 4) {
+                // Leading spacers for alignment to correct day of week
+                ForEach(0..<leadingSpacerCount, id: \.self) { _ in
+                    Color.clear
+                        .aspectRatio(1, contentMode: .fit)
+                }
+
+                ForEach(days, id: \.date) { day in
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(heatmapColor(for: day.count))
+                        .aspectRatio(1, contentMode: .fit)
+                }
+            }
+        }
+    }
+
+    private struct HeatmapDay {
+        let date: Date
+        let count: Int
+    }
+
+    private var heatmapDays: [HeatmapDay] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Build exercise counts per day for last 30 days
+        var countsByDay: [Date: Int] = [:]
+        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -29, to: today) ?? today
+
+        for exercise in exercises {
+            let day = calendar.startOfDay(for: exercise.completedAt)
+            if day >= thirtyDaysAgo && day <= today {
+                countsByDay[day, default: 0] += 1
+            }
+        }
+
+        // Generate all 30 days
+        return (0..<30).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: thirtyDaysAgo) else { return nil }
+            return HeatmapDay(date: date, count: countsByDay[date] ?? 0)
+        }
+    }
+
+    /// Number of empty cells before the first day to align with correct weekday column (Mon=0)
+    private var leadingSpacerCount: Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let firstDay = calendar.date(byAdding: .day, value: -29, to: today) else { return 0 }
+        // weekday: 1=Sun, 2=Mon, ... 7=Sat -> convert to Mon=0
+        let weekday = calendar.component(.weekday, from: firstDay)
+        // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+        return (weekday + 5) % 7
+    }
+
+    private func heatmapColor(for count: Int) -> Color {
+        if count == 0 {
+            return AppColors.cardSurface
+        } else if count <= 2 {
+            return AppColors.accent.opacity(0.3)
+        } else {
+            return AppColors.accent
+        }
+    }
+
     // MARK: - Helpers
 
     private func deltaLabel(value: Int, inverted: Bool) -> some View {
@@ -470,6 +661,15 @@ struct ProgressDashboardView: View {
         }
         // Just return the first non-zero record (most recently set tends to be top)
         return records.first
+    }
+
+    /// All personal bests for games the user has played (score > 0)
+    private var allPersonalBests: [(type: ExerciseType, best: Int)] {
+        Self.availableGames.compactMap { type in
+            let best = PersonalBestTracker.shared.best(for: type)
+            guard best > 0 else { return nil }
+            return (type: type, best: best)
+        }
     }
 
     private func personalBestDisplay(type: ExerciseType, value: Int) -> String {
