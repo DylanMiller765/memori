@@ -67,8 +67,25 @@ struct FocusModeSetupView: View {
     // MARK: - Step 0: Intro
 
     private var introStep: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        VStack(spacing: 0) {
+            Spacer().frame(height: 24)
+
+            Text("FOCUS MODE")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(AppColors.violet)
+                .padding(.bottom, 8)
+
+            Text("Take back your\nscreen time")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 8)
+
+            Text("Block distracting apps. Play a brain game\nto unlock them. You're in control.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 24)
 
             Image("mascot-goal")
                 .renderingMode(.original)
@@ -76,25 +93,38 @@ struct FocusModeSetupView: View {
                 .scaledToFit()
                 .frame(height: 200)
 
-            VStack(spacing: 10) {
-                Text("Block distracting apps")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-
-                Text("Train your brain instead of doomscrolling")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-
             Spacer()
+
+            // Feature pills
+            VStack(spacing: 10) {
+                featurePill(icon: "shield.fill", color: AppColors.coral, text: "Pick apps to block")
+                featurePill(icon: "brain.head.profile", color: AppColors.violet, text: "Play a quick brain game to unlock")
+                featurePill(icon: "clock.fill", color: AppColors.accent, text: "Apps unlock for a set time")
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
 
             continueButton { currentStep = 1 }
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+    }
+
+    private func featurePill(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 32, height: 32)
+                .background(color.opacity(0.12), in: Circle())
+            Text(text)
+                .font(.system(size: 14, weight: .medium))
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Step 1: Pick Apps
@@ -170,86 +200,45 @@ struct FocusModeSetupView: View {
     // MARK: - Step 2: Schedule
 
     private var scheduleStep: some View {
-        VStack(spacing: 20) {
-            Spacer().frame(height: 10)
+        VStack(spacing: 0) {
+            Spacer().frame(height: 24)
 
-            Image("mascot-thinking")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 160)
+            Text("STEP 3 / 4")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(AppColors.violet)
+                .padding(.bottom, 8)
 
-            VStack(spacing: 6) {
-                Text("When to block?")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
+            Text("When should\napps be blocked?")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 6)
 
-                Text("Choose when Focus Mode is active")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+            Text("You can change this anytime in settings.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 24)
+
+            // Schedule option cards
+            VStack(spacing: 10) {
+                scheduleCard(
+                    mascot: "mascot-streak-fire",
+                    title: "All day",
+                    subtitle: "Maximum commitment. No breaks.",
+                    isSelected: !scheduleEnabled
+                ) { scheduleEnabled = false }
+
+                scheduleCard(
+                    mascot: "mascot-thinking",
+                    title: "Set hours",
+                    subtitle: "Active only when you need it.",
+                    isSelected: scheduleEnabled
+                ) { scheduleEnabled = true }
             }
+            .padding(.horizontal, 20)
 
-            // Always on / Scheduled toggle — using onTapGesture for reliable taps
-            VStack(spacing: 0) {
-                HStack(spacing: 14) {
-                    Image(systemName: "infinity")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(!scheduleEnabled ? AppColors.accent : .secondary)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Always on")
-                            .font(.body.weight(.semibold))
-                        Text("Block apps 24/7")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if !scheduleEnabled {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(AppColors.accent)
-                            .font(.system(size: 20))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .contentShape(Rectangle())
-                .onTapGesture { scheduleEnabled = false }
-
-                Divider().padding(.horizontal, 16)
-
-                HStack(spacing: 14) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(scheduleEnabled ? AppColors.accent : .secondary)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Set a schedule")
-                            .font(.body.weight(.semibold))
-                        Text("Only during certain hours")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if scheduleEnabled {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(AppColors.accent)
-                            .font(.system(size: 20))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .contentShape(Rectangle())
-                .onTapGesture { scheduleEnabled = true }
-            }
-            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(AppColors.cardBorder, lineWidth: 1)
-            )
-            .padding(.horizontal, 24)
-
-            // Time pickers — compact style
+            // Time pickers when schedule is selected
             if scheduleEnabled {
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -271,12 +260,13 @@ struct FocusModeSetupView: View {
                     }
                 }
                 .padding(16)
-                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
+                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 14)
                         .stroke(AppColors.cardBorder, lineWidth: 1)
                 )
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
             }
 
             Spacer()
@@ -288,110 +278,90 @@ struct FocusModeSetupView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Step 3: Duration + Enable
-
-    private var durationStep: some View {
-        VStack(spacing: 16) {
-            Spacer().frame(height: 10)
-
-            // Mascot
-            Image("mascot-goal")
+    private func scheduleCard(mascot: String, title: String, subtitle: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 14) {
+            Image(mascot)
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 140)
+                .frame(height: 44)
 
-            VStack(spacing: 6) {
-                Text("Almost there!")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-
-                Text("Pick how long apps stay unlocked\nafter completing a brain game")
-                    .font(.subheadline)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
 
-            // Duration selector — pill style
-            HStack(spacing: 8) {
-                ForEach(durationOptions, id: \.self) { minutes in
-                    let isSelected = unlockDuration == minutes
-                    Text("\(minutes) min")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(isSelected ? .white : .primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            isSelected
-                                ? AnyShapeStyle(AppColors.accentGradient)
-                                : AnyShapeStyle(AppColors.cardSurface)
-                        )
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(isSelected ? Color.clear : AppColors.cardBorder, lineWidth: 1)
-                        )
-                        .contentShape(Capsule())
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                unlockDuration = minutes
-                            }
-                        }
-                        .accessibilityLabel("\(minutes) minutes\(isSelected ? ", selected" : "")")
-                }
+            Spacer()
+        }
+        .padding(14)
+        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSelected ? AppColors.violet : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+    }
+
+    // MARK: - Step 3: Duration + Enable
+
+    private var durationStep: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 24)
+
+            Text("LAST STEP")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(AppColors.violet)
+                .padding(.bottom, 8)
+
+            Text("Pick your pace")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .padding(.bottom, 6)
+
+            Text("Every brain game earns you unlock time.\nYou can change this later.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 24)
+
+            // Preset cards
+            VStack(spacing: 10) {
+                paceCard(
+                    mascot: "mascot-streak-fire",
+                    name: "Laser",
+                    description: "Max focus. Apps snap shut fast.",
+                    minutes: 5,
+                    isRecommended: false
+                )
+
+                paceCard(
+                    mascot: "mascot-cool",
+                    name: "Balanced",
+                    description: "The one most people stick with.",
+                    minutes: 15,
+                    isRecommended: true
+                )
+
+                paceCard(
+                    mascot: "mascot-welcome",
+                    name: "Breathing",
+                    description: "Room to reply without earning it twice.",
+                    minutes: 30,
+                    isRecommended: false
+                )
+
+                paceCard(
+                    mascot: "mascot-bored",
+                    name: "Easing in",
+                    description: "Light touch while you're still adjusting.",
+                    minutes: 60,
+                    isRecommended: false
+                )
             }
-            .padding(.horizontal, 20)
-
-            // What you're setting up — visual summary
-            VStack(spacing: 0) {
-                // Blocked apps row
-                HStack(spacing: 10) {
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppColors.coral)
-                        .frame(width: 24)
-                    Text("\(focusModeService.blockedAppCount) app\(focusModeService.blockedAppCount == 1 ? "" : "s") will be blocked")
-                        .font(.system(size: 14, weight: .medium))
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-
-                Divider().padding(.horizontal, 16)
-
-                // Schedule row
-                HStack(spacing: 10) {
-                    Image(systemName: scheduleEnabled ? "clock.fill" : "infinity")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppColors.accent)
-                        .frame(width: 24)
-                    Text(scheduleEnabled ? "\(formattedTime(scheduleStart)) – \(formattedTime(scheduleEnd))" : "Active all day")
-                        .font(.system(size: 14, weight: .medium))
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-
-                Divider().padding(.horizontal, 16)
-
-                // Unlock row
-                HStack(spacing: 10) {
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppColors.violet)
-                        .frame(width: 24)
-                    Text("Play a game → unlock \(unlockDuration) min")
-                        .font(.system(size: 14, weight: .medium))
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-            }
-            .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(AppColors.cardBorder, lineWidth: 1)
-            )
             .padding(.horizontal, 20)
 
             Spacer()
@@ -418,6 +388,62 @@ struct FocusModeSetupView: View {
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+    }
+
+    private func paceCard(mascot: String, name: String, description: String, minutes: Int, isRecommended: Bool) -> some View {
+        let isSelected = unlockDuration == minutes
+
+        return HStack(spacing: 14) {
+            Image(mascot)
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 44)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(name)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+
+                    if isRecommended {
+                        Text("RECOMMENDED")
+                            .font(.system(size: 8, weight: .heavy))
+                            .tracking(0.5)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(AppColors.violet, in: Capsule())
+                    }
+                }
+
+                Text(description)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            VStack(spacing: 1) {
+                Text("\(minutes)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(isSelected ? AppColors.violet : .primary)
+                Text("MIN")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSelected ? AppColors.violet : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                unlockDuration = minutes
+            }
+        }
     }
 
     // MARK: - Helpers
