@@ -29,6 +29,9 @@ struct ContentView: View {
     @State private var showingChallengeAccept = false
     @State private var showReferralWelcome = false
     @State private var showQuickGame = false
+    @State private var focusUnlockPending = false
+    @State private var focusUnlockExercise: ExerciseType?
+    @State private var showFocusUnlockToast = false
 
     // Toast state
     @State private var showingXPToast = false
@@ -137,7 +140,7 @@ struct ContentView: View {
                     .tag(0)
                     .accessibilityLabel("Home tab")
 
-                TrainingView()
+                TrainingView(externalExercise: $focusUnlockExercise)
                     .tabItem {
                         Label("Train", systemImage: "dumbbell.fill")
                     }
@@ -158,7 +161,7 @@ struct ContentView: View {
                     .tag(3)
                     .accessibilityLabel("Insights tab")
 
-                SettingsView()
+                ProfileView()
                     .tabItem {
                         Label("Profile", systemImage: "person.circle.fill")
                     }
@@ -270,7 +273,19 @@ struct ContentView: View {
                 selectedTab = 4
                 deepLinkRouter.pendingDestination = nil
             case .focusUnlock:
-                showQuickGame = true
+                // Navigate to Train tab with a random game for focus unlock
+                focusUnlockPending = true
+                selectedTab = 1
+                let activeGames: [ExerciseType] = [
+                    .reactionTime, .colorMatch, .speedMatch, .visualMemory,
+                    .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
+                    .chimpTest, .verbalMemory
+                ]
+                let randomGame = activeGames.randomElement()!
+                Analytics.focusUnlockGameStarted(gameType: randomGame.rawValue)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    focusUnlockExercise = randomGame
+                }
                 deepLinkRouter.pendingDestination = nil
             case .referral(let code):
                 // Don't process self-referrals
@@ -311,10 +326,43 @@ struct ContentView: View {
                 )
             }
         }
-        .fullScreenCover(isPresented: $showQuickGame) {
-            QuickGameView(unlockDurationMinutes: focusModeService.unlockDuration) {
+        .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
+            if focusUnlockPending {
+                focusUnlockPending = false
                 focusModeService.temporaryUnlock()
-                showQuickGame = false
+                if let gameType = notification.userInfo?["exerciseType"] as? String,
+                   let score = notification.userInfo?["score"] as? Double {
+                    Analytics.focusUnlockGameCompleted(gameType: gameType, score: Int(score * 100))
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    showFocusUnlockToast = true
+                }
+            }
+        }
+        .overlay(alignment: .top) {
+            if showFocusUnlockToast {
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.mint)
+                    Text("Apps unlocked for \(focusModeService.unlockDuration) min")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().stroke(AppColors.mint.opacity(0.3), lineWidth: 1))
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                .padding(.top, 60)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            showFocusUnlockToast = false
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showFocusUnlockToast)
             }
         }
         .alert("Welcome to Memori!", isPresented: $showReferralWelcome) {
@@ -624,6 +672,9 @@ struct TrainingView: View {
     @Query(sort: \Exercise.completedAt, order: .reverse) private var allExercises: [Exercise]
     private var exercises: [Exercise] { Array(allExercises.prefix(20)) }
 
+    /// External trigger for focus unlock — set by ContentView to navigate to a specific game
+    @Binding var externalExercise: ExerciseType?
+
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
     @State private var navigateToDailyChallenge = false
@@ -707,48 +758,6 @@ struct TrainingView: View {
                         dailyLimitBanner
                     }
 
-                    // Daily Challenge — always accessible, once per day
-                    Button {
-                        if !hasDoneDailyChallenge {
-                            navigateToDailyChallenge = true
-                        }
-                    } label: {
-                        HStack(alignment: .center, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("DAILY CHALLENGE")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(.white.opacity(0.7))
-                                    .tracking(1.5)
-                                Text(hasDoneDailyChallenge ? "Completed!" : "Today's Challenge")
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(.white)
-                                Text(hasDoneDailyChallenge ? "Come back tomorrow" : "Compete for the daily high score")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.75))
-                            }
-
-                            Spacer()
-
-                            Image(systemName: hasDoneDailyChallenge ? "checkmark.circle.fill" : "star.fill")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(.white.opacity(0.2), in: Circle())
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            LinearGradient(
-                                colors: hasDoneDailyChallenge ? [AppColors.teal, AppColors.teal.opacity(0.8)] : [AppColors.amber, AppColors.coral],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            in: RoundedRectangle(cornerRadius: 12)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal)
-
                     // Referral banner — always show so users can keep inviting
                     ReferralBannerView()
                         .padding(.horizontal)
@@ -806,9 +815,7 @@ struct TrainingView: View {
                 .navigationDestination(item: $selectedExercise) { type in
                     exerciseDestination(for: type)
                 }
-                .navigationDestination(isPresented: $navigateToDailyChallenge) {
-                    DailyChallengeView()
-                }
+                // Daily challenge hidden for now
                 .padding(.top, 8)
                 .padding(.bottom, 32)
                 .responsiveContent()
@@ -816,6 +823,12 @@ struct TrainingView: View {
             }
             .pageBackground()
             .navigationTitle("Train")
+            .onChange(of: externalExercise) { _, newValue in
+                if let game = newValue {
+                    selectedExercise = game
+                    externalExercise = nil
+                }
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView(
                     isHighIntent: true,

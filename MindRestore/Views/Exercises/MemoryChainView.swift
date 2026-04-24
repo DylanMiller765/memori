@@ -341,6 +341,11 @@ struct MemoryChainView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .intro && viewModel.phase != .gameOver {
+                Analytics.exerciseAbandoned(game: ExerciseType.memoryChain.rawValue, roundReached: viewModel.roundNumber)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .gameOver {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.longestChain, for: .memoryChain)

@@ -6,17 +6,16 @@ enum SubscriptionTier {
 }
 
 struct PaywallView: View {
-    /// Only show the exit offer on high-intent triggers (daily limit, post-assessment)
     var isHighIntent: Bool = false
     var currentStreak: Int = 0
     var todayScoreGain: Int = 0
     var isPersonalBest: Bool = false
     var gamesPlayedToday: Int = 0
-
     var triggerSource: String = "unknown"
 
     @Environment(\.dismiss) private var dismiss
     @Environment(StoreService.self) private var storeService
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var selectedTier: SubscriptionTier = .ultra
     @State private var selectedPlan: String = StoreService.annualUltraProductID
@@ -26,258 +25,61 @@ struct PaywallView: View {
     @AppStorage("exitOfferShownCount") private var exitOfferShownCount: Int = 0
     private let maxExitOffers = 3
 
+    private var selectedAccentColor: Color {
+        selectedTier == .ultra ? AppColors.violet : AppColors.accent
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Tier selector — at the very top
-                VStack(spacing: 12) {
-                    HStack(spacing: 10) {
-                        tierSegment(
-                            title: "Pro",
-                            subtitle: "Train more",
-                            isSelected: selectedTier == .pro,
-                            accentGradient: AppColors.accentGradient
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.22)) {
-                                selectedTier = .pro
-                                selectedPlan = StoreService.annualProductID
-                            }
-                        }
+                // Hero — compact
+                VStack(spacing: 10) {
+                    Image("mascot-cool")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 70)
+                        .opacity(appeared ? 1 : 0)
+                        .scaleEffect(appeared ? 1 : 0.8)
 
-                        tierSegment(
-                            title: "Ultra",
-                            subtitle: "Protect focus",
-                            isSelected: selectedTier == .ultra,
-                            accentGradient: LinearGradient(
-                                colors: [AppColors.violet, AppColors.indigo],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.22)) {
-                                selectedTier = .ultra
-                                selectedPlan = StoreService.annualUltraProductID
-                            }
-                        }
-                    }
-
-                    Text(selectedTier == .ultra ? "Ultra includes everything in Pro, plus Focus Mode and Screen Time insights." : "Pro unlocks unlimited training, insights, and competitive progress tracking.")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(AppColors.cardElevated)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(selectedTier == .ultra ? AppColors.violet.opacity(0.35) : AppColors.cardBorder, lineWidth: 1)
-                )
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-
-                Spacer()
-
-                // Hero — contextual copy
-                VStack(spacing: 6) {
                     Text(heroHeadline)
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.system(size: 24, weight: .bold))
                         .multilineTextAlignment(.center)
                         .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 10)
 
                     Text(heroSubtitle)
-                        .font(.subheadline)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
                         .opacity(appeared ? 1 : 0)
                 }
+                .padding(.top, 4)
                 .padding(.bottom, 14)
 
-                // Mascot
-                Image("mascot-locked-sad")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 90)
-                    .padding(.bottom, 6)
+                // Tier Toggle — glass pill
+                tierToggle
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 14)
 
-                // Benefits — same icons for shared features
-                HStack(spacing: 8) {
-                    if selectedTier == .pro {
-                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "No daily cap", color: AppColors.accent)
-                        benefitCard(icon: "chart.line.uptrend.xyaxis", title: "Insights", subtitle: "Track progress", color: AppColors.violet)
-                        benefitCard(icon: "trophy.fill", title: "Compete", subtitle: "Leaderboards", color: AppColors.amber)
-                    } else {
-                        benefitCard(icon: "infinity", title: "Unlimited", subtitle: "Everything in Pro", color: AppColors.accent)
-                        benefitCard(icon: "shield.fill", title: "Focus Mode", subtitle: "Block apps", color: AppColors.violet)
-                        benefitCard(icon: "chart.bar.fill", title: "Screen Time", subtitle: "Focus stats & insights", color: AppColors.teal)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 18)
-                .id(selectedTier == .pro ? "pro-benefits" : "ultra-benefits")
-                .animation(.easeInOut(duration: 0.2), value: selectedTier)
-
-                // Plans
-                VStack(spacing: 8) {
-                    if selectedTier == .pro {
-                        PlanCard(
-                            title: "Annual",
-                            price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
-                            detail: annualPerMonthDetail,
-                            trialText: trialLabel(for: storeService.annualProduct),
-                            badge: "Best Value",
-                            isSelected: selectedPlan == StoreService.annualProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.annualProductID
-                            }
-                        }
-
-                        PlanCard(
-                            title: "Monthly",
-                            price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
-                            detail: "Billed monthly",
-                            trialText: trialLabel(for: storeService.monthlyProduct),
-                            badge: nil,
-                            isSelected: selectedPlan == StoreService.monthlyProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.monthlyProductID
-                            }
-                        }
-
-                        PlanCard(
-                            title: "Weekly",
-                            price: storeService.weeklyProduct?.displayPrice ?? "$1.99/wk",
-                            detail: "Billed weekly",
-                            trialText: trialLabel(for: storeService.weeklyProduct),
-                            badge: nil,
-                            isSelected: selectedPlan == StoreService.weeklyProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.weeklyProductID
-                            }
-                        }
-                    } else {
-                        PlanCard(
-                            title: "Annual",
-                            price: storeService.annualUltraProduct?.displayPrice ?? "$29.99/yr",
-                            detail: ultraAnnualPerMonthDetail,
-                            trialText: trialLabel(for: storeService.annualUltraProduct),
-                            badge: "Best Value",
-                            isSelected: selectedPlan == StoreService.annualUltraProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.annualUltraProductID
-                            }
-                        }
-
-                        PlanCard(
-                            title: "Monthly",
-                            price: storeService.monthlyUltraProduct?.displayPrice ?? "$5.99/mo",
-                            detail: "Billed monthly",
-                            trialText: trialLabel(for: storeService.monthlyUltraProduct),
-                            badge: nil,
-                            isSelected: selectedPlan == StoreService.monthlyUltraProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.monthlyUltraProductID
-                            }
-                        }
-
-                        PlanCard(
-                            title: "Weekly",
-                            price: storeService.weeklyUltraProduct?.displayPrice ?? "$2.99/wk",
-                            detail: "Billed weekly",
-                            trialText: trialLabel(for: storeService.weeklyUltraProduct),
-                            badge: nil,
-                            isSelected: selectedPlan == StoreService.weeklyUltraProductID,
-                            accentColor: selectedAccentColor
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedPlan = StoreService.weeklyUltraProductID
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-
-                // CTA + footer
-                VStack(spacing: 8) {
-                    Button {
-                        Task { await purchase() }
-                    } label: {
-                        Group {
-                            if storeService.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "lock.open.fill")
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(ctaButtonLabel)
-                                        .font(.headline.weight(.bold))
-                                }
-                            }
-                        }
-                        .gradientButton(AppColors.premiumGradient)
-                    }
-                    .disabled(storeService.isLoading)
-                    .padding(.horizontal, 20)
-
-                    if let error = storeService.purchaseError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.error)
-                    }
-
-                    Text(ctaDisclaimerLabel)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
-
-                    HStack(spacing: 12) {
-                        Button("Restore") {
-                            Task { await storeService.restorePurchases() }
-                        }
-                        Text("·").foregroundStyle(.quaternary)
-                        Button("Terms") {
-                            if let url = URL(string: "https://getmemoriapp.com/terms") {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                        Text("·").foregroundStyle(.quaternary)
-                        Button("Privacy") {
-                            if let url = URL(string: "https://getmemoriapp.com/privacy") {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                    }
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.tertiary)
-                }
-                .padding(.bottom, 12)
+                // Benefits
+                benefitsList
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 14)
 
                 Spacer()
+
+                // Plans
+                planCards
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+
+                // CTA
+                ctaSection
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
             }
-            .background(
-                ZStack {
-                    paywallBackground
-                    tierAtmosphere
-                }
-                    .ignoresSafeArea()
-            )
+            .background(paywallBackground.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -291,12 +93,11 @@ struct PaywallView: View {
                         }
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.tertiary)
-                            .padding(8)
-
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(.ultraThinMaterial))
                     }
-                    .accessibilityLabel("Close")
                 }
             }
             .sheet(isPresented: $showExitOffer) {
@@ -318,197 +119,348 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Background
+    // MARK: - Tier Toggle
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    @ViewBuilder
-    private var paywallBackground: some View {
-        if colorScheme == .dark {
-            ZStack {
-                Color(red: 0.06, green: 0.04, blue: 0.12)
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.16, green: 0.10, blue: 0.30),
-                        Color(red: 0.10, green: 0.06, blue: 0.25),
-                        Color(red: 0.06, green: 0.04, blue: 0.14),
-                        .clear
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                RadialGradient(
-                    colors: [AppColors.violet.opacity(0.15), .clear],
-                    center: .init(x: 0.5, y: 0.32),
-                    startRadius: 20,
-                    endRadius: 200
-                )
+    private var tierToggle: some View {
+        HStack(spacing: 3) {
+            tierPill("Pro", isSelected: selectedTier == .pro) {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    selectedTier = .pro
+                    selectedPlan = StoreService.annualProductID
+                }
             }
-        } else {
-            LinearGradient(
-                colors: [
-                    AppColors.pageBgLight,
-                    AppColors.accent.opacity(0.07),
-                    AppColors.accent.opacity(0.22)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+
+            tierPill("Ultra", isSelected: selectedTier == .ultra) {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    selectedTier = .ultra
+                    selectedPlan = StoreService.annualUltraProductID
+                }
+            }
         }
+        .padding(3)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
     }
 
-    @ViewBuilder
-    private var tierAtmosphere: some View {
-        if selectedTier == .ultra {
-            LinearGradient(
-                colors: [
-                    AppColors.violet.opacity(0.18),
-                    AppColors.indigo.opacity(0.10),
-                    .clear
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        } else {
-            LinearGradient(
-                colors: [
-                    AppColors.accent.opacity(0.04),
-                    .clear
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-    }
-
-    private var selectedAccentColor: Color {
-        selectedTier == .ultra ? AppColors.violet : AppColors.accent
-    }
-
-    // MARK: - Benefit Card
-
-    private func tierSegment(
-        title: String,
-        subtitle: String,
-        isSelected: Bool,
-        accentGradient: LinearGradient,
-        action: @escaping () -> Void
-    ) -> some View {
+    private func tierPill(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(isSelected ? Color.white : .primary)
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(isSelected ? .white : .secondary)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected
+                        ? AnyShapeStyle(
+                            selectedTier == .ultra && title == "Ultra"
+                                ? LinearGradient(colors: [AppColors.violet, AppColors.indigo], startPoint: .leading, endPoint: .trailing)
+                                : AppColors.accentGradient
+                        )
+                        : AnyShapeStyle(Color.clear),
+                    in: Capsule()
+                )
+        }
+        .buttonStyle(.plain)
+        .contentShape(Capsule())
+    }
 
-                Text(subtitle)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.82) : .secondary)
+    // MARK: - Benefits
+
+    private var benefitsList: some View {
+        VStack(spacing: 0) {
+            if selectedTier == .pro {
+                benefitRow(icon: "infinity", text: "Unlimited daily games", color: AppColors.accent)
+                benefitRow(icon: "chart.line.uptrend.xyaxis", text: "Full progress insights", color: AppColors.teal)
+                benefitRow(icon: "trophy.fill", text: "Compete on leaderboards", color: AppColors.amber)
+                benefitRow(icon: "brain.head.profile", text: "Track your Brain Age", color: AppColors.violet, isLast: true)
+            } else {
+                benefitRow(icon: "infinity", text: "Everything in Pro", color: AppColors.accent)
+                benefitRow(icon: "shield.fill", text: "Block distracting apps", color: AppColors.violet)
+                benefitRow(icon: "gamecontroller.fill", text: "Play to earn screen time", color: AppColors.coral)
+                benefitRow(icon: "chart.bar.fill", text: "Screen time insights", color: AppColors.teal, isLast: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
+        }
+    }
+
+    private func benefitRow(icon: String, text: String, color: Color, isLast: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 32, height: 32)
+                    .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+
+                Text(text)
+                    .font(.system(size: 15, weight: .medium))
+
+                Spacer()
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(selectedAccentColor)
+            }
+            .padding(.vertical, 12)
+
+            if !isLast {
+                Divider().opacity(0.3)
+            }
+        }
+    }
+
+    // MARK: - Plan Cards
+
+    private var planCards: some View {
+        VStack(spacing: 6) {
+            if selectedTier == .pro {
+                planRow(
+                    title: "Annual",
+                    price: storeService.annualProduct?.displayPrice ?? "$19.99/yr",
+                    detail: annualPerMonthDetail,
+                    trial: trialLabel(for: storeService.annualProduct),
+                    badge: "SAVE \(annualSavingsPercent)%",
+                    id: StoreService.annualProductID
+                )
+                planRow(
+                    title: "Monthly",
+                    price: storeService.monthlyProduct?.displayPrice ?? "$3.99/mo",
+                    detail: "Billed monthly",
+                    trial: trialLabel(for: storeService.monthlyProduct),
+                    badge: nil,
+                    id: StoreService.monthlyProductID
+                )
+                planRow(
+                    title: "Weekly",
+                    price: storeService.weeklyProduct?.displayPrice ?? "$1.99/wk",
+                    detail: "Billed weekly",
+                    trial: trialLabel(for: storeService.weeklyProduct),
+                    badge: nil,
+                    id: StoreService.weeklyProductID
+                )
+            } else {
+                planRow(
+                    title: "Annual",
+                    price: storeService.annualUltraProduct?.displayPrice ?? "$39.99/yr",
+                    detail: ultraAnnualPerMonthDetail,
+                    trial: trialLabel(for: storeService.annualUltraProduct),
+                    badge: "SAVE \(ultraAnnualSavingsPercent)%",
+                    id: StoreService.annualUltraProductID
+                )
+                planRow(
+                    title: "Monthly",
+                    price: storeService.monthlyUltraProduct?.displayPrice ?? "$6.99/mo",
+                    detail: "Billed monthly",
+                    trial: trialLabel(for: storeService.monthlyUltraProduct),
+                    badge: nil,
+                    id: StoreService.monthlyUltraProductID
+                )
+                planRow(
+                    title: "Weekly",
+                    price: storeService.weeklyUltraProduct?.displayPrice ?? "$3.99/wk",
+                    detail: "Billed weekly",
+                    trial: trialLabel(for: storeService.weeklyUltraProduct),
+                    badge: nil,
+                    id: StoreService.weeklyUltraProductID
+                )
+            }
+        }
+    }
+
+    private func planRow(title: String, price: String, detail: String, trial: String, badge: String?, id: String) -> some View {
+        let isSelected = selectedPlan == id
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedPlan = id }
+        } label: {
+            HStack(spacing: 12) {
+                // Radio
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? selectedAccentColor : Color.white.opacity(0.2), lineWidth: 2)
+                        .frame(width: 22, height: 22)
+                    if isSelected {
+                        Circle()
+                            .fill(selectedAccentColor)
+                            .frame(width: 14, height: 14)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.system(size: 16, weight: .bold))
+
+                        if let badge {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .black))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(selectedAccentColor, in: Capsule())
+                        }
+                    }
+
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if !trial.isEmpty {
+                        Text(trial)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.mint)
+                    }
+                }
+
+                Spacer()
+
+                Text(price)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(isSelected ? selectedAccentColor : .primary)
+            }
+            .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? AnyShapeStyle(accentGradient) : AnyShapeStyle(Color.clear))
+                    .fill(Color.white.opacity(isSelected ? 0.06 : 0.03))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? selectedAccentColor.opacity(0.18) : AppColors.cardBorder, lineWidth: 1)
+                    .stroke(isSelected ? selectedAccentColor : Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    private func benefitCard(icon: String, title: String, subtitle: String, color: Color) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(height: 28)
+    // MARK: - CTA
 
-            Text(title)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(subtitle)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+    private var ctaSection: some View {
+        VStack(spacing: 10) {
+            Button {
+                Task { await purchase() }
+            } label: {
+                Group {
+                    if storeService.isLoading {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text(ctaButtonLabel)
+                            .font(.headline.weight(.bold))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    selectedTier == .ultra
+                        ? LinearGradient(colors: [AppColors.violet, AppColors.indigo], startPoint: .leading, endPoint: .trailing)
+                        : AppColors.accentGradient,
+                    in: RoundedRectangle(cornerRadius: 14)
+                )
+                .foregroundStyle(.white)
+            }
+            .disabled(storeService.isLoading)
+
+            if let error = storeService.purchaseError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.error)
+            }
+
+            Text(ctaDisclaimerLabel)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+            HStack(spacing: 12) {
+                Button("Restore") {
+                    Task { await storeService.restorePurchases() }
+                }
+                Text("·").foregroundStyle(.quaternary)
+                Button("Terms") {
+                    if let url = URL(string: "https://getmemoriapp.com/terms") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Text("·").foregroundStyle(.quaternary)
+                Button("Privacy") {
+                    if let url = URL(string: "https://getmemoriapp.com/privacy") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.tertiary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(color.opacity(0.15), lineWidth: 1)
-        )
     }
 
-    // MARK: - Benefit Row
+    // MARK: - Background
 
-    private func benefitRow(icon: String, text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 20)
-            Text(text)
-                .font(.subheadline.weight(.medium))
+    @ViewBuilder
+    private var paywallBackground: some View {
+        ZStack {
+            AppColors.pageBgDark
+
+            LinearGradient(
+                colors: [
+                    selectedAccentColor.opacity(0.15),
+                    selectedAccentColor.opacity(0.05),
+                    .clear
+                ],
+                startPoint: .top,
+                endPoint: .center
+            )
+
+            RadialGradient(
+                colors: [selectedAccentColor.opacity(0.1), .clear],
+                center: .init(x: 0.5, y: 0.15),
+                startRadius: 20,
+                endRadius: 250
+            )
         }
+        .animation(.easeInOut(duration: 0.3), value: selectedTier)
     }
 
-    // MARK: - Contextual Copy
+    // MARK: - Copy
 
     private var heroHeadline: String {
-        if isPersonalBest {
-            return "New personal best!\nDon't stop now."
-        } else if todayScoreGain > 0 {
-            return "Your score jumped \(todayScoreGain) points.\nKeep going."
-        } else if currentStreak > 2 {
-            return "You're on a \(currentStreak)-day streak.\nDon't let it die."
-        } else if gamesPlayedToday >= 3 {
-            return "You've hit today's limit.\nThe best players train more."
-        } else {
-            return "Train without limits."
-        }
+        selectedTier == .ultra ? "Block the noise" : "Train without limits"
     }
 
     private var heroSubtitle: String {
-        if currentStreak > 2 {
-            return "\(currentStreak) days of progress. Pro members never get cut off."
-        } else if todayScoreGain > 0 {
-            return "3 games isn't enough to keep those gains."
-        } else if gamesPlayedToday >= 3 {
-            return "Unlimited games. Real improvement."
-        } else {
-            return "3 games a day isn't enough to see real results."
-        }
+        selectedTier == .ultra
+            ? "Block distracting apps.\nEarn screen time with brain games."
+            : "Unlimited games, insights, and leaderboards."
     }
 
     // MARK: - Helpers
 
+    private var annualSavingsPercent: Int {
+        guard let annual = storeService.annualProduct, let monthly = storeService.monthlyProduct else { return 58 }
+        let monthlyFromAnnual = annual.price / 12
+        let diff = NSDecimalNumber(decimal: monthly.price - monthlyFromAnnual)
+        let total = NSDecimalNumber(decimal: monthly.price)
+        return Int((diff.doubleValue / total.doubleValue * 100).rounded())
+    }
+
+    private var ultraAnnualSavingsPercent: Int {
+        guard let annual = storeService.annualUltraProduct, let monthly = storeService.monthlyUltraProduct else { return 58 }
+        let monthlyFromAnnual = annual.price / 12
+        let diff = NSDecimalNumber(decimal: monthly.price - monthlyFromAnnual)
+        let total = NSDecimalNumber(decimal: monthly.price)
+        return Int((diff.doubleValue / total.doubleValue * 100).rounded())
+    }
+
     private var annualPerMonthDetail: String {
-        if let annualProduct = storeService.annualProduct,
-           let monthlyProduct = storeService.monthlyProduct {
-            let monthlyFromAnnual = annualProduct.price / 12
-            let formatted = monthlyFromAnnual.formatted(.currency(code: annualProduct.priceFormatStyle.currencyCode ?? "USD"))
-            let diff = NSDecimalNumber(decimal: monthlyProduct.price - monthlyFromAnnual)
-            let total = NSDecimalNumber(decimal: monthlyProduct.price)
-            let savings = Int((diff.doubleValue / total.doubleValue * 100).rounded())
-            return "Just \(formatted)/month — Save \(savings)%"
+        if let annual = storeService.annualProduct {
+            let monthly = annual.price / 12
+            let formatted = monthly.formatted(.currency(code: annual.priceFormatStyle.currencyCode ?? "USD"))
+            return "Just \(formatted)/month"
         }
-        return "Just $1.67/month — Save 58%"
+        return "Just $1.67/month"
     }
 
     private var ultraAnnualPerMonthDetail: String {
-        if let annualProduct = storeService.annualUltraProduct,
-           let monthlyProduct = storeService.monthlyUltraProduct {
-            let monthlyFromAnnual = annualProduct.price / 12
-            let formatted = monthlyFromAnnual.formatted(.currency(code: annualProduct.priceFormatStyle.currencyCode ?? "USD"))
-            let diff = NSDecimalNumber(decimal: monthlyProduct.price - monthlyFromAnnual)
-            let total = NSDecimalNumber(decimal: monthlyProduct.price)
-            let savings = Int((diff.doubleValue / total.doubleValue * 100).rounded())
-            return "Just \(formatted)/month — Save \(savings)%"
+        if let annual = storeService.annualUltraProduct {
+            let monthly = annual.price / 12
+            let formatted = monthly.formatted(.currency(code: annual.priceFormatStyle.currencyCode ?? "USD"))
+            return "Just \(formatted)/month"
         }
-        return "Just $2.50/month — Save 58%"
+        return "Just $3.33/month"
     }
 
     private func purchase() async {
@@ -554,21 +506,9 @@ struct PaywallView: View {
         return ""
     }
 
-    private var selectedProduct: Product? {
-        switch selectedPlan {
-        case StoreService.annualProductID:       return storeService.annualProduct
-        case StoreService.monthlyProductID:      return storeService.monthlyProduct
-        case StoreService.weeklyProductID:       return storeService.weeklyProduct
-        case StoreService.annualUltraProductID:  return storeService.annualUltraProduct
-        case StoreService.monthlyUltraProductID: return storeService.monthlyUltraProduct
-        case StoreService.weeklyUltraProductID:  return storeService.weeklyUltraProduct
-        default:                                 return storeService.annualUltraProduct
-        }
-    }
-
     private var ctaButtonLabel: String {
-        let selectedProduct = self.selectedProduct
-        if let product = selectedProduct,
+        let product = selectedProduct
+        if let product,
            let sub = product.subscription,
            let intro = sub.introductoryOffer,
            intro.paymentMode == .freeTrial {
@@ -587,8 +527,8 @@ struct PaywallView: View {
     }
 
     private var ctaDisclaimerLabel: String {
-        let selectedProduct = self.selectedProduct
-        if let product = selectedProduct,
+        let product = selectedProduct
+        if let product,
            let sub = product.subscription,
            let intro = sub.introductoryOffer,
            intro.paymentMode == .freeTrial {
@@ -605,91 +545,17 @@ struct PaywallView: View {
         }
         return "Cancel anytime."
     }
-}
 
-// MARK: - Plan Card
-
-struct PlanCard: View {
-    let title: String
-    let price: String
-    let detail: String
-    var trialText: String = ""
-    let badge: String?
-    let isSelected: Bool
-    var accentColor: Color = AppColors.violet
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .stroke(isSelected ? accentColor : Color.gray.opacity(0.3), lineWidth: 2)
-                        .frame(width: 22, height: 22)
-
-                    if isSelected {
-                        Circle()
-                            .fill(accentColor)
-                            .frame(width: 14, height: 14)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(title)
-                            .font(.subheadline.weight(.bold))
-
-                        if let badge {
-                            Text(badge)
-                                .font(.system(size: 9, weight: .bold))
-                                .textCase(.uppercase)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 2)
-                                .background(
-                                    LinearGradient(
-                                        colors: [AppColors.violet, AppColors.indigo],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    ),
-                                    in: Capsule()
-                                )
-                                .foregroundStyle(.white)
-                        }
-                    }
-
-                    Text(detail)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    if !trialText.isEmpty {
-                        Text(trialText)
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(AppColors.accent)
-                    }
-                }
-
-                Spacer()
-
-                Text(price)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(isSelected ? accentColor : .primary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppColors.cardElevated)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        isSelected ? accentColor.opacity(0.6) : Color.clear,
-                        lineWidth: 2
-                    )
-            )
+    private var selectedProduct: Product? {
+        switch selectedPlan {
+        case StoreService.annualProductID:       return storeService.annualProduct
+        case StoreService.monthlyProductID:      return storeService.monthlyProduct
+        case StoreService.weeklyProductID:       return storeService.weeklyProduct
+        case StoreService.annualUltraProductID:  return storeService.annualUltraProduct
+        case StoreService.monthlyUltraProductID: return storeService.monthlyUltraProduct
+        case StoreService.weeklyUltraProductID:  return storeService.weeklyUltraProduct
+        default:                                 return storeService.annualProduct
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(title) plan, \(price)\(isSelected ? ", selected" : "")")
     }
 }
 
@@ -749,6 +615,81 @@ struct ExitOfferSheet: View {
                 appeared = true
             }
         }
+    }
+}
+
+// MARK: - Plan Card (reused by OnboardingPaywallView)
+
+struct PlanCard: View {
+    let title: String
+    let price: String
+    let detail: String
+    var trialText: String = ""
+    let badge: String?
+    let isSelected: Bool
+    var accentColor: Color = AppColors.violet
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? accentColor : Color.gray.opacity(0.3), lineWidth: 2)
+                        .frame(width: 22, height: 22)
+                    if isSelected {
+                        Circle()
+                            .fill(accentColor)
+                            .frame(width: 14, height: 14)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.subheadline.weight(.bold))
+                        if let badge {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .bold))
+                                .textCase(.uppercase)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(
+                                    LinearGradient(
+                                        colors: [AppColors.violet, AppColors.indigo],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    ),
+                                    in: Capsule()
+                                )
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    if !trialText.isEmpty {
+                        Text(trialText)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(AppColors.accent)
+                    }
+                }
+
+                Spacer()
+
+                Text(price)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(isSelected ? accentColor : .primary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 12).fill(AppColors.cardElevated))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? accentColor.opacity(0.6) : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

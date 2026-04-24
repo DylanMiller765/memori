@@ -25,7 +25,7 @@ struct LeaderboardView: View {
                 // Category picker
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
-                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain }) { category in
+                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain && $0 != .dailyChallenge }) { category in
                             Button {
                                 withAnimation(.spring(response: 0.3)) {
                                     selectedCategory = category

@@ -6,41 +6,53 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     private let sharedDefaults = UserDefaults(suiteName: "group.com.memori.shared")!
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
-        buildShieldConfig()
+        buildShieldConfig(appName: application.localizedDisplayName)
     }
 
     override func configuration(shielding application: Application, in category: ActivityCategory) -> ShieldConfiguration {
-        buildShieldConfig()
+        buildShieldConfig(appName: application.localizedDisplayName ?? category.localizedDisplayName)
     }
 
     override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration {
-        buildShieldConfig()
+        buildShieldConfig(appName: webDomain.domain)
     }
 
     override func configuration(shielding webDomain: WebDomain, in category: ActivityCategory) -> ShieldConfiguration {
-        buildShieldConfig()
+        buildShieldConfig(appName: webDomain.domain ?? category.localizedDisplayName)
     }
 
-    private func buildShieldConfig() -> ShieldConfiguration {
+    private func buildShieldConfig(appName: String? = nil) -> ShieldConfiguration {
         let attemptCount = dailyAttemptCount
+        let name = appName ?? "this app"
 
         let title: String
         let subtitle: String
 
         if attemptCount <= 2 {
             title = "Train your brain first!"
-            subtitle = "Complete a quick game to unlock this app"
+            subtitle = "Play a quick game to unlock \(name)"
         } else if attemptCount <= 4 {
             title = "Again? That's \(attemptCount) times today"
-            subtitle = "Play a brain game or stay focused"
+            subtitle = "Play a brain game to unlock \(name)"
         } else {
             title = "You've tried \(attemptCount) times today"
             subtitle = "Maybe it's time to put the phone down?"
         }
 
+        // Load mascot and scale it up for a larger display
+        let mascotIcon: UIImage? = {
+            guard let original = UIImage(named: "shield-mascot") else { return nil }
+            let targetSize = CGSize(width: 120, height: 120)
+            let renderer = UIGraphicsImageRenderer(size: targetSize)
+            return renderer.image { _ in
+                original.draw(in: CGRect(origin: .zero, size: targetSize))
+            }
+        }()
+
         return ShieldConfiguration(
-            backgroundBlurStyle: .systemThickMaterialDark,
-            backgroundColor: UIColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 1.0),
+            backgroundBlurStyle: .dark,
+            backgroundColor: UIColor(red: 0.039, green: 0.039, blue: 0.059, alpha: 1.0),
+            icon: mascotIcon,
             title: ShieldConfiguration.Label(text: title, color: .white),
             subtitle: ShieldConfiguration.Label(text: subtitle, color: UIColor(white: 0.6, alpha: 1.0)),
             primaryButtonLabel: ShieldConfiguration.Label(text: "Play a game", color: .white),

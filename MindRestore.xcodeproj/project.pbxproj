@@ -85,7 +85,6 @@
 		CC000001000000000000CC05 /* ChallengeResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002000000000000CC05 /* ChallengeResultView.swift */; };
 		CC6083B8D31A368F59382EDE /* DualNBackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A648264315FD88A128F688AA /* DualNBackEngine.swift */; };
 		CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */; };
-		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
 		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
@@ -121,11 +120,10 @@
 		FMST0001000000000000FS01 /* FocusModeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMST0002000000000000FS01 /* FocusModeSettingsView.swift */; };
 		FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSU0002000000000000FS01 /* FocusModeSetupView.swift */; };
 		FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSV0002000000000000FM01 /* FocusModeService.swift */; };
+		FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FPOP0002000000000000FP01 /* FreePlayPopup.swift */; };
 		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
 		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
 		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
-		FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FPOP0002000000000000FP01 /* FreePlayPopup.swift */; };
-		RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = RIRL0002000000000000RI01 /* ReferralInlineRow.swift */; };
 		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
 		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
@@ -133,10 +131,12 @@
 		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
 		MASCOT0STATE0002 /* MascotStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MASCOT0STATE0001 /* MascotStateView.swift */; };
 		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
+		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
 		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		RFRRL0000000000000001 /* ReferralService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000002 /* ReferralService.swift */; };
 		RFRRL0000000000000003 /* ReferralBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000004 /* ReferralBannerView.swift */; };
 		RFRRL0000000000000005 /* ReferralServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000006 /* ReferralServiceTests.swift */; };
+		RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = RIRL0002000000000000RI01 /* ReferralInlineRow.swift */; };
 		SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEED0001000000000000SE00 /* SeededGenerator.swift */; };
 		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
 		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
@@ -214,7 +214,6 @@
 		1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallEngine.swift; sourceTree = "<group>"; };
 		1BAED08649D48D8892E649EC /* DailyChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeView.swift; sourceTree = "<group>"; };
 		1DBDF55B2324A1F99C9A976C /* ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressDashboardView.swift; sourceTree = "<group>"; };
-		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		28F2956C980BEE531AF763D7 /* DailySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySession.swift; sourceTree = "<group>"; };
 		2B5ADE32D1F7FD0E731CC1AA /* ActiveRecallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRecallViewModel.swift; sourceTree = "<group>"; };
 		2DC8E99CC02B442CECAD45D0 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -323,11 +322,10 @@
 		FMST0002000000000000FS01 /* FocusModeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSettingsView.swift; sourceTree = "<group>"; };
 		FMSU0002000000000000FS01 /* FocusModeSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSetupView.swift; sourceTree = "<group>"; };
 		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
+		FPOP0002000000000000FP01 /* FreePlayPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePlayPopup.swift; sourceTree = "<group>"; };
 		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
 		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
 		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
-		FPOP0002000000000000FP01 /* FreePlayPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePlayPopup.swift; sourceTree = "<group>"; };
-		RIRL0002000000000000RI01 /* ReferralInlineRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralInlineRow.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
@@ -335,10 +333,12 @@
 		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
 		MASCOT0STATE0001 /* MascotStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotStateView.swift; sourceTree = "<group>"; };
 		MCHN0002000000000000MC01 /* MemoryChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryChainView.swift; sourceTree = "<group>"; };
+		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000002 /* ReferralService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralService.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000004 /* ReferralBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralBannerView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000006 /* ReferralServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralServiceTests.swift; sourceTree = "<group>"; };
+		RIRL0002000000000000RI01 /* ReferralInlineRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralInlineRow.swift; sourceTree = "<group>"; };
 		SEED0001000000000000SE00 /* SeededGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGenerator.swift; sourceTree = "<group>"; };
 		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS00 /* ChallengeLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkTests.swift; sourceTree = "<group>"; };
@@ -539,14 +539,6 @@
 				71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		PROF0003000000000000PF01 /* Profile */ = {
-			isa = PBXGroup;
-			children = (
-				PROF0002000000000000PF01 /* ProfileView.swift */,
-			);
-			path = Profile;
 			sourceTree = "<group>";
 		};
 		247526B0BB2604045C8FA8E6 /* Settings */ = {
@@ -807,6 +799,14 @@
 				71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		PROF0003000000000000PF01 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				PROF0002000000000000PF01 /* ProfileView.swift */,
+			);
+			path = Profile;
 			sourceTree = "<group>";
 		};
 		QGVW0003000000000000QG01 /* FocusMode */ = {
@@ -1452,7 +1452,7 @@
 				CODE_SIGN_ENTITLEMENTS = Memori/Memori.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1471,7 +1471,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.Memori;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1493,7 +1493,7 @@
 				CODE_SIGN_ENTITLEMENTS = Memori/Memori.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1508,7 +1508,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.Memori;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1530,7 +1530,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoriShieldAction/MemoriShieldAction.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1549,7 +1549,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldAction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1571,7 +1571,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoriShieldAction/MemoriShieldAction.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1586,7 +1586,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldAction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1608,7 +1608,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoriShieldConfig/MemoriShieldConfig.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1627,7 +1627,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldConfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1649,7 +1649,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoriShieldConfig/MemoriShieldConfig.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1664,7 +1664,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldConfig;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

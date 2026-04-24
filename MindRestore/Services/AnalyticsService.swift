@@ -216,12 +216,6 @@ enum Analytics {
         PostHogSDK.shared.capture("focus_mode_disabled")
     }
 
-    static func focusShieldShown(attemptCount: Int) {
-        PostHogSDK.shared.capture("focus_shield_shown", properties: [
-            "attempt_count": attemptCount
-        ])
-    }
-
     static func focusUnlockGameStarted(gameType: String) {
         PostHogSDK.shared.capture("focus_unlock_game_started", properties: [
             "game_type": gameType
@@ -239,10 +233,6 @@ enum Analytics {
         PostHogSDK.shared.capture("focus_unlock_granted", properties: [
             "duration_minutes": durationMinutes
         ])
-    }
-
-    static func focusStayedFocused() {
-        PostHogSDK.shared.capture("focus_stayed_focused")
     }
 
     static func focusSetupCompleted() {

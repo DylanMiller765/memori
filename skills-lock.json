@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "superwall": {
+      "source": "superwall/skills",
+      "sourceType": "github",
+      "computedHash": "42734becfb0b1bffbb1cd99d2c8f797d4d3ac2aec24e99db9ccdb1a3155c21a8"
+    },
     "swiftui-pro": {
       "source": "twostraws/swiftui-agent-skill",
       "sourceType": "github",

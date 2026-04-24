@@ -11,6 +11,10 @@ import FamilyControls
 
 struct FocusModeSetupView: View {
 
+    /// Optional completion handler — used when embedded in onboarding.
+    /// When nil, the view dismisses itself via `dismiss()`.
+    var onComplete: (() -> Void)?
+
     // MARK: Environment
 
     @Environment(FocusModeService.self) private var focusModeService
@@ -427,14 +431,20 @@ struct FocusModeSetupView: View {
             Button {
                 Task {
                     await focusModeService.requestAuthorization()
-                    focusModeService.unlockDuration = unlockDuration
+                    focusModeService.setUnlockDuration(unlockDuration)
+                    focusModeService.updateScheduleDays(scheduleDays)
                     focusModeService.updateSchedule(
                         enabled: scheduleEnabled,
                         start: scheduleStart,
                         end: scheduleEnd
                     )
                     focusModeService.enable()
-                    dismiss()
+                    Analytics.focusSetupCompleted()
+                    if let onComplete {
+                        onComplete()
+                    } else {
+                        dismiss()
+                    }
                 }
             } label: {
                 Text("Enable Focus Mode")

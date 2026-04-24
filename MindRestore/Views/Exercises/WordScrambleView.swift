@@ -367,6 +367,11 @@ struct WordScrambleView: View {
                 activeChallenge = challenge
             }
         }
+        .onDisappear {
+            if viewModel.phase != .setup && viewModel.phase != .finished {
+                Analytics.exerciseAbandoned(game: ExerciseType.wordScramble.rawValue, roundReached: viewModel.currentRound)
+            }
+        }
         .onChange(of: viewModel.phase) { _, newPhase in
             if newPhase == .finished {
                 isNewPersonalBest = PersonalBestTracker.shared.record(score: viewModel.leaderboardScore, for: .wordScramble)

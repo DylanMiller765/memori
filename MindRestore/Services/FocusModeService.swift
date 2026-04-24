@@ -16,6 +16,7 @@ private enum FocusKey {
     static let dailyAttemptDate  = "focus_daily_attempt_date"
     static let cooldownUntil    = "focus_cooldown_until"
     static let activitySelection = "focus_activity_selection"
+    static let scheduleDays     = "focus_schedule_days"
 }
 
 // MARK: - FocusModeService
@@ -43,6 +44,9 @@ final class FocusModeService {
 
     /// Schedule window end time (hour/minute only; day ignored).
     var scheduleEnd: Date = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+
+    /// Days of week the schedule is active (1=Sun, 7=Sat). Empty = every day.
+    var scheduleDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7]
 
     /// Number of times the user has attempted to disable Focus Mode today.
     var dailyAttemptCount: Int = 0
@@ -87,8 +91,10 @@ final class FocusModeService {
 
     private let sharedDefaults: UserDefaults
     private let store = ManagedSettingsStore()
+    private let activityCenter = DeviceActivityCenter()
     private var relockTask: Task<Void, Never>?
     private let cooldownMinutes: Int = 10
+    private static let activityName = DeviceActivityName("com.memori.focus")
 
     // MARK: Init
 
@@ -114,6 +120,13 @@ final class FocusModeService {
         authorizationStatus = AuthorizationCenter.shared.authorizationStatus
     }
 
+    // MARK: - Unlock Duration
+
+    func setUnlockDuration(_ minutes: Int) {
+        unlockDuration = minutes
+        sharedDefaults.set(minutes, forKey: FocusKey.unlockDuration)
+    }
+
     // MARK: - Activity Selection
 
     /// Persist a new FamilyActivitySelection chosen by the picker.
@@ -133,7 +146,13 @@ final class FocusModeService {
         persist(bool: true, forKey: FocusKey.enabled)
         clearUnlock()
         clearCooldown()
-        applyShields()
+
+        if scheduleEnabled {
+            registerDeviceActivitySchedule()
+        } else {
+            applyShields()
+        }
+        Analytics.focusModeEnabled()
     }
 
     /// Disable Focus Mode (subject to cooldown).
@@ -154,6 +173,9 @@ final class FocusModeService {
         persist(bool: false, forKey: FocusKey.enabled)
         clearUnlock()
         removeShields()
+        activityCenter.stopMonitoring([Self.activityName])
+        Analytics.focusModeDisabled()
+        Analytics.focusCooldownInitiated()
         return true
     }
 
@@ -167,6 +189,7 @@ final class FocusModeService {
         persist(date: unlockEnd, forKey: FocusKey.unlockUntil)
         removeShields()
         scheduleRelock(at: unlockEnd)
+        Analytics.focusUnlockGranted(durationMinutes: minutes)
     }
 
     /// Cancel an active temporary unlock and re-apply shields immediately.
@@ -215,6 +238,15 @@ final class FocusModeService {
 
     // MARK: - Schedule
 
+    func updateScheduleDays(_ days: Set<Int>) {
+        scheduleDays = days
+        let array = Array(days)
+        sharedDefaults.set(array, forKey: FocusKey.scheduleDays)
+        if isEnabled && scheduleEnabled {
+            registerDeviceActivitySchedule()
+        }
+    }
+
     func updateSchedule(enabled: Bool, start: Date, end: Date) {
         scheduleEnabled = enabled
         scheduleStart = start
@@ -222,6 +254,41 @@ final class FocusModeService {
         persist(bool: enabled, forKey: FocusKey.scheduleEnabled)
         persist(date: start, forKey: FocusKey.scheduleStart)
         persist(date: end, forKey: FocusKey.scheduleEnd)
+
+        guard isEnabled else { return }
+
+        if enabled {
+            registerDeviceActivitySchedule()
+        } else {
+            // All day mode — stop scheduled monitoring, apply shields now
+            activityCenter.stopMonitoring([Self.activityName])
+            if !isTemporarilyUnlocked {
+                applyShields()
+            }
+        }
+    }
+
+    /// Register a repeating daily schedule with DeviceActivityCenter.
+    private func registerDeviceActivitySchedule() {
+        let calendar = Calendar.current
+        let startComponents = calendar.dateComponents([.hour, .minute], from: scheduleStart)
+        let endComponents = calendar.dateComponents([.hour, .minute], from: scheduleEnd)
+
+        let schedule = DeviceActivitySchedule(
+            intervalStart: startComponents,
+            intervalEnd: endComponents,
+            repeats: true
+        )
+
+        do {
+            activityCenter.stopMonitoring([Self.activityName])
+            try activityCenter.startMonitoring(Self.activityName, during: schedule)
+        } catch {
+            // Fallback: apply shields immediately if scheduling fails
+            if !isTemporarilyUnlocked {
+                applyShields()
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -283,6 +350,10 @@ final class FocusModeService {
             dailyAttemptCount = savedCount
         } else {
             dailyAttemptCount = 0
+        }
+
+        if let savedDays = sharedDefaults.array(forKey: FocusKey.scheduleDays) as? [Int], !savedDays.isEmpty {
+            scheduleDays = Set(savedDays)
         }
 
         if let data = sharedDefaults.data(forKey: FocusKey.activitySelection),

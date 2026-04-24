@@ -259,24 +259,24 @@ struct OnboardingView: View {
     }
 
     private var goalsPage: some View {
-        VStack(spacing: 16) {
-            Spacer().frame(height: 20)
+        VStack(spacing: 12) {
+            Spacer().frame(height: 12)
 
             Image("mascot-goal")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 130)
+                .frame(height: 90)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Text("Pick your focus")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
                 Text("Select 1-3 goals")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ForEach(UserFocusGoal.allCases) { goal in
                     GoalCard(goal: goal, isSelected: selectedGoals.contains(goal)) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -719,34 +719,25 @@ struct OnboardingView: View {
     // MARK: - Focus Mode Page
 
     private var focusModePage: some View {
-        Color.clear
-            .onAppear {
-                showingFocusModeSetup = true
+        ZStack(alignment: .bottom) {
+            FocusModeSetupView(onComplete: {
+                focusModeWasSetUp = true
+                Analytics.onboardingStep(step: "focusModeCompleted")
+                withAnimation { currentPage = 8 }
+            })
+
+            // "Not now" skip button
+            Button {
+                Analytics.onboardingStep(step: "focusModeSkipped")
+                Analytics.focusSetupSkipped()
+                withAnimation { currentPage = 8 }
+            } label: {
+                Text("Not now")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
             }
-            .sheet(isPresented: $showingFocusModeSetup) {
-                FocusModeSetupView()
-                    .onDisappear {
-                        focusModeWasSetUp = true
-                        Analytics.onboardingStep(step: "focusModeCompleted")
-                        withAnimation { currentPage = 8 }
-                    }
-            }
-            .overlay {
-                VStack {
-                    Spacer()
-                    Button {
-                        showingFocusModeSetup = false
-                        Analytics.onboardingStep(step: "focusModeSkipped")
-                        withAnimation { currentPage = 8 }
-                    } label: {
-                        Text("Skip Focus Mode")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.vertical, 8)
-                    }
-                    .padding(.bottom, 40)
-                }
-            }
+            .padding(.bottom, 8)
+        }
     }
 
     private func continueButton(action: @escaping () -> Void) -> some View {
@@ -850,36 +841,29 @@ struct GoalCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 Text(goal.emoji)
-                    .font(.system(size: 28))
+                    .font(.system(size: 22))
 
                 Text(goal.displayName)
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
 
                 Spacer()
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 18)
+            .padding(.vertical, 11)
+            .padding(.horizontal, 16)
             .background(
-                ZStack {
-                    // Bottom shadow/3D edge
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isSelected ? AppColors.accent.opacity(0.4) : AppColors.cardBorder)
-                        .offset(y: 3)
-                    // Main card
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isSelected ? AppColors.accent.opacity(0.08) : AppColors.cardSurface)
-                }
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? AppColors.accent.opacity(0.10) : AppColors.cardSurface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(
                         isSelected ? AppColors.accent : AppColors.cardBorder,
-                        lineWidth: isSelected ? 2 : 1.5
+                        lineWidth: isSelected ? 2 : 1
                     )
             )
         }

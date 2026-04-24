@@ -8,7 +8,7 @@ enum ReviewPromptService {
         let lastPrompt = defaults.double(forKey: "lastReviewPromptDate")
         let daysSincePrompt = (Date.now.timeIntervalSince1970 - lastPrompt) / 86400
 
-        guard totalExercises >= 10, streak >= 3, daysSincePrompt > 30 else { return }
+        guard totalExercises >= 5, streak >= 2, daysSincePrompt > 90 else { return }
 
         defaults.set(Date.now.timeIntervalSince1970, forKey: "lastReviewPromptDate")
 

@@ -86,7 +86,7 @@ struct FocusModeSettingsView: View {
                 Section("Unlock Duration") {
                     Picker("After completing a game", selection: Binding(
                         get: { focusModeService.unlockDuration },
-                        set: { focusModeService.unlockDuration = $0 }
+                        set: { focusModeService.setUnlockDuration($0) }
                     )) {
                         Text("5 min").tag(5)
                         Text("15 min").tag(15)

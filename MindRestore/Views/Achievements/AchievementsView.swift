@@ -5,7 +5,6 @@ struct AchievementsView: View {
     @Query private var achievements: [Achievement]
     @Query private var users: [User]
     @State private var selectedCategory: AchievementCategory?
-    @State private var selectedAchievementType: AchievementType?
 
     private var user: User? { users.first }
     private var unlockedTypes: Set<AchievementType> {
@@ -13,10 +12,19 @@ struct AchievementsView: View {
     }
 
     private var filteredTypes: [AchievementType] {
+        let types: [AchievementType]
         if let category = selectedCategory {
-            return AchievementType.allCases.filter { $0.category == category }
+            types = AchievementType.allCases.filter { $0.category == category }
+        } else {
+            types = Array(AchievementType.allCases)
         }
-        return AchievementType.allCases
+        // Unlocked first, then locked
+        return types.sorted { a, b in
+            let aUnlocked = unlockedTypes.contains(a)
+            let bUnlocked = unlockedTypes.contains(b)
+            if aUnlocked != bUnlocked { return aUnlocked }
+            return false
+        }
     }
 
     private var unlockedCount: Int { achievements.count }
@@ -24,15 +32,33 @@ struct AchievementsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Progress header
-                progressHeader
+            VStack(spacing: 16) {
+                // Header count
+                Text("ACHIEVEMENTS · \(unlockedCount) / \(totalCount)")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Category filter
                 categoryFilter
 
-                // Achievement grid
-                achievementGrid
+                // Achievement rows
+                VStack(spacing: 0) {
+                    ForEach(Array(filteredTypes.enumerated()), id: \.element.rawValue) { index, type in
+                        let isUnlocked = unlockedTypes.contains(type)
+                        achievementRow(
+                            index: index + 1,
+                            type: type,
+                            isUnlocked: isUnlocked
+                        )
+
+                        if index < filteredTypes.count - 1 {
+                            Divider()
+                                .padding(.leading, 36)
+                        }
+                    }
+                }
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -41,68 +67,6 @@ struct AchievementsView: View {
         .pageBackground()
         .navigationTitle("Achievements")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selectedAchievementType) { type in
-            AchievementDetailView(
-                type: type,
-                achievement: achievements.first(where: { $0.typeRaw == type.rawValue }),
-                user: user
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-    }
-
-    // MARK: - Progress Header
-
-    private var progressHeader: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.accent.opacity(0.08))
-                    .frame(width: 112, height: 112)
-
-                Circle()
-                    .stroke(AppColors.accent.opacity(0.20), lineWidth: 8)
-                    .frame(width: 84, height: 84)
-
-                Circle()
-                    .trim(from: 0, to: totalCount > 0 ? CGFloat(unlockedCount) / CGFloat(totalCount) : 0)
-                    .stroke(
-                        AngularGradient(
-                            colors: [AppColors.accent, AppColors.teal, AppColors.violet, AppColors.accent],
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                    )
-                    .frame(width: 84, height: 84)
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 0) {
-                    Text("\(unlockedCount)")
-                        .font(.system(size: 26, weight: .bold, design: .monospaced))
-                        .foregroundStyle(AppColors.accent)
-                    Text("/\(totalCount)")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Text("\(unlockedCount) of \(totalCount) Unlocked")
-                .font(.subheadline.weight(.semibold))
-
-            if let user {
-                HStack(spacing: 16) {
-                    Label("Level \(user.level)", systemImage: "star.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(AppColors.violet)
-                    Label("\(user.totalXP) XP", systemImage: "bolt.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(AppColors.teal)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .heroCard(color: AppColors.accent)
     }
 
     // MARK: - Category Filter
@@ -130,134 +94,87 @@ struct AchievementsView: View {
         } label: {
             HStack(spacing: 4) {
                 Text(title)
-                    .font(.caption.weight(.semibold))
+                    .font(.system(size: 12, weight: .semibold))
                 Text("\(unlocked)/\(count)")
-                    .font(.caption2.weight(.medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(selectedCategory == category ? .white.opacity(0.7) : .secondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
                 selectedCategory == category
-                    ? AnyShapeStyle(category?.gradient ?? AppColors.accentGradient)
-                    : AnyShapeStyle(Color.white.opacity(0.08)),
+                    ? AnyShapeStyle(Color.white.opacity(0.15))
+                    : AnyShapeStyle(Color.white.opacity(0.05)),
                 in: Capsule()
+            )
+            .overlay(
+                Capsule()
+                    .stroke(
+                        selectedCategory == category ? Color.white.opacity(0.3) : Color.white.opacity(0.08),
+                        lineWidth: 1
+                    )
             )
             .foregroundStyle(selectedCategory == category ? .white : .primary)
         }
     }
 
-    // MARK: - Achievement Grid
+    // MARK: - Achievement Row
 
-    private var achievementGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-            ForEach(filteredTypes, id: \.rawValue) { type in
-                let isUnlocked = unlockedTypes.contains(type)
-                Button {
-                    selectedAchievementType = type
-                } label: {
-                    achievementCard(type: type, isUnlocked: isUnlocked)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
+    private func achievementRow(index: Int, type: AchievementType, isUnlocked: Bool) -> some View {
+        HStack(spacing: 12) {
+            // Number
+            Text(String(format: "%02d", index))
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundStyle(isUnlocked ? .secondary : .quaternary)
+                .frame(width: 24)
 
-    private func achievementCard(type: AchievementType, isUnlocked: Bool) -> some View {
-        VStack(spacing: 10) {
-            ZStack {
-                if isUnlocked {
-                    Circle()
-                        .fill(type.color.opacity(0.10))
-                        .frame(width: 72, height: 72)
-                }
-
-                Circle()
-                    .fill(
-                        isUnlocked
-                            ? AnyShapeStyle(
-                                LinearGradient(
-                                    colors: type.gradientColors,
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            : AnyShapeStyle(Color.white.opacity(0.08))
-                    )
-                    .frame(width: 52, height: 52)
-
-                Image(systemName: isUnlocked ? type.icon : "lock.fill")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(isUnlocked ? .white : .secondary)
+            // Name + description
+            VStack(alignment: .leading, spacing: 2) {
+                Text(type.displayName)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(isUnlocked ? .primary : .secondary)
+                Text(type.requirementDescription)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(isUnlocked ? .secondary : .quaternary)
+                    .lineLimit(1)
             }
 
-            Text(type.displayName)
-                .font(.caption.weight(.bold))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .foregroundStyle(isUnlocked ? .primary : .secondary)
+            Spacer()
 
-            Text(isUnlocked ? type.description : type.requirementDescription)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
+            // Status
+            if isUnlocked {
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("UNLOCKED")
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppColors.mint, in: Capsule())
 
-            if isUnlocked, let achievement = achievements.first(where: { $0.typeRaw == type.rawValue }) {
-                Text(achievement.unlockedAt.formatted(.dateTime.month(.abbreviated).day()))
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(type.color)
-            } else if !isUnlocked && type.targetValue > 1 {
+                    if let achievement = achievements.first(where: { $0.typeRaw == type.rawValue }) {
+                        Text(achievement.unlockedAt.formatted(.dateTime.month(.abbreviated).day()))
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            } else if type.targetValue > 1 {
                 let current = min(type.currentProgress(user: user), type.targetValue)
-                let progress = Double(current) / Double(type.targetValue)
-                VStack(spacing: 3) {
-                    ProgressView(value: progress)
-                        .tint(type.color)
-                    Text("\(current) / \(type.targetValue)")
-                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("\(current)/\(type.targetValue)")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.tertiary)
+
+                    ProgressView(value: Double(current), total: Double(type.targetValue))
+                        .tint(AppColors.accent.opacity(0.5))
+                        .frame(width: 60)
                 }
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.quaternary)
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppColors.cardSurface)
-                if isUnlocked {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [type.color.opacity(0.06), .clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                }
-            }
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    isUnlocked
-                        ? LinearGradient(
-                            colors: [type.color.opacity(0.35), type.color.opacity(0.1)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        : LinearGradient(colors: [Color.clear, Color.clear], startPoint: .top, endPoint: .bottom),
-                    lineWidth: 1
-                )
-        )
-        .opacity(isUnlocked ? 1 : 0.55)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel({
-            if isUnlocked, let achievement = achievements.first(where: { $0.typeRaw == type.rawValue }) {
-                return "\(type.displayName), unlocked on \(achievement.unlockedAt.formatted(.dateTime.month(.abbreviated).day()))"
-            } else {
-                return "\(type.displayName), locked"
-            }
-        }())
+        .padding(.vertical, 10)
+        .opacity(isUnlocked ? 1 : 0.6)
     }
 }

@@ -44,28 +44,13 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // 1. Player Card Hero
-                    playerCardHero
-
-                    // 2. Stats Grid
-                    statsGrid
-
-                    // 2.5 Referral Stats
-                    referralCard
-
-                    // 3. Achievements Preview
-                    achievementsPreview
-
-                    // 4. Pro Card
-                    proCard
-
-                    // 5. Settings Section
+                    // Settings Section
                     settingsCard
 
-                    // 6. About/Legal Section
+                    // About/Legal Section
                     aboutCard
 
-                    // 7. Reset Data (standalone red button)
+                    // Reset Data (standalone red button)
                     resetDataButton
 
                     // Debug (7-tap easter egg)
@@ -78,7 +63,7 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
             }
             .pageBackground()
-            .navigationTitle("Profile")
+            .navigationTitle("Settings")
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
