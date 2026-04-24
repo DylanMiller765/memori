@@ -24,7 +24,6 @@ struct ContentView: View {
     @State private var workoutEngine = WorkoutEngine()
     @State private var referralService = ReferralService()
     @State private var focusModeService = FocusModeService()
-
     // Challenge accept flow
     @State private var showingChallengeAccept = false
     @State private var showReferralWelcome = false
@@ -338,6 +337,7 @@ struct ContentView: View {
                     showFocusUnlockToast = true
                 }
             }
+
         }
         .overlay(alignment: .top) {
             if showFocusUnlockToast {

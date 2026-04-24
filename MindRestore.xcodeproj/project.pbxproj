@@ -55,6 +55,8 @@
 		A33BC116471F3B0282CF3629 /* StreakBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B93885923C4848ACCA6ADDA /* StreakBadge.swift */; };
 		A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B18226B6A2D87A22928921B /* PaywallView.swift */; };
 		AA000001000000000000AA01 /* Achievement.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA01 /* Achievement.swift */; };
+		RANK0001000000000000RK01 /* PlayerRank.swift in Sources */ = {isa = PBXBuildFile; fileRef = RANK0002000000000000RK01 /* PlayerRank.swift */; };
+		COSM0001000000000000CS01 /* CosmeticItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = COSM0002000000000000CS01 /* CosmeticItem.swift */; };
 		AA000001000000000000AA02 /* LeaderboardEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA02 /* LeaderboardEntry.swift */; };
 		AA000001000000000000AA03 /* AchievementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA03 /* AchievementService.swift */; };
 		AA000001000000000000AA04 /* LeaderboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000AA04 /* LeaderboardService.swift */; };
@@ -125,6 +127,7 @@
 		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
 		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
 		HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH01 /* LeaderboardRankCard.swift */; };
+		LOOT0001000000000000LT01 /* LootDropRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOOT0002000000000000LT01 /* LootDropRevealView.swift */; };
 		HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HH000002000000000000HH02 /* ExerciseResultView.swift */; };
 		II000001000000000000II01 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II01 /* HapticService.swift */; };
 		II000001000000000000II02 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II02 /* ReviewPromptService.swift */; };
@@ -258,6 +261,8 @@
 		A648264315FD88A128F688AA /* DualNBackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackEngine.swift; sourceTree = "<group>"; };
 		A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualNBackViewModel.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA01 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
+		RANK0002000000000000RK01 /* PlayerRank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRank.swift; sourceTree = "<group>"; };
+		COSM0002000000000000CS01 /* CosmeticItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmeticItem.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA02 /* LeaderboardEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardEntry.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA03 /* AchievementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementService.swift; sourceTree = "<group>"; };
 		AA000002000000000000AA04 /* LeaderboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardService.swift; sourceTree = "<group>"; };
@@ -327,6 +332,7 @@
 		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
 		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH01 /* LeaderboardRankCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRankCard.swift; sourceTree = "<group>"; };
+		LOOT0002000000000000LT01 /* LootDropRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LootDropRevealView.swift; sourceTree = "<group>"; };
 		HH000002000000000000HH02 /* ExerciseResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResultView.swift; sourceTree = "<group>"; };
 		II000002000000000000II01 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		II000002000000000000II02 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
@@ -555,9 +561,11 @@
 				AA000002000000000000AA01 /* Achievement.swift */,
 				05276B66D71D60017E61FBAC /* BrainScore.swift */,
 				CL00000001CL00000001CL00 /* ChallengeLink.swift */,
+				COSM0002000000000000CS01 /* CosmeticItem.swift */,
 				28F2956C980BEE531AF763D7 /* DailySession.swift */,
 				A5587C281892FC851EF36036 /* Enums.swift */,
 				A2163242F05F27F1F0A59324 /* Exercise.swift */,
+				RANK0002000000000000RK01 /* PlayerRank.swift */,
 				EEDDEEF4FB05119281748996 /* PsychoEducationCard.swift */,
 				AA000002000000000000AA02 /* LeaderboardEntry.swift */,
 				C13615D7A7F7C3F5FCCE04CF /* SpacedRepetitionCard.swift */,
@@ -697,6 +705,7 @@
 				MASCOT0STATE0001 /* MascotStateView.swift */,
 				43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */,
 				HH000002000000000000HH01 /* LeaderboardRankCard.swift */,
+				LOOT0002000000000000LT01 /* LootDropRevealView.swift */,
 				B0EF9610B969A47D9CF45857 /* ProgressRing.swift */,
 				BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */,
 				AA000002000000000000AA06 /* ShareableCard.swift */,
@@ -1134,6 +1143,9 @@
 				FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */,
 				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
+				RANK0001000000000000RK01 /* PlayerRank.swift in Sources */,
+				LOOT0001000000000000LT01 /* LootDropRevealView.swift in Sources */,
+				COSM0001000000000000CS01 /* CosmeticItem.swift in Sources */,
 				PROF0001000000000000PF01 /* ProfileView.swift in Sources */,
 				CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */,
 				15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */,

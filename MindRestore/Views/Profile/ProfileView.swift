@@ -7,6 +7,7 @@ struct ProfileView: View {
     @Environment(GameCenterService.self) private var gameCenterService
     @Query private var users: [User]
     @Query private var achievements: [Achievement]
+    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
 
     @State private var showingSettings = false
     @State private var globalRank: Int?
@@ -14,6 +15,9 @@ struct ProfileView: View {
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
     private var isUltraUser: Bool { storeService.isUltraUser }
+
+    private var latestBrainScore: Int { brainScores.first?.brainScore ?? 0 }
+    private var currentRank: PlayerRank { .from(brainScore: latestBrainScore) }
 
     private var unlockedAchievements: [Achievement] {
         achievements.sorted { $0.unlockedAt < $1.unlockedAt }
@@ -37,8 +41,12 @@ struct ProfileView: View {
                     playerCard
                         .staggered(index: 0)
 
-                    xpProgress
+                    RankProgressView(rank: currentRank, brainScore: latestBrainScore)
+                        .padding(.horizontal, 4)
                         .staggered(index: 1)
+
+                    xpProgress
+                        .staggered(index: 2)
 
                     achievementsSection
                         .staggered(index: 2)
@@ -88,10 +96,13 @@ struct ProfileView: View {
             .frame(height: 110)
             .clipped()
 
-            // Name + Join Date
+            // Name + Rank + Join Date
             VStack(spacing: 6) {
-                Text(user?.username.isEmpty == false ? user!.username : "Player")
-                    .font(.system(size: 28, weight: .bold))
+                HStack(spacing: 10) {
+                    Text(user?.username.isEmpty == false ? user!.username : "Player")
+                        .font(.system(size: 28, weight: .bold))
+                    RankPill(rank: currentRank)
+                }
 
                 if let user {
                     Text("joined \(user.createdAt.formatted(.dateTime.month(.twoDigits).day(.twoDigits).year()))")

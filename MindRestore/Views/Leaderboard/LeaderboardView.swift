@@ -9,7 +9,7 @@ struct LeaderboardView: View {
     @Environment(GameCenterService.self) private var gameCenterService
 
     @State private var selectedCategory: LeaderboardCategory = .brainScore
-    @State private var selectedFilter: LeaderboardTimeFilter = .allTime
+    @State private var selectedFilter: LeaderboardTimeFilter = .thisWeek
     @State private var entries: [LeaderboardEntryData] = []
     @State private var totalPlayerCount: Int = 0
     @State private var isLoading = false
@@ -506,10 +506,19 @@ struct LeaderboardView: View {
                 .foregroundStyle(entry.rank <= 3 ? medalColor("\(entry.rank)") : .secondary)
                 .frame(width: 30, alignment: .center)
 
-            VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 6) {
                 Text(entry.isCurrentUser ? "You" : entry.username)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(entry.isCurrentUser ? AppColors.accent : .primary)
+
+                if selectedCategory == .brainScore {
+                    let rank = PlayerRank.from(brainScore: entry.score)
+                    Text(rank.displayName.uppercased())
+                        .font(.system(size: 8, weight: .black))
+                        .tracking(0.5)
+                        .foregroundStyle(rank.color)
+                        .shadow(color: rank.color.opacity(0.5), radius: 2)
+                }
             }
 
             Spacer()
