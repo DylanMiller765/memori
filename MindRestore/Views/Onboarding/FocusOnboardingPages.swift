@@ -1,5 +1,7 @@
 import SwiftUI
 import DeviceActivity
+import FamilyControls
+import UIKit
 
 extension DeviceActivityReport.Context {
     /// Must match the context name declared in the `FocusUnlocksReport` extension target.
@@ -130,6 +132,7 @@ struct FocusOnboardA: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
         }
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -203,6 +206,7 @@ struct FocusOnboardHowItWorks: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
         }
+        .preferredColorScheme(.dark)
     }
 
     private func stepRow(index: Int, step: Step) -> some View {
@@ -331,6 +335,7 @@ struct FocusOnboardB: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
         }
+        .preferredColorScheme(.dark)
     }
 
     private struct BouncerApp {
@@ -489,6 +494,7 @@ struct FocusOnboardC: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
         }
+        .preferredColorScheme(.dark)
     }
 
     private func appTile(_ app: DemoApp) -> some View {
@@ -533,6 +539,9 @@ struct FocusOnboardPersonalUnlocks: View {
     var onContinue: () -> Void
     var authorized: Bool = true
     var count: Int = 287  // fallback for preview / declined
+    /// When the user previously denied auth, iOS won't re-prompt. We surface an
+    /// "Open Settings" deep-link instead of the standard "Unlock" CTA.
+    var previouslyDenied: Bool = false
 
     private var minsBetween: Int { max(1, Int((1440.0 / Double(count)).rounded())) }
 
@@ -605,6 +614,18 @@ struct FocusOnboardPersonalUnlocks: View {
                             .padding(.leading, 14)
                             .padding(.vertical, 2)
                     }
+                } else if previouslyDenied {
+                    HStack(spacing: 0) {
+                        Rectangle().fill(FO.speed).frame(width: 2)
+                        (Text("Permission was denied earlier. ")
+                         + Text("Open Settings").foregroundColor(FO.fg).fontWeight(.semibold)
+                         + Text(" to enable Screen Time access."))
+                            .font(.system(size: 15))
+                            .foregroundStyle(FO.fg2)
+                            .lineSpacing(3)
+                            .padding(.leading, 14)
+                            .padding(.vertical, 2)
+                    }
                 } else {
                     HStack(spacing: 0) {
                         Rectangle().fill(FO.border2).frame(width: 2)
@@ -650,10 +671,27 @@ struct FocusOnboardPersonalUnlocks: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(FO.bg.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
-            FOContinueButton(title: authorized ? "Continue" : "Unlock the Real Numbers", action: onContinue)
+            FOContinueButton(title: ctaTitle, action: ctaAction)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
         }
+        .preferredColorScheme(.dark)
+    }
+
+    private var ctaTitle: String {
+        if authorized { return "Continue" }
+        if previouslyDenied { return "Open Settings" }
+        return "Unlock the Real Numbers"
+    }
+
+    private func ctaAction() {
+        if !authorized && previouslyDenied {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+            return
+        }
+        onContinue()
     }
 }
 

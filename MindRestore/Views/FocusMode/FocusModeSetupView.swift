@@ -26,11 +26,13 @@ struct FocusModeSetupView: View {
     /// Start at "pick apps" — the intro step is skipped when used inline in onboarding.
     @State private var currentStep = 1
     @State private var scheduleEnabled = false
-    @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 9)) ?? Date()
-    @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 17)) ?? Date()
+    // Default to evening/bedtime block (22:00 → 08:00) — matches FocusModeService's default and
+    // the feature's primary intent (block distractions when winding down / sleeping).
+    @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 22)) ?? Date()
+    @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 8)) ?? Date()
     @State private var scheduleDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7] // 1=Sun, 7=Sat
     @State private var unlockDuration = 15
-    @State private var showingUltraPaywall = false
+    @State private var showingProPaywall = false
     @State private var showingAppPicker = false
 
     private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
@@ -99,7 +101,7 @@ struct FocusModeSetupView: View {
             // Free-user limit note — tappable to open paywall
             if !storeService.isProUser {
                 Button {
-                    showingUltraPaywall = true
+                    showingProPaywall = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
@@ -166,7 +168,7 @@ struct FocusModeSetupView: View {
             continueButton(disabled: totalSelected == 0) {
                 let exceedsLimit = appCount > 1 || catCount > 0
                 if !storeService.isProUser && exceedsLimit {
-                    showingUltraPaywall = true
+                    showingProPaywall = true
                 } else {
                     currentStep = 2
                 }
@@ -179,7 +181,7 @@ struct FocusModeSetupView: View {
             get: { focusModeService.activitySelection },
             set: { focusModeService.updateActivitySelection($0) }
         ))
-        .sheet(isPresented: $showingUltraPaywall) {
+        .sheet(isPresented: $showingProPaywall) {
             PaywallView(triggerSource: "focus_mode_limit")
         }
     }

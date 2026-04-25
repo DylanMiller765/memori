@@ -91,7 +91,7 @@ final class AchievementService {
         if !unlockedSet.contains(.nightOwl) {
             let hasLate = exercises.contains { exercise in
                 let hour = calendar.component(.hour, from: exercise.completedAt)
-                return hour >= 23
+                return hour >= 22
             }
             if hasLate {
                 toUnlock.append(.nightOwl)

@@ -25,7 +25,6 @@ final class GameCenterService {
     static let memoryChainLeaderboard = "com.dylanmiller.mindrestore.leaderboard.memoryChain"
     static let chimpTestLeaderboard = "com.dylanmiller.mindrestore.leaderboard.chimpTest"
     static let verbalMemoryLeaderboard = "com.dylanmiller.mindrestore.leaderboard.verbalMemory"
-    static let dailyChallengeLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dailyChallengeScore"
     static let focusBlockingLeaderboard = "com.dylanmiller.mindrestore.leaderboard.focusBlocking"
 
     // MARK: - Monthly Leaderboards
@@ -71,7 +70,6 @@ final class GameCenterService {
         case .memoryChain: return memoryChainLeaderboard
         case .chimpTest: return chimpTestLeaderboard
         case .verbalMemory: return verbalMemoryLeaderboard
-        case .dailyChallenge: return dailyChallengeLeaderboard
         case .focusBlocking: return focusBlockingLeaderboard
         }
     }

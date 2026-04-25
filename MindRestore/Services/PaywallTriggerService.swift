@@ -17,7 +17,6 @@ final class PaywallTriggerService {
         case generic
         case afterAssessment
         case streakMilestone
-        case dailyChallengeResult
         case dailyLimit
         case lockedCategory
         case progressAnalytics
@@ -105,20 +104,6 @@ final class PaywallTriggerService {
         guard [3, 7, 14].contains(streak) else { return }
         guard canShowPaywall() else { return }
         triggerContext = .streakMilestone
-        shouldShowPaywall = true
-    }
-
-    /// Call after daily challenge results
-    func triggerAfterDailyChallenge(isProUser: Bool) {
-        guard !isProUser else { return }
-        let count = defaults.integer(forKey: "daily_challenge_paywall_count")
-        guard count % 2 == 0 else {
-            defaults.set(count + 1, forKey: "daily_challenge_paywall_count")
-            return
-        }
-        defaults.set(count + 1, forKey: "daily_challenge_paywall_count")
-        guard canShowPaywall() else { return }
-        triggerContext = .dailyChallengeResult
         shouldShowPaywall = true
     }
 

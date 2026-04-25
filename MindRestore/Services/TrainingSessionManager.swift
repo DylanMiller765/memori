@@ -290,7 +290,6 @@ enum ExerciseDestination {
     case dualNBack
     case activeRecall
     case mixedTraining
-    case dailyChallenge
     case brainAssessment
     case exercise(ExerciseType)
 }

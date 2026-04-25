@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UserNotifications
 
 // MARK: - Processing Moment
 //
@@ -322,6 +324,11 @@ struct OnboardingNotificationPrimingView: View {
     @State private var headlineAppeared = false
     @State private var bulletsAppeared = false
     @State private var requesting = false
+    @State private var permissionTask: Task<Void, Never>?
+    @State private var showTimeoutError = false
+    /// Once the user denies notifications, iOS won't re-prompt — we have to
+    /// deep-link to Settings instead.
+    @State private var previouslyDenied = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -374,15 +381,35 @@ struct OnboardingNotificationPrimingView: View {
             .foregroundStyle(.tertiary)
 
             VStack(spacing: 10) {
+                if previouslyDenied {
+                    Text("Permission was denied earlier — open Settings to enable.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                } else if showTimeoutError {
+                    Text("Couldn't request permission. Tap to retry.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(AppColors.coral)
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                }
+
                 Button {
-                    requestPermission()
+                    if previouslyDenied {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } else {
+                        requestPermission()
+                    }
                 } label: {
                     Group {
                         if requesting {
                             ProgressView()
                                 .tint(.white)
                         } else {
-                            Text("Enable Notifications")
+                            Text(buttonTitle)
                                 .font(.headline.weight(.bold))
                         }
                     }
@@ -392,6 +419,7 @@ struct OnboardingNotificationPrimingView: View {
 
                 Button {
                     Analytics.onboardingStep(step: "notificationsSkipped")
+                    permissionTask?.cancel()
                     onResult(false)
                 } label: {
                     Text("Not now")
@@ -403,6 +431,7 @@ struct OnboardingNotificationPrimingView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 8)
         }
+        .onDisappear { permissionTask?.cancel() }
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
         .onAppear {
@@ -414,7 +443,21 @@ struct OnboardingNotificationPrimingView: View {
                     bulletsAppeared = true
                 }
             }
+            // Detect previously-denied so we can offer Settings deep-link instead
+            // of a no-op system prompt.
+            Task {
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                await MainActor.run {
+                    previouslyDenied = (settings.authorizationStatus == .denied)
+                }
+            }
         }
+    }
+
+    private var buttonTitle: String {
+        if previouslyDenied { return "Open Settings" }
+        if showTimeoutError { return "Try Again" }
+        return "Enable Notifications"
     }
 
     private func primingBullet(icon: String, color: Color, text: String) -> some View {
@@ -434,12 +477,36 @@ struct OnboardingNotificationPrimingView: View {
 
     private func requestPermission() {
         requesting = true
-        Task {
-            let granted = await NotificationService.shared.requestPermission()
+        showTimeoutError = false
+        permissionTask?.cancel()
+        permissionTask = Task {
+            // Race the permission request against an 8s timeout. If the system
+            // prompt hangs (rare but possible), we surface a retry instead of
+            // leaving the user stuck on a spinner.
+            let granted: Bool? = await withTaskGroup(of: Bool?.self) { group in
+                group.addTask {
+                    await NotificationService.shared.requestPermission()
+                }
+                group.addTask {
+                    try? await Task.sleep(for: .seconds(8))
+                    return nil
+                }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                return first
+            }
+
+            if Task.isCancelled { return }
+
             await MainActor.run {
                 requesting = false
-                Analytics.onboardingStep(step: granted ? "notificationsEnabled" : "notificationsDeclined")
-                onResult(granted)
+                if let granted {
+                    Analytics.onboardingStep(step: granted ? "notificationsEnabled" : "notificationsDeclined")
+                    onResult(granted)
+                } else {
+                    Analytics.onboardingStep(step: "notificationsTimeout")
+                    withAnimation { showTimeoutError = true }
+                }
             }
         }
     }
@@ -460,6 +527,7 @@ struct OnboardingBrainAgeReveal: View {
     @State private var showSubtitle: Bool
     @State private var showShare: Bool
     @State private var pulseGlow: Bool
+    @State private var countUpTimer: Timer?
 
     init(brainAge: Int, userAge: Int, onContinue: @escaping () -> Void, skipAnimation: Bool = false) {
         self.brainAge = brainAge
@@ -605,7 +673,14 @@ struct OnboardingBrainAgeReveal: View {
             }
         }
         .ignoresSafeArea()
-        .onAppear { if !skipAnimation { startSequence() } }
+        .onAppear {
+            Analytics.onboardingStep(step: "reveal")
+            if !skipAnimation { startSequence() }
+        }
+        .onDisappear {
+            countUpTimer?.invalidate()
+            countUpTimer = nil
+        }
         .onChange(of: countUpFinished) { _, finished in if finished { pulseGlow = true } }
     }
 
@@ -628,10 +703,12 @@ struct OnboardingBrainAgeReveal: View {
         lightImpact.prepare()
         heavyImpact.prepare()
 
-        Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+        countUpTimer?.invalidate()
+        countUpTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
             Task { @MainActor in
                 if displayedBrainAge >= target {
                     timer.invalidate()
+                    countUpTimer = nil
                     displayedBrainAge = target
                     heavyImpact.impactOccurred(intensity: 1.0)
                     withAnimation(.easeOut(duration: 0.3)) { countUpFinished = true }

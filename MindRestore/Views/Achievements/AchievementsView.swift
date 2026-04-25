@@ -92,29 +92,30 @@ struct AchievementsView: View {
                 selectedCategory = category
             }
         } label: {
+            let isSelected = selectedCategory == category
             HStack(spacing: 4) {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
                 Text("\(unlocked)/\(count)")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(selectedCategory == category ? .white.opacity(0.7) : .secondary)
+                    .foregroundStyle(isSelected ? AppColors.accent.opacity(0.8) : .secondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
-                selectedCategory == category
-                    ? AnyShapeStyle(Color.white.opacity(0.15))
-                    : AnyShapeStyle(Color.white.opacity(0.05)),
+                isSelected
+                    ? AnyShapeStyle(AppColors.accent.opacity(0.18))
+                    : AnyShapeStyle(AppColors.cardSurface),
                 in: Capsule()
             )
             .overlay(
                 Capsule()
                     .stroke(
-                        selectedCategory == category ? Color.white.opacity(0.3) : Color.white.opacity(0.08),
+                        isSelected ? AppColors.accent : AppColors.cardBorder,
                         lineWidth: 1
                     )
             )
-            .foregroundStyle(selectedCategory == category ? .white : .primary)
+            .foregroundStyle(isSelected ? AppColors.accent : .secondary)
         }
     }
 

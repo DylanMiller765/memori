@@ -12,7 +12,7 @@ struct FreePlayPopup: View {
                 // Card body
                 VStack(spacing: 16) {
                     // Space for mascot overflow
-                    Spacer().frame(height: 42)
+                    Spacer().frame(height: 50)
 
                     Text("Every game is free\nto try!")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -49,7 +49,7 @@ struct FreePlayPopup: View {
                     .resizable()
                     .scaledToFit()
                     .frame(height: 100)
-                    .offset(y: -35)
+                    .offset(y: -20)
                     .scaleEffect(appeared ? 1 : 0.3)
                     .opacity(appeared ? 1 : 0)
             }

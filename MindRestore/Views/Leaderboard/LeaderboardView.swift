@@ -25,7 +25,7 @@ struct LeaderboardView: View {
                 // Category picker
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
-                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain && $0 != .dailyChallenge }) { category in
+                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain }) { category in
                             Button {
                                 withAnimation(.spring(response: 0.3)) {
                                     selectedCategory = category
@@ -597,8 +597,6 @@ struct LeaderboardView: View {
             return "\(primary)/10"
         case .memoryChain:
             return "\(score)"
-        case .dailyChallenge:
-            return "\(score)"
         case .focusBlocking:
             let h = score / 60
             let m = score % 60
@@ -777,8 +775,6 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .chimpTest)
         case .verbalMemory:
             return PersonalBestTracker.shared.best(for: .verbalMemory)
-        case .dailyChallenge:
-            return nil
         case .focusBlocking:
             // Read from FocusModeService's shared defaults
             return UserDefaults(suiteName: "group.com.memori.shared")?.integer(forKey: "focus_weekly_minutes")

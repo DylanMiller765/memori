@@ -684,20 +684,8 @@ struct TrainingView: View {
 
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
-    @State private var navigateToDailyChallenge = false
-    @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
     @AppStorage("has_seen_free_play_popup") private var hasSeenFreePlayPopup = false
     @State private var showFreePlayPopup = false
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    private var hasDoneDailyChallenge: Bool {
-        dailyChallengeCompletedDate == Self.dayFormatter.string(from: Date.now)
-    }
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }

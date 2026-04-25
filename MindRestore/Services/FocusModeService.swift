@@ -355,6 +355,14 @@ final class FocusModeService {
     }
 
     /// Register a repeating daily schedule with DeviceActivityCenter.
+    ///
+    /// NOTE on day-of-week filtering: `DeviceActivitySchedule` is interval-only and has no
+    /// native weekday filter. We work around this by:
+    ///   1. Persisting `scheduleDays` to the shared App Group defaults (already done in
+    ///      `updateScheduleDays`).
+    ///   2. Having `DeviceActivityMonitorExtension.intervalDidStart` read that array and
+    ///      skip applying shields when today's weekday isn't selected.
+    /// This keeps the day filter honored even when the host app isn't running.
     private func registerDeviceActivitySchedule() {
         let calendar = Calendar.current
         let startComponents = calendar.dateComponents([.hour, .minute], from: scheduleStart)

@@ -70,6 +70,11 @@ struct FocusModeCard: View {
                 }
             }
         }
+        // The `FM` token palette (surfaces, halos, fg opacities, glows) is composed for a dark
+        // background — re-skinning each variant for light mode would compromise the cinematic feel
+        // and require redoing every gradient/shadow. Pin the card to dark so it reads as a
+        // deliberate "focus mode island" no matter the global appearance.
+        .environment(\.colorScheme, .dark)
         .sheet(isPresented: $showingSettings) { FocusModeSettingsView() }
         .sheet(isPresented: $showingSetup)    { FocusModeSetupView() }
     }
@@ -166,16 +171,26 @@ struct FocusModeCard: View {
                         DeviceActivityReport(.screenTime, filter: yesterdayFilter)
                             .frame(height: 64)
                     } else {
-                        // Fallback when Screen Time access wasn't granted — still show something motivational.
+                        // Fallback when Screen Time access wasn't granted — clearly mark this as the
+                        // industry average (not the user's data) so a quick reader doesn't mistake it
+                        // for their own stat. The "AVG" eyebrow + "~" prefix make the framing explicit.
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("4.3")
-                                .font(.system(size: 56, weight: .bold, design: .monospaced))
-                                .kerning(-1.5)
-                                .foregroundStyle(FM.fg)
-                            Text("HRS")
-                                .font(.system(size: 22, weight: .bold, design: .monospaced))
-                                .kerning(-0.3)
-                                .foregroundStyle(FM.fg2)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("AVG")
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .tracking(0.9)
+                                    .foregroundStyle(FM.fg3)
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Text("~4.3")
+                                        .font(.system(size: 56, weight: .bold, design: .monospaced))
+                                        .kerning(-1.5)
+                                        .foregroundStyle(FM.fg)
+                                    Text("HRS")
+                                        .font(.system(size: 22, weight: .bold, design: .monospaced))
+                                        .kerning(-0.3)
+                                        .foregroundStyle(FM.fg2)
+                                }
+                            }
                         }
                     }
                 }
@@ -411,10 +426,15 @@ struct FocusModeCard: View {
                 }
                 .buttonStyle(.plain)
 
+                // Passive acknowledgment — during cooldown there's nothing actionable to do
+                // (disable button is hidden until cooldown ends), so this is just a "Got it"
+                // dismiss that visually does nothing but lets the user feel like they've handled it.
+                // Kept as a non-destructive button so the layout matches the bribe CTA.
                 Button {
-                    showingSettings = true
+                    // No-op — cooldown will end on its own. Rely on TimelineView (1Hz) to
+                    // re-render the card into its post-cooldown state.
                 } label: {
-                    Text("Wait it out")
+                    Text("Got it")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(FM.fg)
                         .padding(.horizontal, 16).padding(.vertical, 13)
@@ -535,7 +555,10 @@ struct FocusModeCard: View {
     // MARK: - 05 · Scheduled Off
 
     private var scheduledCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let resume = nextResumeDate()
+        let resumeLabel = formatClockTime(resume)
+        let dayLabel = resumeDayLabel(for: resume)
+        return VStack(alignment: .leading, spacing: 0) {
             // eyebrow + pill
             HStack {
                 HStack(spacing: 8) {
@@ -545,7 +568,7 @@ struct FocusModeCard: View {
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: "clock.fill").font(.system(size: 9, weight: .bold))
-                    Text("Off until \(formatClockTime(focusModeService.scheduleStart))")
+                    Text("Off until \(resumeLabel)")
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .foregroundStyle(FM.amber)
@@ -569,7 +592,7 @@ struct FocusModeCard: View {
                         .font(.system(size: 19, weight: .bold, design: .rounded))
                         .kerning(-0.2)
                         .foregroundStyle(FM.fg)
-                    Text("Memo clocks back in at \(formatClockTime(focusModeService.scheduleStart)) tomorrow.")
+                    Text("Memo clocks back in at \(resumeLabel) \(dayLabel).")
                         .font(.system(size: 13, design: .rounded))
                         .foregroundStyle(FM.fg2)
                         .lineSpacing(2)
@@ -725,20 +748,68 @@ struct FocusModeCard: View {
         guard focusModeService.scheduleEnabled else { return true }
         let cal = Calendar.current
         let now = Date.now
-        let weekday = cal.component(.weekday, from: now)
-        if !focusModeService.scheduleDays.contains(weekday) { return false }
         let startC = cal.dateComponents([.hour, .minute], from: focusModeService.scheduleStart)
         let endC = cal.dateComponents([.hour, .minute], from: focusModeService.scheduleEnd)
         let nowC = cal.dateComponents([.hour, .minute], from: now)
         let startMins = (startC.hour ?? 0) * 60 + (startC.minute ?? 0)
         let endMins = (endC.hour ?? 0) * 60 + (endC.minute ?? 0)
         let nowMins = (nowC.hour ?? 0) * 60 + (nowC.minute ?? 0)
+        let todayWeekday = cal.component(.weekday, from: now)
+        let yesterdayWeekday = ((todayWeekday - 2 + 7) % 7) + 1 // 1-based weekday for yesterday
+
         if startMins <= endMins {
+            // same-day window
+            guard focusModeService.scheduleDays.contains(todayWeekday) else { return false }
             return nowMins >= startMins && nowMins < endMins
         } else {
-            // overnight window (e.g. 22:00 → 08:00)
-            return nowMins >= startMins || nowMins < endMins
+            // overnight window (e.g. 22:00 → 08:00):
+            // - If now is past start (e.g. 23:00), it counts toward today's scheduled day.
+            // - If now is before end (e.g. 03:00), it counts toward YESTERDAY's scheduled day
+            //   because that's when this active interval began.
+            if nowMins >= startMins {
+                return focusModeService.scheduleDays.contains(todayWeekday)
+            } else if nowMins < endMins {
+                return focusModeService.scheduleDays.contains(yesterdayWeekday)
+            }
+            return false
         }
+    }
+
+    /// The next moment Focus Mode will resume blocking (when card is in `.scheduled` state).
+    /// Handles three cases:
+    ///   1. Same-day window (e.g. 09→17), now outside it: next start is the next scheduled `start` time.
+    ///   2. Overnight window (e.g. 22→08), now in the daytime gap: next start is today at `start`.
+    ///   3. Overnight active that crossed midnight but today isn't a scheduled day: returns next valid start.
+    private func nextResumeDate() -> Date {
+        let cal = Calendar.current
+        let now = Date.now
+        let startC = cal.dateComponents([.hour, .minute], from: focusModeService.scheduleStart)
+        let startHour = startC.hour ?? 0
+        let startMinute = startC.minute ?? 0
+        let days = focusModeService.scheduleDays.isEmpty ? Set(1...7) : focusModeService.scheduleDays
+
+        // Probe up to 8 days ahead to find the next scheduled start that's strictly in the future.
+        for offset in 0..<8 {
+            guard let candidateDay = cal.date(byAdding: .day, value: offset, to: now) else { continue }
+            let weekday = cal.component(.weekday, from: candidateDay)
+            guard days.contains(weekday) else { continue }
+            var comps = cal.dateComponents([.year, .month, .day], from: candidateDay)
+            comps.hour = startHour
+            comps.minute = startMinute
+            guard let candidate = cal.date(from: comps), candidate > now else { continue }
+            return candidate
+        }
+        return focusModeService.scheduleStart
+    }
+
+    /// Friendly day label for the next resume time ("today", "tomorrow", or weekday name).
+    private func resumeDayLabel(for date: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDateInToday(date) { return "today" }
+        if cal.isDateInTomorrow(date) { return "tomorrow" }
+        let f = DateFormatter()
+        f.dateFormat = "EEEE"
+        return "on \(f.string(from: date))"
     }
 
     /// Idle subtitle. When Screen Time access is granted the stat above is real (yesterday's screen time);

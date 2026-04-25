@@ -116,7 +116,7 @@ struct OnboardingView: View {
         // presentations produces a race where the second cover can silently fail to present
         // while the first is still in its dismiss animation.
         .fullScreenCover(isPresented: $showingBrainAgeReveal, onDismiss: {
-            Analytics.onboardingStep(step: "reveal")
+            Analytics.onboardingStep(step: "paywallDismissed")
             withAnimation { currentPage = 6 } // → personalSolution
         }) {
             OnboardingFinaleSequence(
@@ -143,18 +143,25 @@ struct OnboardingView: View {
     // MARK: - Personal Unlocks (287×) Page
 
     private var personalUnlocksPage: some View {
-        FocusOnboardPersonalUnlocks(
+        // Once iOS marks FamilyControls as .denied, requestAuthorization() silently
+        // no-ops — the only path back is Settings. The page handles that CTA itself.
+        let denied = (focusModeService.authorizationStatus == .denied)
+        return FocusOnboardPersonalUnlocks(
             onContinue: {
                 if screenTimeAuthorized {
                     Analytics.onboardingStep(step: "personalUnlocksAuthorized")
                     withAnimation { currentPage = 10 } // → focusMode
+                } else if denied {
+                    // CTA already deep-links to Settings inside the view. Nothing to do here.
+                    // (User returns to this page; if they enabled it, screenTimeAuthorized
+                    // will flip on next .onAppear via the focusModeService refresh.)
+                    Analytics.onboardingStep(step: "personalUnlocksOpenedSettings")
                 } else {
-                    // User declined — re-prompt auth
+                    // First decline (or .notDetermined) — re-prompt auth
                     Task {
                         await focusModeService.requestAuthorization()
                         screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
                         if screenTimeAuthorized {
-                            // stay on this page; view will switch to authorized variant via state update
                             Analytics.onboardingStep(step: "personalUnlocksAuthorized")
                         } else {
                             // still declined — let them continue anyway
@@ -165,8 +172,13 @@ struct OnboardingView: View {
                 }
             },
             authorized: screenTimeAuthorized,
-            count: 287
+            count: 287,
+            previouslyDenied: denied
         )
+        .onAppear {
+            // Re-check authorization in case user just returned from Settings.
+            screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
+        }
     }
 
     private var welcomePage: some View {
