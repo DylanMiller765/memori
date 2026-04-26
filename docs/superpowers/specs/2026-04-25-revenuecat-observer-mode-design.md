@@ -40,39 +40,31 @@ If observer mode proves valuable and we later want unified analytics or remote-c
 
 ## Code Changes
 
-### 1. `MindRestoreApp.swift` — configure on launch
+**Single file. Single function call.** `StoreService.swift` is not modified — RevenueCat's SDK observes `Transaction.updates` on its own when configured for SK2 observer mode on iOS.
 
-Add to the app's `init()`:
+### `MindRestoreApp.swift` — configure on launch
+
+Add `import RevenueCat` and the following inside the app's `init()`, before any UI shows:
 
 ```swift
-import RevenueCat
-
-// inside init(), before any UI shows
-Purchases.logLevel = .info  // verbose enough to confirm events fire; can drop to .error later
+Purchases.logLevel = .info  // verbose enough to confirm events fire; drop to .error after verify
 Purchases.configure(
-    with: Configuration.Builder(withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC")
-        .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
-        .build()
+    withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC",
+    purchasesAreCompletedBy: .myApp,
+    storeKitVersion: .storeKit2
 )
 ```
 
-The `purchasesAreCompletedBy: .myApp` flag is the observer-mode switch — it tells the SDK that StoreKit purchases are completed by the host app (i.e., our `StoreService`), not by RevenueCat.
+What each parameter does:
 
-### 2. `StoreService.swift` — forward verified transactions
+- **`purchasesAreCompletedBy: .myApp`** — observer-mode switch. Tells the SDK that StoreKit purchases are completed by the host app (our `StoreService`), not by RevenueCat. The SDK will not initiate any purchase or attempt to finish transactions; it only observes.
+- **`storeKitVersion: .storeKit2`** — must be set explicitly when in observer mode. It tells the SDK to subscribe to the `Transaction.updates` async sequence to learn about new transactions.
 
-Two call sites, both feeding the same `recordPurchase` API:
+That's the entire integration. No `recordPurchase` calls, no `StoreService` modifications.
 
-**a) Inside `purchase(_:)` after `case .success(let verification)`:**
-After we call `await transaction.finish()` for a successful purchase, also call:
+### Why no `StoreService` changes
 
-```swift
-_ = try? await Purchases.shared.recordPurchase(verification)
-```
-
-**b) Inside `listenForTransactions()`'s `for await result in Transaction.updates` loop:**
-After processing the verified transaction with the existing logic, call the same `recordPurchase` line.
-
-Both calls are best-effort: failures in observer-mode forwarding must never block or affect the user's purchase outcome. Use `try?` and ignore the return value.
+The RevenueCat docs explicitly note that manual `Purchases.shared.recordPurchase(...)` calls are only needed on **macOS**, where iOS-style background transaction observation is unavailable and the SDK can't see new transactions until the user foregrounds the app. On iOS, the SDK's own internal `Transaction.updates` listener fires in parallel with `StoreService.listenForTransactions()`, so RC sees every verified transaction without explicit forwarding.
 
 ## API Key Handling
 
@@ -92,9 +84,9 @@ Hardcoded as a string literal in `MindRestoreApp.swift`. Justification:
 
 ## Risks
 
-- **Crash on launch if SDK is misconfigured.** Mitigation: `Purchases.configure` is non-throwing; only invalid Configuration usage would crash, and the call is unit-testable. Build verify on device before commit.
-- **Duplicate transaction reporting.** `Purchases.shared.recordPurchase` is idempotent server-side (RC dedupes by `transactionId`), so calling it from both the purchase site and the `Transaction.updates` listener for the same transaction is safe.
-- **Free users with no transactions** — observer mode does nothing for them, which is fine. The SDK just sits idle until a transaction fires.
+- **Crash on launch if SDK is misconfigured.** Mitigation: `Purchases.configure` is non-throwing. Build-verify on device before commit.
+- **Race between RC's listener and `StoreService.listenForTransactions()`.** Both observe the same `Transaction.updates` sequence. Async sequences in Swift Concurrency are independent observers — each subscriber receives every value — so neither steals from the other. Confirmed in RC docs.
+- **Free users with no transactions** — observer mode does nothing for them, which is fine. The SDK sits idle until a transaction fires.
 
 ## Out of Scope (Explicit Won't-Dos)
 
@@ -104,4 +96,4 @@ Hardcoded as a string literal in `MindRestoreApp.swift`. Justification:
 
 ## Rollback
 
-If RC ever causes a problem in production, comment out the `Purchases.configure` call and the two `recordPurchase` calls. No state migration required — observer mode owns no app-side state.
+If RC ever causes a problem in production, comment out the `Purchases.configure` call and the `import RevenueCat` line. No state migration required — observer mode owns no app-side state.
