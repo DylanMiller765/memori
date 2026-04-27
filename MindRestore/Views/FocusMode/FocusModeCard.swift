@@ -268,16 +268,20 @@ struct FocusModeCard: View {
                 // live big timer
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let secondsLocked = Int(max(0, context.date.timeIntervalSince(focusModeService.currentBlockStartDate ?? context.date)))
+                    let intro = Text("Memo's been guarding since \(focusModeService.currentBlockStartDate.map(formatClockTime) ?? "now").")
+                    // Past 60min the headline already reads "Xh Xm", so the
+                    // "Saved you Xh Xm." trailer would just repeat it. Drop it.
+                    let trailer: Text = secondsLocked < 3600
+                        ? Text(" Saved you ") + Text(fmtHrsMin(secondsLocked)).foregroundColor(FM.fg).fontWeight(.semibold) + Text(".")
+                        : Text("")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(fmtMMSS(secondsLocked))
+                        Text(fmtElapsedAdaptive(secondsLocked))
                             .font(.system(size: 56, weight: .bold, design: .monospaced))
                             .kerning(-1.5)
                             .foregroundStyle(FM.fg)
                             .contentTransition(.numericText())
 
-                        (Text("Memo's been guarding since \(focusModeService.currentBlockStartDate.map(formatClockTime) ?? "now"). Saved you ")
-                         + Text(fmtHrsMin(secondsLocked)).foregroundColor(FM.fg).fontWeight(.semibold)
-                         + Text("."))
+                        (intro + trailer)
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(FM.fg2)
                             .lineSpacing(2)
@@ -834,6 +838,12 @@ struct FocusModeCard: View {
         let m = (max(0, secs) % 3600) / 60
         if h > 0 { return "\(h)h \(m)m" }
         return "\(m)m"
+    }
+
+    /// Headline elapsed-time format for active patrols: MM:SS until the first hour,
+    /// then switches to "Xh Ym" so triple-digit minutes never display.
+    private func fmtElapsedAdaptive(_ secs: Int) -> String {
+        secs < 3600 ? fmtMMSS(secs) : fmtHrsMin(secs)
     }
 
     private func formatClockTime(_ date: Date) -> String {
