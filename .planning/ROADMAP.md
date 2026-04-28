@@ -48,6 +48,18 @@
 
 **Why this is one phase:** All onboarding pages share the same design system (OB tokens), animation cadence pattern, and brand voice. Polishing them in one pass catches systemic issues that single-page work misses.
 
+**Plans:** 8 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Pain Cards polish (Wave 1)
+- [ ] 01-02-PLAN.md — Industry Scare polish (Wave 1)
+- [ ] 01-03-PLAN.md — Goals polish (Wave 1)
+- [ ] 01-04-PLAN.md — Plan Reveal polish + ONB-09 receipt-count verify (Wave 2; depends on 01)
+- [ ] 01-05-PLAN.md — Commitment polish (Wave 2; depends on 03)
+- [ ] 01-06-PLAN.md — Screen Time Access polish (Wave 3; depends on 05)
+- [ ] 01-07-PLAN.md — Empathy verify-and-polish (Wave 4; depends on 06)
+- [ ] 01-08-PLAN.md — Light/Dark + Reduce Motion sweep + ONB-01/02/03/09 verification (Wave 5; depends on 01-07)
+
 ---
 
 ### Phase 2: Focus Mode + Entitlement
