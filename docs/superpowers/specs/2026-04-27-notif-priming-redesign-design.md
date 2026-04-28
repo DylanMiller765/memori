@@ -60,7 +60,7 @@ Both cards: 22pt corner radius, 14pt horizontal padding, 14pt vertical padding, 
 | Icon | `Image("logo-tiktok")` at 38pt rounded square (corner radius 9) |
 | App name | "TikTok" — `.brand(size: 14, weight: .heavy)` in `OB.fg2` |
 | Timestamp | "now" — `.brand(size: 12, weight: .medium)` in `OB.fg3` |
-| Body | "🔥 You haven't checked TikTok today. 47 friends just posted!" — `.brand(size: 14, weight: .medium)` in `OB.fg2`, 2-line clip |
+| Body | "🔥 Your For You page is moving. Come see what you missed." — `.brand(size: 14, weight: .medium)` in `OB.fg2`, 2-line clip |
 | Whole card | `.opacity(0.55)`, `.rotationEffect(-3°)`, `.scaleEffect(0.97)` |
 | Shadow | none |
 
@@ -71,9 +71,9 @@ Both cards: 22pt corner radius, 14pt horizontal padding, 14pt vertical padding, 
 | Background | `OB.surface` with overlay `OB.accent.opacity(0.05)` |
 | Border | `OB.accent.opacity(0.35)`, 1.5pt |
 | Icon | `Image("app-icon")` at 38pt rounded square (corner radius 9) |
-| App name | "Memo" — `.brand(size: 14, weight: .heavy)` in `OB.fg` |
+| App name | "Memori" — `.brand(size: 14, weight: .heavy)` in `OB.fg` (matches what iOS will actually show under the app icon — `Info.plist` does not override `CFBundleDisplayName`) |
 | Timestamp | "now" — `.brand(size: 12, weight: .medium)` in `OB.fg3` |
-| Body | "You earned 12 min of TikTok. Tap to unlock." — `.brand(size: 14, weight: .heavy)` in `OB.fg`, 2-line clip |
+| Body | "Memo earned you 12 min of TikTok. Tap to unlock." — `.brand(size: 14, weight: .heavy)` in `OB.fg`, 2-line clip. App brand = "Memori"; mascot voice in body = "Memo". |
 | Whole card | full opacity, `.rotationEffect(+1°)` |
 | Shadow | `OB.accent.opacity(0.32)`, radius 24, y 10 |
 
@@ -85,10 +85,12 @@ Card spacing: 18pt vertical gap between the two cards. Cards do NOT visually ove
 |---|---|
 | Eyebrow | `TWO KINDS OF NUDGES` |
 | Headline | `One pulls you in.\nOne pulls you out.` (38pt, heavy, rounded design, `OB.fg`) |
-| Feed body | `🔥 You haven't checked TikTok today. 47 friends just posted!` |
-| Memo body | `You earned 12 min of TikTok. Tap to unlock.` |
-| Caption | `The feed nudges to harvest you. Memo nudges to give you time back.` (15pt, semibold, `OB.fg2`) |
-| Privacy line | `🔒 No spam. Once a day max.` (12pt, semibold, `OB.fg3`) |
+| Feed app name | `TikTok` |
+| Feed body | `🔥 Your For You page is moving. Come see what you missed.` |
+| Memo app name | `Memori` |
+| Memo body | `Memo earned you 12 min of TikTok. Tap to unlock.` |
+| Caption | `The feed nudges to pull you back. Memo nudges to give you time back.` (15pt, semibold, `OB.fg2`) |
+| Privacy line | `🔒 No spam. Just unlocks, streak saves, and patrol reminders.` (12pt, semibold, `OB.fg3`) |
 | Primary CTA | `Let Memo nudge me` (via `OBContinueButton`) |
 | Skip button | `Not now` (subhead, semibold, `OB.fg2`) |
 | Denied state caption | `Permission was denied earlier — open Settings to enable.` |
@@ -148,9 +150,30 @@ Create `MindRestore/Assets.xcassets/app-icon.imageset/`:
 
 Imagesets do not need to be registered in `project.pbxproj` because the `.xcassets` folder is a folder reference (verified via `grep -c "logo-tiktok\|mascot-thinking\.imageset" project.pbxproj` returning 0 — none of the existing imagesets are individually tracked).
 
+## App Review safety
+
+The TikTok mockup card uses the real `logo-tiktok` asset and the literal string "TikTok". This is consistent with how competitor apps (Opal, Brick, ScreenZen) handle similar comparison screens, and matches Apple's allowance for nominative trademark use in legitimate comparative context. The risk is mitigated by:
+
+1. **Heavy illustrative styling** — `-3°` rotation, 0.55 opacity, 0.97 scale make the card visibly a stylized mockup, not a forged system notification
+2. **Surrounding context** — the page header explicitly frames both cards as illustrative ("TWO KINDS OF NUDGES" / "One pulls you in. One pulls you out.")
+3. **No deceptive claims** — the feed copy is generic feed-bait, not an attempt to spoof TikTok branding
+
+If App Review pushes back, the fallback is a generic "feed app" treatment: replace the TikTok logo with a stylized red-gradient app icon and the name "Social Feed" or similar. Branded version is the preferred ship target.
+
+## Future enhancement: dynamic Memo app name
+
+Memori cannot read app names from `FamilyActivitySelection.applicationTokens` — Apple deliberately treats those as opaque privacy tokens. The token count is accessible (`activitySelection.applicationTokens.count`) but the names are not.
+
+To make the Memo card show the user's actual most-blocked app, we'd need an upstream signal:
+
+- **Option A:** Add a one-tap "what's your worst app?" pick to an earlier onboarding page (Goals or Pain Cards), with a fixed list (TikTok / Instagram / Snapchat / YouTube / X / Reddit). Map the answer through to this mockup.
+- **Option B:** Defer dynamic app name to v2.1+ when a "primary blocked app" preference exists in `FocusModeService`.
+
+For v2.0 ship: hardcode "TikTok" on both cards. The `NotifMockupCard` view should accept the app name + icon as parameters so the dynamic version is a one-line swap when the upstream signal exists.
+
 ## Out of scope
 
-- No changes to the actual notification copy/scheduling in `NotificationService.swift`. The "You earned X min" notification on the mockup is illustrative — production notifications are governed by the existing 8 notification types and may not match this exact copy.
+- No changes to the actual notification copy/scheduling in `NotificationService.swift`. The "Memo earned you X min of TikTok" notification on the mockup is illustrative — production notifications are governed by the existing 8 notification types and may not match this exact copy verbatim.
 - No changes to `OnboardingView.swift` page wiring — the parent still presents `OnboardingNotificationPrimingView { granted in ... }` with the same callback.
 - No changes to the page's position in the flow (still page 14 between Focus Mode and Commitment).
 
