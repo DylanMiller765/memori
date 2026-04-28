@@ -2,13 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: is a single coherent product release
-status: unknown
-last_updated: "2026-04-28T03:01:33.479Z"
+status: in-progress
+last_updated: "2026-04-27T22:55:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 8
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -34,7 +35,9 @@ progress:
 | 3 | Brand Rename + ASO | Pending | Rename + screenshots + ASC metadata push |
 | 4 | TestFlight + Submission | Pending | Final QA + App Review |
 
-**Next action:** `/gsd-discuss-phase 1` or `/gsd-plan-phase 1` to start Phase 1.
+**Next action:** Continue Phase 1 — Plan 01-02 (Goals page polish, ONB-05).
+
+**Just completed (2026-04-27):** Plan 01-01 — Pain Cards polish (commit `b6a98bc`). All 6 D-01 fixes applied per UI-SPEC: lowercase brand `3 of 6` micro progress, top-edge perforation, single tall receipt slip (210pt min-height) carrying confession text, mascot peek reframed bottom-leading, back-stack opacity `[0.78, 0.55, 0.35]`, blank back-slip body. Reduce Motion fallback added. Build + install verified on device `00008130-000A214E11E2001C`. Awaiting on-device human verification (Task 2 of plan).
 
 ## Active Decisions
 
@@ -50,6 +53,7 @@ progress:
 - 2026-04-27: Project initialized via `/gsd-new-project`
 - 2026-04-27: Codebase mapped via `/gsd-map-codebase` (7 docs in `.planning/codebase/`)
 - 2026-04-27: v2.0 onboarding sweep committed (welcome bouncer + notif counter-cards + atmosphere lift + hi-res logos + MonoKeypad + Bricolage font + Pain Cards receipt stack from Codex)
+- 2026-04-27: Plan 01-01 executed — Pain Cards polished per UI-SPEC (commit `b6a98bc`); 6/6 D-01 fixes applied + Reduce Motion fallback. Device build + install passed.
 
 ## Open Questions / Blockers
 

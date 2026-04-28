@@ -36,7 +36,7 @@
 - [ ] **ONB-01**: Welcome page bouncer scene + struggle-and-shove animation lands on iPhone (shipped 2026-04-27)
 - [ ] **ONB-02**: Notif Priming counter-cards (TikTok feed-bait vs Memo unlock) lands on iPhone (shipped 2026-04-27)
 - [ ] **ONB-03**: Page atmosphere lifted to outer ZStack so blurs extend behind progress bar (shipped 2026-04-27)
-- [ ] **ONB-04**: Pain Cards receipt stack — Codex implementation reviewed and gaps fixed (back-stack visibility, "1 OF 6" font legibility, mascot clipping, perforation position, ambient text fallback)
+- [x] **ONB-04**: Pain Cards receipt stack — Codex implementation reviewed and gaps fixed (back-stack visibility, "1 OF 6" font legibility, mascot clipping, perforation position, ambient text fallback) — completed Plan 01-01 (2026-04-27, commit `b6a98bc`)
 - [ ] **ONB-05**: Goals page redesign — Codex working; eliminate divider-list aesthetic, fix subtitle truncation, add tactile selection feedback, sharper mission labels
 - [ ] **ONB-06**: Empathy page Option 3 (sunglasses Memo against social media wall) — Codex full implementation
 - [ ] **ONB-07**: Plan Reveal final tweaks per audit (REDESIGN tier)

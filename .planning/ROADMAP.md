@@ -51,7 +51,7 @@
 **Plans:** 8 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Pain Cards polish (Wave 1)
+- [x] 01-01-PLAN.md — Pain Cards polish (Wave 1) — completed 2026-04-27, commit `b6a98bc`
 - [ ] 01-02-PLAN.md — Industry Scare polish (Wave 1)
 - [ ] 01-03-PLAN.md — Goals polish (Wave 1)
 - [ ] 01-04-PLAN.md — Plan Reveal polish + ONB-09 receipt-count verify (Wave 2; depends on 01)
