@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v2.0
+milestone_name: is a single coherent product release
+status: unknown
+last_updated: "2026-04-28T03:01:33.479Z"
+progress:
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+---
+
 # Project State
 
 **Project:** MEMO-V2 — Memo Doomscroll Blocker (v2.0 milestone)
