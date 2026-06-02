@@ -241,6 +241,34 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.retakeIdentifier])
     }
 
+    // MARK: - Trial Reminder
+
+    private static let trialReminderIdentifier = "trial-reminder"
+
+    func recordTrialStarted(days: Int) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.trialReminderIdentifier])
+
+        let reminderDays = max(1, days - 2)
+        guard let fireDate = Calendar.current.date(byAdding: .day, value: reminderDays, to: Date.now) else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Memo trial reminder"
+        content.body = "Your trial ends in 2 days. Keep Memo only if you want the feed guarded."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: max(1, fireDate.timeIntervalSinceNow),
+            repeats: false
+        )
+        let request = UNNotificationRequest(
+            identifier: Self.trialReminderIdentifier,
+            content: content,
+            trigger: trigger
+        )
+        center.add(request)
+    }
+
     // MARK: - Brain Score Follow-Up
 
     func scheduleBrainScoreFollowUp(currentScore: Int) {

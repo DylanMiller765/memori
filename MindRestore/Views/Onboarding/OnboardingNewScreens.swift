@@ -2,6 +2,209 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
+enum OnboardingProtectedPriority: String, CaseIterable, Identifiable {
+    case school
+    case work
+    case sleep
+    case creativeWork
+    case relationships
+    case mentalClarity
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .school: return "School"
+        case .work: return "Work"
+        case .sleep: return "Sleep"
+        case .creativeWork: return "Creative work"
+        case .relationships: return "Relationships"
+        case .mentalClarity: return "Mental clarity"
+        }
+    }
+
+    var planValue: String {
+        switch self {
+        case .school: return "school"
+        case .work: return "work"
+        case .sleep: return "sleep"
+        case .creativeWork: return "creative work"
+        case .relationships: return "relationships"
+        case .mentalClarity: return "mental clarity"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .school: return "graduationcap.fill"
+        case .work: return "briefcase.fill"
+        case .sleep: return "moon.fill"
+        case .creativeWork: return "sparkles"
+        case .relationships: return "person.2.fill"
+        case .mentalClarity: return "brain.head.profile"
+        }
+    }
+}
+
+enum OnboardingDangerWindow: String, CaseIterable, Identifiable {
+    case lateNight
+    case morning
+    case workBreaks
+    case afterStress
+    case boredom
+    case allDay
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .lateNight: return "Late night"
+        case .morning: return "Morning"
+        case .workBreaks: return "Between work or class"
+        case .afterStress: return "After stress"
+        case .boredom: return "When bored"
+        case .allDay: return "All day"
+        }
+    }
+
+    var planValue: String {
+        switch self {
+        case .lateNight: return "late night"
+        case .morning: return "morning"
+        case .workBreaks: return "work/class breaks"
+        case .afterStress: return "after stress"
+        case .boredom: return "boredom"
+        case .allDay: return "all day"
+        }
+    }
+
+    var bubbleLead: String {
+        switch self {
+        case .lateNight: return "Late night"
+        case .morning: return "Morning"
+        case .workBreaks: return "Work/class breaks"
+        case .afterStress: return "Stress"
+        case .boredom: return "Boredom"
+        case .allDay: return "All day"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .lateNight: return "moon.stars.fill"
+        case .morning: return "sunrise.fill"
+        case .workBreaks: return "clock.fill"
+        case .afterStress: return "bolt.heart.fill"
+        case .boredom: return "hand.tap.fill"
+        case .allDay: return "infinity"
+        }
+    }
+}
+
+struct PlanBuildBeatContent {
+    enum Beat: CaseIterable {
+        case goals, protect, dangerWindow, age, screenTime, final
+    }
+
+    struct Line: Equatable {
+        let label: String
+        let value: String
+    }
+
+    let beat: Beat
+    let goals: Set<UserFocusGoal>
+    let protectedPriority: OnboardingProtectedPriority?
+    let dangerWindow: OnboardingDangerWindow?
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let isEstimate: Bool
+
+    private static let lifeExpectancy = 80
+
+    private var yearsAhead: Int { max(0, Self.lifeExpectancy - age) }
+
+    private var hoursLabel: String {
+        if dailyScreenTimeHours >= 8 && isEstimate { return "8h+" }
+        let rounded = (dailyScreenTimeHours * 10).rounded() / 10
+        if rounded == rounded.rounded() {
+            return "\(Int(rounded))h"
+        }
+        return "\(rounded)h"
+    }
+
+    private var daysPerYear: Int {
+        Int((dailyScreenTimeHours * 365 / 24).rounded())
+    }
+
+    static func goalSummary(_ goals: Set<UserFocusGoal>) -> String {
+        if goals.contains(.screenTimeFrying) { return "hours back" }
+        if goals.contains(.doomscrolling) { return "sleep protected" }
+        if goals.contains(.attentionShot) { return "attention guarded" }
+        if goals.contains(.loseFocus) { return "focus that holds" }
+        if goals.contains(.forgetInstantly) { return "memory that sticks" }
+        if goals.contains(.getSharper) { return "sharper scores" }
+        return "hours back"
+    }
+
+    var bubble: String {
+        switch beat {
+        case .goals:
+            return "Hours back. That's the mission."
+        case .protect:
+            return "Protect \(protectedPriority?.planValue ?? "your time"). That changes the plan."
+        case .dangerWindow:
+            return "\(dangerWindow?.bubbleLead ?? "The feed") is where the feed gets loud."
+        case .age:
+            return "\(age)? You've got ~\(yearsAhead) years of phone ahead."
+        case .screenTime:
+            return "\(hoursLabel) a day... that's ~\(daysPerYear) days a year gone."
+        case .final:
+            return "Your counterattack's ready."
+        }
+    }
+
+    var newLine: Line? {
+        switch beat {
+        case .goals:
+            return Line(label: "Goal", value: Self.goalSummary(goals))
+        case .protect:
+            return Line(label: "Protect", value: protectedPriority?.planValue ?? "your time")
+        case .dangerWindow:
+            return Line(label: "Danger window", value: dangerWindow?.planValue ?? "feed pull")
+        case .age:
+            return Line(label: "Age", value: "\(age) · ~\(yearsAhead) yrs ahead")
+        case .screenTime:
+            return Line(label: "Screen time", value: "\(hoursLabel)/day")
+        case .final:
+            return nil
+        }
+    }
+
+    static func cumulativeLines(
+        upTo: Beat,
+        goals: Set<UserFocusGoal>,
+        protectedPriority: OnboardingProtectedPriority?,
+        dangerWindow: OnboardingDangerWindow?,
+        age: Int,
+        dailyScreenTimeHours: Double,
+        isEstimate: Bool
+    ) -> [Line] {
+        let order: [Beat] = [.goals, .protect, .dangerWindow, .age, .screenTime]
+        let cutoff = (upTo == .final) ? order.count : (order.firstIndex(of: upTo).map { $0 + 1 } ?? 0)
+        return order.prefix(cutoff).compactMap { beat in
+            PlanBuildBeatContent(
+                beat: beat,
+                goals: goals,
+                protectedPriority: protectedPriority,
+                dangerWindow: dangerWindow,
+                age: age,
+                dailyScreenTimeHours: dailyScreenTimeHours,
+                isEstimate: isEstimate
+            ).newLine
+        }
+    }
+}
+
 // MARK: - Processing Moment
 //
 // Sits between the assessment (page 5) and the brain age reveal.
@@ -120,6 +323,8 @@ struct OnboardingPersonalSolutionView: View {
     let projectedScreenTimeHours: Int
     let projectionIsEstimate: Bool
     let receiptCount: Int
+    let protectedPriority: OnboardingProtectedPriority?
+    let dangerWindow: OnboardingDangerWindow?
     let onContinue: () -> Void
 
     private enum RevealBeat {
@@ -578,16 +783,16 @@ struct OnboardingPersonalSolutionView: View {
             )
             planCardRow(
                 color: AppColors.accent,
-                label: "Earn",
-                detail: "unlock time back",
-                value: "your call",
+                label: "Protect",
+                detail: protectedPriority.map { "guard \($0.planValue)" } ?? "guard your time",
+                value: protectedPriority?.title ?? "Your time",
                 index: 1
             )
             planCardRow(
                 color: AppColors.coral,
-                label: "Block",
-                detail: "apps stay sealed",
-                value: "pick yours",
+                label: "Window",
+                detail: "feed pull peaks",
+                value: dangerWindow?.title ?? "Your pattern",
                 index: 2
             )
             planCardRow(
@@ -1760,6 +1965,8 @@ struct OnboardingBrainAgeReveal: View {
         projectedScreenTimeHours: 50200,
         projectionIsEstimate: false,
         receiptCount: 4,
+        protectedPriority: .sleep,
+        dangerWindow: .lateNight,
         onContinue: {}
     )
 }
@@ -1773,6 +1980,8 @@ struct OnboardingBrainAgeReveal: View {
         projectedScreenTimeHours: 51100,
         projectionIsEstimate: true,
         receiptCount: 0,
+        protectedPriority: nil,
+        dangerWindow: nil,
         onContinue: {}
     )
 }

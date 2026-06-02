@@ -13,6 +13,8 @@ struct OnboardingView: View {
     @Query private var users: [User]
     @State private var currentPage = 0
     @State private var selectedGoals: Set<UserFocusGoal> = []
+    @State private var selectedProtectedPriority: OnboardingProtectedPriority?
+    @State private var selectedDangerWindow: OnboardingDangerWindow?
     @State private var assessmentResult: BrainScoreResult?
     @State private var notificationsEnabled = false
     @State private var enteredName: String = ""
@@ -78,7 +80,7 @@ struct OnboardingView: View {
 
     var onComplete: () -> Void
 
-    private let totalPages = 15
+    private let totalPages = 17
 
     init(startPage: Int = 0, previewName: String = "", onComplete: @escaping () -> Void) {
         self.onComplete = onComplete
@@ -92,7 +94,7 @@ struct OnboardingView: View {
             // directly so light-mode iPhones don't bleed cream pageBg through
             // the chrome around the TabView. Quick Assessment keeps its
             // dynamic bg color (the assessment animates color shifts).
-            (currentPage == 8 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()
+            (currentPage == 10 ? quickAssessmentBgColor : OB.bg).ignoresSafeArea()
 
             // Page-specific atmosphere lifted out of individual pages so
             // blurs/glows extend behind the progress bar instead of clipping
@@ -142,7 +144,7 @@ struct OnboardingView: View {
                         }
                         #endif
                         // Reset commitment typewriter bullets when navigating away
-                        if newPage != 14 {
+                        if newPage != 16 {
                             commitmentBullet1Visible = false
                             commitmentBullet2Visible = false
                             commitmentBullet3Visible = false
@@ -155,7 +157,7 @@ struct OnboardingView: View {
         .environment(\.colorScheme, .dark)
         .onDisappear {
             if users.first?.hasCompletedOnboarding != true {
-                let stepNames = ["welcome", "name", "painCards", "industryScare", "empathy", "goals", "age", "screenTimeAccess", "quickAssessment", "planReveal", "comparison", "differentiation", "focusMode", "notificationPriming", "commitment"]
+                let stepNames = ["welcome", "name", "painCards", "industryScare", "empathy", "goals", "protect", "dangerWindow", "age", "screenTimeAccess", "quickAssessment", "planReveal", "comparison", "differentiation", "focusMode", "notificationPriming", "commitment"]
                 let lastStep = currentPage < stepNames.count ? stepNames[currentPage] : "unknown"
                 Analytics.onboardingDroppedOff(lastStep: lastStep, totalSteps: currentPage)
             }
@@ -190,10 +192,10 @@ struct OnboardingView: View {
         switch lastDismissedCover {
         case .brainAgeReveal:
             Analytics.onboardingStep(step: "revealDismissed")
-            goToPage(9) // → planReveal
+            goToPage(11) // → planReveal
         case .paywall:
             Analytics.onboardingStep(step: "paywallDismissed")
-            goToPage(12) // → focusMode
+            goToPage(14) // → focusMode
         case nil:
             break
         }
@@ -218,15 +220,17 @@ struct OnboardingView: View {
         case 3: industryScarePage
         case 4: empathyPage
         case 5: goalsPage
-        case 6: agePage
-        case 7: screenTimeAccessPage
-        case 8: quickAssessmentPage
-        case 9: planRevealPage
-        case 10: comparisonPage
-        case 11: differentiationPage
-        case 12: focusModePage
-        case 13: notificationPrimingPage
-        case 14: commitmentPage
+        case 6: protectedPriorityPage
+        case 7: dangerWindowPage
+        case 8: agePage
+        case 9: screenTimeAccessPage
+        case 10: quickAssessmentPage
+        case 11: planRevealPage
+        case 12: comparisonPage
+        case 13: differentiationPage
+        case 14: focusModePage
+        case 15: notificationPrimingPage
+        case 16: commitmentPage
         default: EmptyView()
         }
     }
@@ -244,9 +248,9 @@ struct OnboardingView: View {
     // MARK: - Progress Header
 
     /// Pages where the top progress bar is hidden (full-bleed interactive/cinematic moments):
-    /// 8 Quick Assessment, 9 Plan Reveal.
+    /// 10 Quick Assessment, 11 Plan Reveal.
     private var progressHeaderOpacity: Double {
-        let hiddenPages: Set<Int> = [8, 9]
+        let hiddenPages: Set<Int> = [10, 11]
         return hiddenPages.contains(currentPage) ? 0 : 1
     }
 
@@ -295,8 +299,8 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 24)
-        .padding(.top, currentPage == 7 ? 36 : 10)
-        .padding(.bottom, currentPage == 7 ? 0 : 4)
+        .padding(.top, currentPage == 9 ? 36 : 10)
+        .padding(.bottom, currentPage == 9 ? 0 : 4)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: currentPage)
     }
 
@@ -388,7 +392,7 @@ struct OnboardingView: View {
         FocusOnboardPersonalUnlocks(
             onContinue: {
                 Analytics.onboardingStep(step: "personalScare")
-                goToPage(8) // → quickAssessment
+                goToPage(10) // → quickAssessment
             },
             authorized: screenTimeAuthorized,
             count: 287,
@@ -665,7 +669,7 @@ struct OnboardingView: View {
                     Button {
                         nameFieldFocused = false
                         Analytics.onboardingStep(step: "debugJumpBrainTest")
-                        goToPage(8)
+                        goToPage(10)
                     } label: {
                         Text("Debug: Brain test")
                             .font(.system(size: 12, weight: .semibold))
@@ -685,7 +689,7 @@ struct OnboardingView: View {
                     Button {
                         nameFieldFocused = false
                         Analytics.onboardingStep(step: "debugJumpContract")
-                        goToPage(14)
+                        goToPage(16)
                     } label: {
                         Text("Debug: Contract")
                             .font(.system(size: 12, weight: .semibold))
@@ -873,7 +877,7 @@ struct OnboardingView: View {
 
                 continueButton("Personalize my plan") {
                     Analytics.onboardingStep(step: "goals")
-                    goToPage(6) // → age
+                    goToPage(6) // → protect
                 }
                     .disabled(selectedGoals.isEmpty)
                     .opacity(selectedGoals.isEmpty ? 0.4 : 1)
@@ -884,6 +888,42 @@ struct OnboardingView: View {
         }
         .clipped()
         .onAppear { nameFieldFocused = false }
+    }
+
+    private var protectedPriorityPage: some View {
+        OnboardingPersonalQuestionPage(
+            eyebrow: "YOUR WHY",
+            title: "What are you\nprotecting?",
+            subtitle: "Pick the thing the feed keeps stealing from.",
+            options: OnboardingProtectedPriority.allCases,
+            selection: selectedProtectedPriority,
+            titleForOption: \.title,
+            iconForOption: \.icon,
+            onSelect: { selectedProtectedPriority = $0 },
+            ctaTitle: "Lock this in",
+            onContinue: {
+                Analytics.onboardingStep(step: "protect_\(selectedProtectedPriority?.rawValue ?? "unknown")")
+                goToPage(7) // → dangerWindow
+            }
+        )
+    }
+
+    private var dangerWindowPage: some View {
+        OnboardingPersonalQuestionPage(
+            eyebrow: "DANGER WINDOW",
+            title: "When does the\nfeed usually win?",
+            subtitle: "Memo uses this to frame your first guardrail.",
+            options: OnboardingDangerWindow.allCases,
+            selection: selectedDangerWindow,
+            titleForOption: \.title,
+            iconForOption: \.icon,
+            onSelect: { selectedDangerWindow = $0 },
+            ctaTitle: "Build around this",
+            onContinue: {
+                Analytics.onboardingStep(step: "danger_window_\(selectedDangerWindow?.rawValue ?? "unknown")")
+                goToPage(8) // → age
+            }
+        )
     }
 
     // MARK: - Screen Time Access Page
@@ -929,7 +969,7 @@ struct OnboardingView: View {
                         Analytics.onboardingStep(step: "screenTimeAccessApproved")
                         useScreenTimeEstimate = false
                         refreshCachedScreenTimeHours()
-                        goToPage(8) // → quickAssessment
+                        goToPage(10) // → quickAssessment
                     } else {
                         requestScreenTimeForOnboarding()
                     }
@@ -975,7 +1015,7 @@ struct OnboardingView: View {
                     measuredScreenTimeHours = nil
                     showingScreenTimeEstimateSheet = false
                     Analytics.onboardingStep(step: "screenTimeEstimate")
-                    goToPage(8) // → quickAssessment
+                    goToPage(10) // → quickAssessment
                 }
             )
             .presentationDetents([.medium, .large])
@@ -1561,7 +1601,7 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 Button {
                     Analytics.onboardingStep(step: "age")
-                    goToPage(7) // → screenTimeAccess
+                    goToPage(9) // → screenTimeAccess
                 } label: {
                     Text("Calculate my cost")
                         .gradientButton()
@@ -1723,7 +1763,7 @@ struct OnboardingView: View {
                 Analytics.onboardingStep(step: "debugSkipBrainAgeTest")
                 assessmentResult = nil
                 quickAssessmentBgColor = AppColors.pageBg
-                goToPage(9) // → planReveal
+                goToPage(11) // → planReveal
             } label: {
                 Text("Skip test")
                     .font(.system(size: 12, weight: .heavy, design: .rounded))
@@ -1761,9 +1801,11 @@ struct OnboardingView: View {
             projectedScreenTimeHours: projectedScreenTimeHours,
             projectionIsEstimate: projectionIsEstimate,
             receiptCount: receiptCount,
+            protectedPriority: selectedProtectedPriority,
+            dangerWindow: selectedDangerWindow,
             onContinue: {
                 Analytics.onboardingStep(step: "planReveal")
-            goToPage(10) // → comparison
+                goToPage(12) // → comparison
             }
         )
     }
@@ -1773,7 +1815,7 @@ struct OnboardingView: View {
     private var notificationPrimingPage: some View {
         OnboardingNotificationPrimingView { granted in
             notificationsEnabled = granted
-            goToPage(14) // → commitment
+            goToPage(16) // → commitment
         }
     }
 
@@ -1803,7 +1845,7 @@ struct OnboardingView: View {
             dailyHours: effectiveDailyScreenTimeHours,
             brainAge: assessmentResult?.brainAge,
             onContinue: {
-                goToPage(11) // → differentiation
+                goToPage(13) // → differentiation
             }
         )
     }
@@ -2299,14 +2341,14 @@ struct OnboardingView: View {
             FocusModeSetupView(onComplete: {
                 focusModeWasSetUp = true
                 Analytics.onboardingStep(step: "focusModeCompleted")
-                goToPage(13) // → notificationPriming
+                goToPage(15) // → notificationPriming
             })
 
             // "Set up later" skip button
             Button {
                 Analytics.onboardingStep(step: "focusModeSkipped")
                 Analytics.focusSetupSkipped()
-                goToPage(13) // → notificationPriming
+                goToPage(15) // → notificationPriming
             } label: {
                 Text("Set up later")
                     .font(.subheadline.weight(.medium))
@@ -2345,6 +2387,8 @@ struct OnboardingView: View {
         sharedDefaults?.set(effectiveDailyScreenTimeHours, forKey: "onboarding_projection_daily_hours")
         sharedDefaults?.set(projectionIsEstimate, forKey: "onboarding_projection_is_estimate")
         sharedDefaults?.set(projectedScreenTimeHours, forKey: "onboarding_projected_screen_time_hours")
+        sharedDefaults?.set(selectedProtectedPriority?.rawValue, forKey: "onboarding_protected_priority")
+        sharedDefaults?.set(selectedDangerWindow?.rawValue, forKey: "onboarding_danger_window")
 
         // Save brain score result — assessment does NOT count toward daily session/limit
         if let result = assessmentResult {
@@ -2974,6 +3018,118 @@ struct ScreenTimeEstimateRow: View {
     }
 }
 
+// MARK: - Personal Question Page
+
+struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
+    let eyebrow: String
+    let title: String
+    let subtitle: String
+    let options: [Option]
+    let selection: Option?
+    let titleForOption: KeyPath<Option, String>
+    let iconForOption: KeyPath<Option, String>
+    let onSelect: (Option) -> Void
+    let ctaTitle: String
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 18)
+
+            VStack(alignment: .leading, spacing: 11) {
+                Text(eyebrow)
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(AppColors.accent)
+
+                Text(title)
+                    .font(.brand(size: 36, weight: .heavy))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(subtitle)
+                    .font(.brand(size: 16, weight: .medium))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 28)
+
+            Spacer().frame(height: 28)
+
+            VStack(spacing: 0) {
+                Divider().overlay(AppColors.cardBorder)
+
+                ForEach(options) { option in
+                    personalQuestionRow(option)
+
+                    Divider()
+                        .overlay(AppColors.cardBorder.opacity(selection == option ? 0.9 : 0.7))
+                }
+            }
+            .padding(.horizontal, 24)
+
+            Spacer(minLength: 16)
+
+            Button {
+                guard selection != nil else { return }
+                onContinue()
+            } label: {
+                Text(ctaTitle)
+                    .gradientButton()
+            }
+            .disabled(selection == nil)
+            .opacity(selection == nil ? 0.42 : 1)
+            .padding(.horizontal, 28)
+            .padding(.bottom, 12)
+        }
+        .responsiveContent(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+        .preferredColorScheme(.dark)
+    }
+
+    private func personalQuestionRow(_ option: Option) -> some View {
+        let selected = selection == option
+
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                onSelect(option)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(selected ? AppColors.accent.opacity(0.18) : AppColors.cardElevated.opacity(0.72))
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(selected ? AppColors.accent.opacity(0.45) : AppColors.cardBorder, lineWidth: 1)
+                        )
+
+                    Image(systemName: option[keyPath: iconForOption])
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(selected ? AppColors.accent : AppColors.textTertiary)
+                }
+
+                Text(option[keyPath: titleForOption])
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+
+                GoalSelectionMark(isSelected: selected)
+            }
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(option[keyPath: titleForOption])\(selected ? ", selected" : "")")
+    }
+}
+
 // MARK: - Goal Card
 
 struct GoalCard: View {
@@ -3364,7 +3520,7 @@ private struct LoopingVideoPlayer: UIViewRepresentable {
 }
 
 #Preview("Contract Page") {
-    OnboardingView(startPage: 15, previewName: "Dylan") {}
+    OnboardingView(startPage: 16, previewName: "Dylan") {}
         .environment(FocusModeService())
         .modelContainer(for: [
             User.self,

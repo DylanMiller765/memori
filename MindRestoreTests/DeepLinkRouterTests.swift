@@ -30,10 +30,10 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertEqual(router.pendingDestination, .game(.reactionTime))
     }
 
-    func testDailyChallengeRoute() {
+    func testRemovedDailyChallengeRouteFallsBackToHome() {
         let router = DeepLinkRouter()
         router.handle(URL(string: "memori://challenge")!)
-        XCTAssertEqual(router.pendingDestination, .dailyChallenge)
+        XCTAssertEqual(router.pendingDestination, .home)
     }
 
     // MARK: - Challenge/Duel Routes

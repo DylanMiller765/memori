@@ -363,3 +363,46 @@ final class PaywallTriggerServiceTryOnceTests: XCTestCase {
                        "Calling recordExerciseCompleted without a gameType should always count")
     }
 }
+
+final class OnboardingPersonalizationPlanTests: XCTestCase {
+    func testCumulativeLinesIncludeProtectAndDangerWindowBeforeAge() {
+        let lines = PlanBuildBeatContent.cumulativeLines(
+            upTo: .screenTime,
+            goals: [.screenTimeFrying],
+            protectedPriority: .work,
+            dangerWindow: .workBreaks,
+            age: 24,
+            dailyScreenTimeHours: 4.2,
+            isEstimate: false
+        )
+
+        XCTAssertEqual(lines.map(\.label), ["Goal", "Protect", "Danger window", "Age", "Screen time"])
+        XCTAssertEqual(lines.map(\.value), ["hours back", "work", "work/class breaks", "24 · ~56 yrs ahead", "4.2h/day"])
+    }
+
+    func testPersonalizationBeatsEchoProtectedPriorityAndDangerWindow() {
+        let protect = PlanBuildBeatContent(
+            beat: .protect,
+            goals: [.attentionShot],
+            protectedPriority: .relationships,
+            dangerWindow: .boredom,
+            age: 29,
+            dailyScreenTimeHours: 5,
+            isEstimate: false
+        )
+        XCTAssertEqual(protect.bubble, "Protect relationships. That changes the plan.")
+        XCTAssertEqual(protect.newLine, .init(label: "Protect", value: "relationships"))
+
+        let window = PlanBuildBeatContent(
+            beat: .dangerWindow,
+            goals: [.attentionShot],
+            protectedPriority: .relationships,
+            dangerWindow: .boredom,
+            age: 29,
+            dailyScreenTimeHours: 5,
+            isEstimate: false
+        )
+        XCTAssertEqual(window.bubble, "Boredom is where the feed gets loud.")
+        XCTAssertEqual(window.newLine, .init(label: "Danger window", value: "boredom"))
+    }
+}

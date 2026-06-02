@@ -37,6 +37,7 @@ final class StoreService {
     static let weeklyUltraProductID = "com.memori.ultra.weekly"
     static let monthlyUltraProductID = "com.memori.ultra.monthly"
     static let annualUltraProductID = "com.memori.ultra.annual"
+    static let annualUltraExitOfferProductID = "com.memori.ultra.annual.firstyear"
 
     private var updateListenerTask: Task<Void, Error>?
 
@@ -59,7 +60,8 @@ final class StoreService {
                 Self.annualProductID,
                 Self.weeklyUltraProductID,
                 Self.monthlyUltraProductID,
-                Self.annualUltraProductID
+                Self.annualUltraProductID,
+                Self.annualUltraExitOfferProductID
             ])
             products.sort { $0.price < $1.price }
         } catch {
@@ -111,7 +113,8 @@ final class StoreService {
                     hasActiveProEntitlement = true
                 } else if transaction.productID == Self.weeklyUltraProductID ||
                           transaction.productID == Self.monthlyUltraProductID ||
-                          transaction.productID == Self.annualUltraProductID {
+                          transaction.productID == Self.annualUltraProductID ||
+                          transaction.productID == Self.annualUltraExitOfferProductID {
                     hasActiveUltraEntitlement = true
                 }
             }
@@ -161,6 +164,7 @@ final class StoreService {
     var weeklyUltraProduct: Product? { products.first { $0.id == Self.weeklyUltraProductID } }
     var monthlyUltraProduct: Product? { products.first { $0.id == Self.monthlyUltraProductID } }
     var annualUltraProduct: Product? { products.first { $0.id == Self.annualUltraProductID } }
+    var annualUltraExitOfferProduct: Product? { products.first { $0.id == Self.annualUltraExitOfferProductID } }
 }
 
 enum StoreServiceError: Error {
