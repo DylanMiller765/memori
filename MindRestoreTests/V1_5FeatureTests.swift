@@ -412,4 +412,12 @@ final class OnboardingPersonalizationPlanTests: XCTestCase {
         XCTAssertEqual(OnboardingDangerWindow.lateNight.emoji, "🌙")
         XCTAssertEqual(OnboardingDangerWindow.afterStress.emoji, "😵‍💫")
     }
+
+    func testPersonalQuestionOptionsUseBuiltInSymbolsForVisibleIcons() {
+        XCTAssertEqual(OnboardingProtectedPriority.school.symbolName, "graduationcap.fill")
+        XCTAssertEqual(OnboardingProtectedPriority.mentalClarity.symbolName, "brain.head.profile")
+        XCTAssertEqual(OnboardingDangerWindow.lateNight.symbolName, "moon.stars.fill")
+        XCTAssertEqual(OnboardingDangerWindow.afterStress.symbolName, "bolt.heart.fill")
+    }
+
 }

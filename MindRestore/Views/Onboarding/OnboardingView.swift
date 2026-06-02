@@ -897,7 +897,7 @@ struct OnboardingView: View {
             options: OnboardingProtectedPriority.allCases,
             selection: selectedProtectedPriority,
             titleForOption: \.title,
-            emojiForOption: \.emoji,
+            symbolForOption: \.symbolName,
             onSelect: { selectedProtectedPriority = $0 },
             ctaTitle: "Lock this in",
             onContinue: {
@@ -914,7 +914,7 @@ struct OnboardingView: View {
             options: OnboardingDangerWindow.allCases,
             selection: selectedDangerWindow,
             titleForOption: \.title,
-            emojiForOption: \.emoji,
+            symbolForOption: \.symbolName,
             onSelect: { selectedDangerWindow = $0 },
             ctaTitle: "Build around this",
             onContinue: {
@@ -3024,7 +3024,7 @@ struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
     let options: [Option]
     let selection: Option?
     let titleForOption: KeyPath<Option, String>
-    let emojiForOption: KeyPath<Option, String>
+    let symbolForOption: KeyPath<Option, String>
     let onSelect: (Option) -> Void
     let ctaTitle: String
     let onContinue: () -> Void
@@ -3100,8 +3100,12 @@ struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
                                 .stroke(selected ? AppColors.accent.opacity(0.45) : AppColors.cardBorder, lineWidth: 1)
                         )
 
-                    Text(option[keyPath: emojiForOption])
-                        .font(.system(size: 22))
+                    Image(systemName: option[keyPath: symbolForOption])
+                        .font(.system(size: 20, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(selected ? AppColors.accent : AppColors.textSecondary)
+                        .frame(width: 24, height: 24)
+                        .accessibilityHidden(true)
                 }
 
                 Text(option[keyPath: titleForOption])

@@ -44,6 +44,18 @@ enum OnboardingProtectedPriority: String, CaseIterable, Identifiable {
         case .mentalClarity: return "🧠"
         }
     }
+
+    var symbolName: String {
+        switch self {
+        case .school: return "graduationcap.fill"
+        case .work: return "briefcase.fill"
+        case .sleep: return "bed.double.fill"
+        case .creativeWork: return "sparkles"
+        case .relationships: return "heart.fill"
+        case .mentalClarity: return "brain.head.profile"
+        }
+    }
+
 }
 
 enum OnboardingDangerWindow: String, CaseIterable, Identifiable {
@@ -99,6 +111,18 @@ enum OnboardingDangerWindow: String, CaseIterable, Identifiable {
         case .allDay: return "♾️"
         }
     }
+
+    var symbolName: String {
+        switch self {
+        case .lateNight: return "moon.stars.fill"
+        case .morning: return "sun.max.fill"
+        case .workBreaks: return "clock.fill"
+        case .afterStress: return "bolt.heart.fill"
+        case .boredom: return "face.dashed.fill"
+        case .allDay: return "infinity"
+        }
+    }
+
 }
 
 struct PlanBuildBeatContent {
