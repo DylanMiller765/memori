@@ -892,13 +892,12 @@ struct OnboardingView: View {
 
     private var protectedPriorityPage: some View {
         OnboardingPersonalQuestionPage(
-            eyebrow: "YOUR WHY",
             title: "What are you\nprotecting?",
             subtitle: "Pick the thing the feed keeps stealing from.",
             options: OnboardingProtectedPriority.allCases,
             selection: selectedProtectedPriority,
             titleForOption: \.title,
-            iconForOption: \.icon,
+            emojiForOption: \.emoji,
             onSelect: { selectedProtectedPriority = $0 },
             ctaTitle: "Lock this in",
             onContinue: {
@@ -910,13 +909,12 @@ struct OnboardingView: View {
 
     private var dangerWindowPage: some View {
         OnboardingPersonalQuestionPage(
-            eyebrow: "DANGER WINDOW",
             title: "When does the\nfeed usually win?",
             subtitle: "Memo uses this to frame your first guardrail.",
             options: OnboardingDangerWindow.allCases,
             selection: selectedDangerWindow,
             titleForOption: \.title,
-            iconForOption: \.icon,
+            emojiForOption: \.emoji,
             onSelect: { selectedDangerWindow = $0 },
             ctaTitle: "Build around this",
             onContinue: {
@@ -3021,13 +3019,12 @@ struct ScreenTimeEstimateRow: View {
 // MARK: - Personal Question Page
 
 struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
-    let eyebrow: String
     let title: String
     let subtitle: String
     let options: [Option]
     let selection: Option?
     let titleForOption: KeyPath<Option, String>
-    let iconForOption: KeyPath<Option, String>
+    let emojiForOption: KeyPath<Option, String>
     let onSelect: (Option) -> Void
     let ctaTitle: String
     let onContinue: () -> Void
@@ -3037,11 +3034,6 @@ struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
             Spacer().frame(height: 18)
 
             VStack(alignment: .leading, spacing: 11) {
-                Text(eyebrow)
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                    .tracking(1.6)
-                    .foregroundStyle(AppColors.accent)
-
                 Text(title)
                     .font(.brand(size: 36, weight: .heavy))
                     .foregroundStyle(AppColors.textPrimary)
@@ -3108,9 +3100,8 @@ struct OnboardingPersonalQuestionPage<Option: Identifiable & Equatable>: View {
                                 .stroke(selected ? AppColors.accent.opacity(0.45) : AppColors.cardBorder, lineWidth: 1)
                         )
 
-                    Image(systemName: option[keyPath: iconForOption])
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(selected ? AppColors.accent : AppColors.textTertiary)
+                    Text(option[keyPath: emojiForOption])
+                        .font(.system(size: 22))
                 }
 
                 Text(option[keyPath: titleForOption])

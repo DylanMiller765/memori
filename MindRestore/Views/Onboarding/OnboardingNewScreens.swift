@@ -34,14 +34,14 @@ enum OnboardingProtectedPriority: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
+    var emoji: String {
         switch self {
-        case .school: return "graduationcap.fill"
-        case .work: return "briefcase.fill"
-        case .sleep: return "moon.fill"
-        case .creativeWork: return "sparkles"
-        case .relationships: return "person.2.fill"
-        case .mentalClarity: return "brain.head.profile"
+        case .school: return "🎓"
+        case .work: return "💼"
+        case .sleep: return "💤"
+        case .creativeWork: return "✨"
+        case .relationships: return "🫶"
+        case .mentalClarity: return "🧠"
         }
     }
 }
@@ -89,14 +89,14 @@ enum OnboardingDangerWindow: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
+    var emoji: String {
         switch self {
-        case .lateNight: return "moon.stars.fill"
-        case .morning: return "sunrise.fill"
-        case .workBreaks: return "clock.fill"
-        case .afterStress: return "bolt.heart.fill"
-        case .boredom: return "hand.tap.fill"
-        case .allDay: return "infinity"
+        case .lateNight: return "🌙"
+        case .morning: return "☀️"
+        case .workBreaks: return "⏰"
+        case .afterStress: return "😵‍💫"
+        case .boredom: return "🫠"
+        case .allDay: return "♾️"
         }
     }
 }

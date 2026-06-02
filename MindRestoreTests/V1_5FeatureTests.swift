@@ -405,4 +405,11 @@ final class OnboardingPersonalizationPlanTests: XCTestCase {
         XCTAssertEqual(window.bubble, "Boredom is where the feed gets loud.")
         XCTAssertEqual(window.newLine, .init(label: "Danger window", value: "boredom"))
     }
+
+    func testPersonalQuestionOptionsUseEmojiGlyphs() {
+        XCTAssertEqual(OnboardingProtectedPriority.sleep.emoji, "💤")
+        XCTAssertEqual(OnboardingProtectedPriority.mentalClarity.emoji, "🧠")
+        XCTAssertEqual(OnboardingDangerWindow.lateNight.emoji, "🌙")
+        XCTAssertEqual(OnboardingDangerWindow.afterStress.emoji, "😵‍💫")
+    }
 }
