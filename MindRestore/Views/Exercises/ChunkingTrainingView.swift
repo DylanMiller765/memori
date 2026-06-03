@@ -241,11 +241,9 @@ struct ChunkingTrainingView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var showingInfo = false
     @State private var isNewPersonalBest = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -273,29 +271,9 @@ struct ChunkingTrainingView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.correctDigits,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Chunking Training")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .intro {
                 Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
                 viewModel.startFromIntro()
@@ -376,7 +354,7 @@ struct ChunkingTrainingView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "lightbulb.fill")
                         .foregroundStyle(AppColors.amber)
-                    Text("Pro Tip")
+                    Text("Training Tip")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColors.amber)
                 }
@@ -582,12 +560,6 @@ struct ChunkingTrainingView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .chunkingTraining,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.correctDigits,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Chunking",
             gameIcon: "rectangle.split.3x1.fill",
@@ -605,8 +577,6 @@ struct ChunkingTrainingView: View {
             personalBest: PersonalBestTracker.shared.best(for: .chunkingTraining),
             exerciseType: .chunkingTraining,
             leaderboardScore: viewModel.correctDigits,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.startChallenge()

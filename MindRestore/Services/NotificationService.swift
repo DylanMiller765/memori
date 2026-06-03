@@ -17,16 +17,16 @@ final class NotificationService: Sendable {
     // MARK: - Daily Reminder
 
     private static let reminderMessages: [(title: String, body: String)] = [
-        ("Memo is waiting for you", "3 games to make Memo happy. Don't leave it hanging."),
-        ("Memo is getting bored...", "It's been staring at the wall all day. Play a game."),
-        ("Feed Memo 🧠", "3 games = happy Memo. 0 games = sad Memo. Your choice."),
-        ("Memo misses you", "It's sitting there doing nothing. Give it a workout."),
-        ("Don't let Memo get sad", "Play 3 games today. It takes 5 minutes."),
-        ("Memo is judging you", "It knows you've been on TikTok. Train instead."),
-        ("Memo needs attention", "Your score won't improve itself. Memo is waiting."),
-        ("The leaderboard moved", "Did you move with it? Memo wants to climb."),
-        ("Memo called", "It wants its daily workout. 3 games, let's go."),
-        ("Don't ghost Memo", "It's counting on you. 3 games. 5 minutes."),
+        ("Memo is on patrol", "Run 3 quick rounds, then close the app before the feed gets loud."),
+        ("Train before the feed wins", "A few reps now makes the next scroll harder to justify."),
+        ("Put the feed on notice", "Train memory, speed, or attention. Then get back to your day."),
+        ("Memo needs 3 reps", "Quick session in, phone down after. That's the whole move."),
+        ("Guard the next unlock", "Train now so Memo has something to push back with later."),
+        ("The feed can wait", "One fast workout. Then leave Memo and do the real thing."),
+        ("Your brain gets first dibs", "Train before TikTok, Instagram, or YouTube gets the opening bid."),
+        ("Lock in today's reps", "3 games keeps Memo sharp without turning into another app spiral."),
+        ("Memo is still guarding", "Give it a quick training receipt, then get off your phone."),
+        ("Tiny workout, real pushback", "A few minutes of training makes the feed less automatic."),
     ]
 
     func scheduleDailyReminder(hour: Int, minute: Int, streak: Int) {
@@ -39,9 +39,10 @@ final class NotificationService: Sendable {
         let content = UNMutableNotificationContent()
         content.title = message.title
         content.body = streak > 0
-            ? "\(message.body) (\(streak)-day streak!)"
+            ? "\(message.body) \(streak)-day streak on deck."
             : message.body
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         var dateComponents = DateComponents()
         dateComponents.hour = hour
@@ -57,11 +58,11 @@ final class NotificationService: Sendable {
 
     private static func streakRiskMessages(streak: Int) -> [(title: String, body: String)] {
         [
-            ("Memo is panicking", "Your \(streak)-day streak dies at midnight. One game saves it."),
-            ("\(streak)-day streak on the line", "Memo doesn't want to cry tonight. Play now."),
-            ("Don't break Memo's heart", "\(streak) days straight. It vanishes at midnight."),
-            ("Memo is begging you", "\(streak)-day streak needs one game to survive. 2 minutes."),
-            ("Last chance today", "Memo's happiness depends on this \(streak)-day streak."),
+            ("Streak on the line", "One game keeps your \(streak)-day training streak alive before midnight."),
+            ("Protect the streak", "\(streak) days of reps. One quick round keeps it moving."),
+            ("Last call for today's rep", "Train once before midnight and Memo keeps the streak receipt."),
+            ("Do the tiny hard thing", "One game saves the \(streak)-day streak. Then get off the app."),
+            ("The feed would love a miss", "One training round keeps your \(streak)-day streak out of its hands."),
         ]
     }
 
@@ -78,6 +79,7 @@ final class NotificationService: Sendable {
         content.title = message.title
         content.body = message.body
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         var dateComponents = DateComponents()
         dateComponents.hour = 20
@@ -96,20 +98,21 @@ final class NotificationService: Sendable {
         guard milestones.contains(streak) else { return }
 
         let messages: [Int: (title: String, body: String)] = [
-            3: ("3-Day Streak!", "You're building a habit. Keep it up!"),
-            7: ("One Week Strong!", "7 days straight — you're on fire!"),
-            14: ("Two Weeks!", "14 days of brain training. Impressive dedication."),
-            30: ("30-Day Legend!", "A full month of training. Your brain thanks you."),
-            60: ("60-Day Titan!", "Two months strong. You're in the top 1%."),
-            100: ("100 DAYS!", "Triple digits! You are a cognitive legend."),
+            3: ("3 days on patrol", "Memo has a real training streak now. Keep the feed earning its way back."),
+            7: ("One week guarded", "7 straight days of reps. The feed had to work harder this week."),
+            14: ("Two weeks of pushback", "14 days of training before the scroll. That is the system working."),
+            30: ("30 days trained", "A full month of putting your brain before the feed."),
+            60: ("60 days guarded", "Two months of reps, locks, and comeback receipts."),
+            100: ("100 days of Memo", "Triple digits. The feed is no longer driving without a fight."),
         ]
 
-        let message = messages[streak] ?? ("Milestone!", "You've trained for \(streak) days straight!")
+        let message = messages[streak] ?? ("\(streak) days trained", "Memo logged another streak milestone.")
 
         let content = UNMutableNotificationContent()
         content.title = message.title
         content.body = message.body
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "milestone_\(streak)", content: content, trigger: trigger)
@@ -126,10 +129,10 @@ final class NotificationService: Sendable {
         guard lastTrainedDaysAgo >= 2 else { return }
 
         let messages: [(title: String, body: String)] = [
-            ("Memo is sad", "It's been \(lastTrainedDaysAgo) days. Memo is collecting dust in there."),
-            ("Memo is crying", "You haven't played in \(lastTrainedDaysAgo) days. It thinks you forgot."),
-            ("Memo looks terrible", "Neurons are withering. \(lastTrainedDaysAgo) days without training."),
-            ("Remember Memo?", "It remembers you. It's been waiting \(lastTrainedDaysAgo) days."),
+            ("The feed got comfortable", "\(lastTrainedDaysAgo) days without a rep. One game puts Memo back on patrol."),
+            ("Memo needs a fresh receipt", "Train once today so the next unlock is earned, not automatic."),
+            ("Comeback round", "\(lastTrainedDaysAgo) days off. Start with one fast game and leave."),
+            ("Reset the pattern", "The scroll had \(lastTrainedDaysAgo) quiet days. Memo only needs one rep to push back."),
         ]
 
         let message = messages[lastTrainedDaysAgo % messages.count]
@@ -138,6 +141,7 @@ final class NotificationService: Sendable {
         content.title = message.title
         content.body = message.body
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3600, repeats: false)
         let request = UNNotificationRequest(identifier: "comeback", content: content, trigger: trigger)
@@ -149,9 +153,10 @@ final class NotificationService: Sendable {
 
     func scheduleAchievementNudge(achievementName: String, progress: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Almost there!"
-        content.body = "\(progress) to unlock \"\(achievementName)\". You got this!"
+        content.title = "Achievement almost unlocked"
+        content.body = "\(progress) to earn \"\(achievementName)\". One more receipt for Memo."
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         var dateComponents = DateComponents()
         dateComponents.hour = 10
@@ -167,51 +172,15 @@ final class NotificationService: Sendable {
 
     func scheduleLevelUpNotification(level: Int, levelName: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Level \(level) — \(levelName)!"
-        content.body = "You leveled up! Keep training to reach the next milestone."
+        content.title = "Level \(level): \(levelName)"
+        content.body = "Memo logged the upgrade. Train again when the feed asks for another pass."
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "level_up", content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request)
-    }
-
-    // MARK: - Weekly Brain Report
-
-    func scheduleWeeklyReport(brainScore: Int, previousBrainScore: Int) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["weeklyReport"])
-
-        let content = UNMutableNotificationContent()
-        content.sound = .default
-
-        if brainScore == 0 {
-            content.title = "Your first Brain Score awaits"
-            content.body = "Play a few games this week and find out how sharp your brain really is."
-        } else {
-            let delta = brainScore - previousBrainScore
-            if delta > 0 {
-                content.title = "Your brain got sharper!"
-                content.body = "Brain Score: \(brainScore) — up \(delta) points from last week. Keep the momentum going."
-            } else if delta < 0 {
-                content.title = "Your Brain Score dipped"
-                content.body = "Brain Score: \(brainScore) — down \(abs(delta)) points. A quick session can turn it around."
-            } else {
-                content.title = "Weekly Brain Report"
-                content.body = "Brain Score: \(brainScore) — holding steady. Can you push it higher this week?"
-            }
-        }
-
-        var dateComponents = DateComponents()
-        dateComponents.weekday = 2  // Monday
-        dateComponents.hour = 9     // 9 AM
-        dateComponents.minute = 0
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-        let request = UNNotificationRequest(identifier: "weeklyReport", content: content, trigger: trigger)
-
-        center.add(request)
     }
 
     // MARK: - Retake Assessment Reminder
@@ -226,9 +195,10 @@ final class NotificationService: Sendable {
               fireDate > Date.now else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "Your brain has been training!"
-        content.body = "Retake your Brain Score to see how much you've improved"
+        content.title = "Retake your Brain Score"
+        content.body = "Memo has new training receipts. Check what changed."
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://insights"]
 
         let interval = fireDate.timeIntervalSinceNow
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, interval), repeats: false)
@@ -241,13 +211,89 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.retakeIdentifier])
     }
 
+    // MARK: - Trial Reminders
+
+    private static let trialEndDateKey = "memo_trial_end_date"
+    private static let trialReminderIdentifiers = [
+        "trial_reminder_day5",
+        "trial_reminder_last_day"
+    ]
+
+    func recordTrialStarted(days: Int) {
+        guard let endDate = Calendar.current.date(byAdding: .day, value: days, to: Date.now) else { return }
+        UserDefaults.standard.set(endDate, forKey: Self.trialEndDateKey)
+        scheduleStoredTrialRemindersIfAuthorized()
+    }
+
+    func scheduleStoredTrialRemindersIfAuthorized() {
+        guard let endDate = UserDefaults.standard.object(forKey: Self.trialEndDateKey) as? Date,
+              endDate > Date.now else { return }
+
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let settings = await center.notificationSettings()
+            guard settings.authorizationStatus == .authorized ||
+                  settings.authorizationStatus == .provisional ||
+                  settings.authorizationStatus == .ephemeral else { return }
+
+            scheduleTrialReminders(endDate: endDate)
+        }
+    }
+
+    private func scheduleTrialReminders(endDate: Date) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: Self.trialReminderIdentifiers)
+
+        let calendar = Calendar.current
+        let reminderDates: [(id: String, offsetDays: Int, hour: Int, minute: Int, title: String, body: String)] = [
+            (
+                "trial_reminder_day5",
+                -2,
+                10,
+                0,
+                "Your Memo trial ends in 2 days",
+                "Keep Memo guarding the feed, or cancel anytime in App Store."
+            ),
+            (
+                "trial_reminder_last_day",
+                -1,
+                9,
+                0,
+                "Trial ends tomorrow",
+                "Your $49.99/year plan starts tomorrow unless you cancel in App Store."
+            )
+        ]
+
+        for reminder in reminderDates {
+            guard let reminderDay = calendar.date(byAdding: .day, value: reminder.offsetDays, to: endDate),
+                  let fireDate = calendar.date(
+                    bySettingHour: reminder.hour,
+                    minute: reminder.minute,
+                    second: 0,
+                    of: reminderDay
+                  ),
+                  fireDate > Date.now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = reminder.title
+            content.body = reminder.body
+            content.sound = .default
+            content.userInfo = ["deepLink": "memo://profile"]
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, fireDate.timeIntervalSinceNow), repeats: false)
+            let request = UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger)
+            center.add(request)
+        }
+    }
+
     // MARK: - Brain Score Follow-Up
 
     func scheduleBrainScoreFollowUp(currentScore: Int) {
         let content = UNMutableNotificationContent()
-        content.title = "Your Brain Score hit \(currentScore)"
-        content.body = "Play today to push it even higher."
+        content.title = "Brain Score: \(currentScore)"
+        content.body = "Nice receipt. One more quick game before the feed gets another shot."
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 24 * 60 * 60, repeats: false)
         let request = UNNotificationRequest(
@@ -258,55 +304,29 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().add(request)
     }
 
-    func scheduleDecayWarning(pointsLost: Int) {
-        let content = UNMutableNotificationContent()
-        content.title = "Memo lost \(pointsLost) brain cells"
-        content.body = "Memo is getting weaker without you. Play today to recover."
-        content.sound = .default
-
-        // Schedule for 2 hours from now (give them time to play first)
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2 * 60 * 60, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: "decay_warning",
-            content: content,
-            trigger: trigger
-        )
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    func cancelDecayWarning() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["decay_warning"])
-    }
-
     func cancelStreakRisk() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["streak_risk"])
     }
 
-    // MARK: - Social Proof (competitive urgency)
+    // MARK: - Competitive Nudge
 
     func scheduleSocialProof(currentRank: Int? = nil, brainScore: Int? = nil) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ["social_proof"])
 
-        // Generate a competitive message with fake but believable numbers
-        let dropped = Int.random(in: 2...8)
-        let beatCount = Int.random(in: 3...12)
-        let scoreGap = Int.random(in: 5...25)
-
-        let messages: [(title: String, body: String)] = [
-            ("You dropped \(dropped) spots on the leaderboard", "\(beatCount) players passed you today. Train now to win it back."),
-            ("\(beatCount) players just beat your score", "They trained today — you didn't. Take it back."),
-            ("Your rank dropped to #\(Int.random(in: 40...150))", "Others are grinding. One session to reclaim your spot."),
-            ("Someone scored \(scoreGap) points higher than you", "Your Brain Score is falling behind. Fight back."),
-            ("The leaderboard moved without you", "\(beatCount) players climbed past you. Show them who's boss."),
-            ("You're losing ground", "\(dropped) players overtook you since yesterday. Defend your rank."),
-        ]
-
-        let msg = messages.randomElement()!
         let content = UNMutableNotificationContent()
-        content.title = msg.title
-        content.body = msg.body
+        if let currentRank {
+            content.title = "Rank #\(currentRank) is not parked"
+            content.body = "Train once before the week moves without you."
+        } else if let brainScore, brainScore > 0 {
+            content.title = "Defend Brain Score \(brainScore)"
+            content.body = "One short workout keeps your score from going stale."
+        } else {
+            content.title = "The leaderboard is open"
+            content.body = "Train once, check your rank, then get off the app."
+        }
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://compete"]
 
         // Fire at 7pm
         var dateComponents = DateComponents()
@@ -322,23 +342,19 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["social_proof"])
     }
 
-    // MARK: - Daily Brain Fact
+    // MARK: - Training Tip
 
     private static let brainFacts: [(title: String, body: String)] = [
-        ("Your brain uses 20% of your energy", "Despite being only 2% of your body weight. Train it daily."),
-        ("Neurons fire up to 200 times per second", "Reaction time training strengthens these pathways."),
-        ("Working memory peaks in your 20s", "But training can slow the decline at any age."),
-        ("Sleep consolidates memory", "What you trained today gets stronger overnight."),
-        ("Your brain creates 700 new neurons daily", "In the hippocampus — the memory center. Keep them busy."),
-        ("Multitasking is a myth", "Your brain switches tasks, it doesn't parallel process. Dual N-Back trains this."),
-        ("Stress shrinks your hippocampus", "But cognitive training can reverse the effect."),
-        ("Brain training improves processing speed by 15%", "Studies show consistent training pays off."),
-        ("Chimps beat humans at short-term memory", "Chimpanzee Ayumu memorizes faster than any human tested."),
-        ("The Stroop effect was discovered in 1935", "Your Color Match game is based on 90 years of research."),
-        ("Your brain can hold 7±2 items", "George Miller's magic number. Number Memory tests this limit."),
-        ("Neuroplasticity never stops", "Your brain rewires itself every time you learn something new."),
-        ("Speed of thought: 268 mph", "Signals travel through myelinated neurons at highway speeds."),
-        ("Reading changes your brain structure", "The brain physically adapts. So does training."),
+        ("Attention rep", "Color Match makes your brain ignore the obvious trap. Useful against the feed."),
+        ("Memory rep", "Visual Memory trains the same muscle the scroll tries to numb."),
+        ("Speed rep", "Reaction Time is a quick reset before you hand the phone back to Big Social."),
+        ("Pattern rep", "Speed Match forces fast decisions without opening another feed."),
+        ("Focus rep", "Dual N-Back is hard on purpose. The feed is easy on purpose."),
+        ("Unlock rep", "Train first, unlock second. That is the Memo contract."),
+        ("Feed patrol tip", "Pick the app you open automatically. Memo works best against the reflex."),
+        ("Short session wins", "One focused round beats ten minutes of pretending to be productive."),
+        ("Protect the next hour", "Train now, then close Memo before it becomes another place to hide."),
+        ("Brain before feed", "Give your attention one rep before the algorithm gets a turn."),
     ]
 
     func scheduleDailyBrainFact() {
@@ -350,6 +366,7 @@ final class NotificationService: Sendable {
         content.title = fact.title
         content.body = fact.body
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://train"]
 
         // Fire at a random time between 9am and 8pm
         var dateComponents = DateComponents()
@@ -361,23 +378,6 @@ final class NotificationService: Sendable {
         center.add(request)
     }
 
-    // MARK: - Decay Preview Warning (24h before decay starts)
-
-    func scheduleDecayPreview() {
-        let content = UNMutableNotificationContent()
-        content.title = "Memo is getting worried"
-        content.body = "Your score starts dropping tomorrow if you don't train today."
-        content.sound = .default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 24 * 60 * 60, repeats: false)
-        let request = UNNotificationRequest(identifier: "decay_preview", content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    func cancelDecayPreview() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["decay_preview"])
-    }
-
     // MARK: - Weekly Leaderboard Reset Warning (Sunday 8pm — 4h before midnight reset)
 
     func scheduleWeeklyLeaderboardReset() {
@@ -385,9 +385,9 @@ final class NotificationService: Sendable {
         center.removePendingNotificationRequests(withIdentifiers: ["weekly_leaderboard_reset"])
 
         let messages: [(String, String)] = [
-            ("Leaderboards reset in 4 hours", "Lock in your rank before midnight."),
-            ("Final hours of the week", "One last push to climb the leaderboard."),
-            ("Sunday night warning", "Leaderboards reset at midnight — squeeze in a few games."),
+            ("Leaderboard resets tonight", "One clean session before midnight. Then leave the app alone."),
+            ("Final reps of the week", "Train once if you want the receipt on this week's board."),
+            ("Week closes at midnight", "Memo can still log one more pushback before reset."),
         ]
         let pick = messages.randomElement()!
 
@@ -395,6 +395,7 @@ final class NotificationService: Sendable {
         content.title = pick.0
         content.body = pick.1
         content.sound = .default
+        content.userInfo = ["deepLink": "memo://compete"]
 
         // Sunday at 8pm, repeats weekly
         var dateComponents = DateComponents()

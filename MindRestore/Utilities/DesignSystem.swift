@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 // MARK: - App Theme
@@ -100,6 +101,129 @@ enum AppColors {
         endPoint: .trailing
     )
 }
+
+// MARK: - Main Screen Titles
+
+struct MainScreenTitle: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .mainScreenTitleStyle()
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension Text {
+    func mainScreenTitleStyle(
+        size: CGFloat = 38,
+        lineLimit: Int = 1,
+        minimumScaleFactor: CGFloat = 0.82
+    ) -> some View {
+        self
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .foregroundStyle(AppColors.textPrimary)
+            .lineLimit(lineLimit)
+            .minimumScaleFactor(minimumScaleFactor)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+#if DEBUG
+@MainActor
+struct MainScreenPreview<Content: View>: View {
+    private let content: Content
+    private let modelContainer: ModelContainer
+
+    @State private var storeService = StoreService(loadProductsOnInit: false)
+    @State private var achievementService = AchievementService()
+    @State private var paywallTrigger = PaywallTriggerService()
+    @State private var trainingManager = TrainingSessionManager()
+    @State private var gameCenterService = GameCenterService()
+    @State private var deepLinkRouter = DeepLinkRouter()
+    @State private var focusModeService = FocusModeService()
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.modelContainer = Self.makeModelContainer()
+    }
+
+    var body: some View {
+        content
+            .environment(storeService)
+            .environment(achievementService)
+            .environment(paywallTrigger)
+            .environment(trainingManager)
+            .environment(gameCenterService)
+            .environment(deepLinkRouter)
+            .environment(focusModeService)
+            .modelContainer(modelContainer)
+            .preferredColorScheme(.dark)
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(
+            for: User.self, Exercise.self, SpacedRepetitionCard.self,
+            DailySession.self, BrainScoreResult.self, Achievement.self,
+            configurations: configuration
+        )
+        seed(container.mainContext)
+        return container
+    }
+
+    private static func seed(_ context: ModelContext) {
+        let user = User()
+        user.hasCompletedOnboarding = true
+        user.username = "Dylan"
+        user.level = 6
+        user.totalXP = 840
+        user.currentStreak = 5
+        user.longestStreak = 12
+        user.totalExercises = 38
+        user.lastSessionDate = .now
+        context.insert(user)
+
+        let exerciseTypes: [ExerciseType] = [.reactionTime, .visualMemory, .mathSpeed, .dualNBack]
+        for (index, type) in exerciseTypes.enumerated() {
+            let exercise = Exercise(
+                type: type,
+                difficulty: 2 + index,
+                score: 0.72 + Double(index) * 0.06,
+                durationSeconds: 80 + index * 22
+            )
+            exercise.completedAt = Calendar.current.date(byAdding: .day, value: -index, to: .now) ?? .now
+            context.insert(exercise)
+        }
+
+        for dayOffset in 0..<7 {
+            let session = DailySession()
+            session.date = Calendar.current.date(byAdding: .day, value: -dayOffset, to: .now) ?? .now
+            session.totalScore = 0.70 + Double(dayOffset % 3) * 0.07
+            session.durationSeconds = 540 + dayOffset * 65
+            context.insert(session)
+        }
+
+        let brainScore = BrainScoreResult()
+        brainScore.brainScore = 742
+        brainScore.brainAge = 22
+        brainScore.percentile = 86
+        brainScore.digitSpanScore = 78
+        brainScore.reactionTimeScore = 84
+        brainScore.visualMemoryScore = 73
+        brainScore.digitSpanMax = 8
+        brainScore.reactionTimeAvgMs = 221
+        brainScore.visualMemoryMax = 6
+        context.insert(brainScore)
+
+        for type in [AchievementType.firstExercise, .streak3, .brainScore700] {
+            let achievement = Achievement(type: type)
+            achievement.isNew = false
+            context.insert(achievement)
+        }
+    }
+}
+#endif
 
 // MARK: - App Card Modifier (white card, subtle shadow, 14pt radius)
 

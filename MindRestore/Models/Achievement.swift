@@ -189,8 +189,8 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
     var description: String {
         switch self {
         // Streaks
-        case .streak3: return "You kept your brain training going for 3 days straight. Consistency is key!"
-        case .streak7: return "A full week of cognitive training. Your brain thanks you!"
+        case .streak3: return "You kept Memo on patrol for 3 days straight. Consistency is key!"
+        case .streak7: return "A full week of blocking the noise. Your brain thanks you!"
         case .streak14: return "Two weeks of dedication. You are building powerful habits."
         case .streak30: return "A whole month of daily training. You are truly committed!"
         case .streak60: return "60 days without missing a beat. Your willpower is incredible."

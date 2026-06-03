@@ -492,7 +492,7 @@ struct QuickAssessmentView: View {
             Button {
                 viewModel.startReaction()
             } label: {
-                Text("Start")
+                Text("Start reaction test")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -645,7 +645,7 @@ struct QuickAssessmentView: View {
             Button {
                 viewModel.startVisual()
             } label: {
-                Text("Start")
+                Text("Start memory test")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -734,7 +734,7 @@ struct QuickAssessmentView: View {
             Button {
                 viewModel.startDigit()
             } label: {
-                Text("Start")
+                Text("Start number test")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -833,3 +833,23 @@ struct QuickAssessmentView: View {
         }
     }
 }
+
+#if DEBUG
+private struct QuickAssessmentPreviewHost: View {
+    @State private var backgroundColor: Color = AppColors.pageBg
+    @State private var isInFullscreenPhase = false
+
+    var body: some View {
+        QuickAssessmentView(
+            backgroundColor: $backgroundColor,
+            isInFullscreenPhase: $isInFullscreenPhase,
+            onComplete: { _ in }
+        )
+    }
+}
+
+#Preview("Quick Assessment") {
+    QuickAssessmentPreviewHost()
+        .preferredColorScheme(.dark)
+}
+#endif

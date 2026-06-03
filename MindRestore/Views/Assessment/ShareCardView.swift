@@ -22,7 +22,7 @@ struct ShareCardView: View {
                     Image(systemName: "brain.fill")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(AppColors.accent)
-                    Text("MEMORI")
+                    Text("MEMO")
                         .font(.system(size: 13, weight: .heavy))
                         .tracking(3)
                         .foregroundStyle(Color.black.opacity(0.4))

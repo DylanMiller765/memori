@@ -38,7 +38,7 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .memoryChain: return "link.circle.fill"
         case .chimpTest: return "pawprint.fill"
         case .verbalMemory: return "text.book.closed.fill"
-        case .focusBlocking: return "shield.fill"
+        case .focusBlocking: return "shield.slash.fill"
         }
     }
 
@@ -58,12 +58,12 @@ enum LeaderboardCategory: String, CaseIterable, Identifiable {
         case .memoryChain: return "Longest sequence chain recalled"
         case .chimpTest: return "Highest level reached — more numbers, harder positions"
         case .verbalMemory: return "Longest streak without a mistake"
-        case .focusBlocking: return "Total minutes of distracting apps blocked this week"
+        case .focusBlocking: return "Protected Focus Mode time. More wins."
         }
     }
 }
 
-enum LeaderboardTimeFilter: String, CaseIterable, Identifiable {
+enum LeaderboardTimeFilter: String, CaseIterable, Identifiable, Hashable {
     case today = "Today"
     case thisWeek = "This Week"
     case thisMonth = "This Month"

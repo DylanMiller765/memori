@@ -198,7 +198,6 @@ struct ChimpTestView: View {
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var showingInfo = false
     @State private var confettiCounter = 0
@@ -227,10 +226,6 @@ struct ChimpTestView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.phase == .playing)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .setup {
                 Analytics.exerciseStarted(game: ExerciseType.chimpTest.rawValue)
                 viewModel.startGame()
@@ -422,12 +417,6 @@ struct ChimpTestView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .chimpTest,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.leaderboardScore,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Chimp Test",
             gameIcon: "pawprint.fill",
@@ -445,8 +434,6 @@ struct ChimpTestView: View {
             leaderboardScore: viewModel.bestLevel,
             emoji: "🐵",
             subtitleText: viewModel.bestLevel > 7 ? "You beat the chimp!" : viewModel.bestLevel == 7 ? "Tied with the chimp!" : "The chimp wins this time!",
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

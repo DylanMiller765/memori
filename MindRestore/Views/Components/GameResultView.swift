@@ -20,10 +20,6 @@ struct GameResultView: View {
     var emoji: String? = nil  // Use emoji instead of SF Symbol icon
     var subtitleText: String? = nil  // e.g. "You beat the chimp!"
 
-    // Challenge support
-    var activeChallenge: ChallengeLink? = nil   // Set when responding to a challenge
-    var challengeLink: ChallengeLink? = nil     // Set to enable "Challenge a Friend" button
-
     // Callbacks
     var onPlayAgain: () -> Void
     var onDone: () -> Void
@@ -42,14 +38,6 @@ struct GameResultView: View {
         ScrollView {
             VStack(spacing: 24) {
                 Spacer().frame(height: 20)
-
-                // Challenger comparison banner (when responding to a challenge)
-                if let challenge = activeChallenge {
-                    challengerBanner(challenge: challenge)
-                        .opacity(phase == .complete ? 1 : 0)
-                        .offset(y: phase == .complete ? 0 : 20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: phase)
-                }
 
                 // Hero Score Zone
                 heroSection
@@ -211,93 +199,10 @@ struct GameResultView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Challenger Banner
-
-    private func challengerBanner(challenge: ChallengeLink) -> some View {
-        let lowerIsBetter = challenge.game == .reactionTime
-        let playerWon = lowerIsBetter ? mainScore < challenge.score : mainScore > challenge.score
-        let isTie = mainScore == challenge.score
-        let winColor = AppColors.mint
-        let loseColor = AppColors.coral
-
-        let challengeBackLink = ChallengeLink(
-            game: challenge.game,
-            seed: ChallengeLink.randomSeed(),
-            score: mainScore,
-            challengerName: challenge.challengerName  // Will be replaced by sender at each hop
-        )
-
-        return VStack(spacing: 12) {
-            // Win/lose badge
-            Text(isTie ? "It's a Tie! 🤝" : playerWon ? "You Win! 🏆" : "They Win!")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(isTie ? AppColors.amber : playerWon ? winColor : loseColor)
-
-            // Side-by-side score comparison
-            HStack(spacing: 0) {
-                VStack(spacing: 4) {
-                    Text(challenge.challengerName)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(challenge.game.challengeDisplayText(score: challenge.score))
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(!playerWon && !isTie ? winColor : .primary)
-                }
-                .frame(maxWidth: .infinity)
-
-                Text("vs")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.tertiary)
-
-                VStack(spacing: 4) {
-                    Text("You")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(challenge.game.challengeDisplayText(score: mainScore))
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(playerWon ? winColor : .primary)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke((isTie ? AppColors.amber : playerWon ? winColor : loseColor).opacity(0.3), lineWidth: 1)
-            )
-
-            // Challenge Back button
-            if let url = challengeBackLink.vercelURL {
-                ShareLink(item: url, subject: Text("Memo Challenge"), message: Text(challengeBackLink.shareMessage())) {
-                    Label("Challenge Back", systemImage: "arrow.uturn.left")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundStyle(AppColors.accent)
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-
     // MARK: - CTAs
 
     private var ctaButtons: some View {
         VStack(spacing: 12) {
-            // Challenge a Friend (only when not responding to a challenge)
-            if activeChallenge == nil, let link = challengeLink, let url = link.vercelURL {
-                ShareLink(item: url, subject: Text("Memo Challenge"), message: Text(link.shareMessage())) {
-                    Label("Challenge a Friend", systemImage: "person.2.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                        .foregroundStyle(.primary)
-                }
-            }
-
             Button(action: onPlayAgain) {
                 Text("Play Again")
                     .accentButton()

@@ -173,11 +173,9 @@ struct VisualMemoryView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -209,29 +207,9 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.maxLevelReached,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .setup {
                 Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
                 viewModel.startGame()
@@ -505,12 +483,6 @@ struct VisualMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .visualMemory,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.maxLevelReached,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Visual Memory",
             gameIcon: "square.grid.3x3.fill",
@@ -526,8 +498,6 @@ struct VisualMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .visualMemory),
             exerciseType: .visualMemory,
             leaderboardScore: viewModel.maxLevelReached,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

@@ -22,8 +22,8 @@ struct FocusModeSettingsView: View {
                     HStack {
                         Text("Focus Mode")
                         Spacer()
-                        Text(focusModeService.isEnabled ? "Active" : "Off")
-                            .foregroundStyle(focusModeService.isEnabled ? AppColors.accent : .secondary)
+                        Text(focusStatusLabel)
+                            .foregroundStyle(focusStatusColor)
                     }
 
                     if focusModeService.isTemporarilyUnlocked, let until = focusModeService.unlockUntil {
@@ -41,7 +41,7 @@ struct FocusModeSettingsView: View {
 
                 // MARK: Blocked Apps
                 Section("Blocked Apps") {
-                    if focusModeService.isEnabled {
+                    if focusModeService.isBlockingNow {
                         if storeService.isProUser {
                             Button {
                                 showingAppPicker = true
@@ -77,7 +77,7 @@ struct FocusModeSettingsView: View {
                         HStack(spacing: 8) {
                             Image(systemName: currentSelectionExceedsFreeLimit ? "lock.fill" : "checkmark.circle.fill")
                                 .foregroundStyle(currentSelectionExceedsFreeLimit ? AppColors.amber : AppColors.accent)
-                            Text(currentSelectionExceedsFreeLimit ? "Reduce to 1 app or upgrade to Pro" : "Free plan blocks 1 app")
+                            Text(currentSelectionExceedsFreeLimit ? "Reduce to 1 app or unlock full access" : "Starter access blocks 1 app")
                                 .foregroundStyle(currentSelectionExceedsFreeLimit ? AppColors.amber : .secondary)
                         }
                     }
@@ -97,6 +97,18 @@ struct FocusModeSettingsView: View {
                     ))
 
                     if focusModeService.scheduleEnabled {
+                        if focusModeService.shouldShowScheduledOffNow {
+                            Button {
+                                focusModeService.blockNowUntilNextSchedule()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "bolt.shield.fill")
+                                        .foregroundStyle(AppColors.amber)
+                                    Text("Block now until next shift")
+                                }
+                            }
+                        }
+
                         DatePicker("Start", selection: Binding(
                             get: { focusModeService.scheduleStart },
                             set: { newValue in
@@ -156,10 +168,8 @@ struct FocusModeSettingsView: View {
                             }
                         }
                     } else if focusModeService.isEnabled {
-                        Button("Turn off Focus Mode", role: .destructive) {
-                            focusModeService.disable()
-                            dismiss()
-                        }
+                        Text("Train for a short pass back in.")
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -173,17 +183,6 @@ struct FocusModeSettingsView: View {
             .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
                 get: { focusModeService.activitySelection },
                 set: { newSelection in
-                    // Active session + Pro: additions only — discard removals so users
-                    // can't unblock apps mid-patrol to escape the commitment.
-                    if focusModeService.isEnabled && storeService.isProUser {
-                        var merged = focusModeService.activitySelection
-                        merged.applicationTokens.formUnion(newSelection.applicationTokens)
-                        merged.categoryTokens.formUnion(newSelection.categoryTokens)
-                        merged.webDomainTokens.formUnion(newSelection.webDomainTokens)
-                        focusModeService.updateActivitySelection(merged)
-                        return
-                    }
-
                     let exceedsLimit = newSelection.applicationTokens.count > 1 ||
                         !newSelection.categoryTokens.isEmpty ||
                         !newSelection.webDomainTokens.isEmpty
@@ -201,6 +200,19 @@ struct FocusModeSettingsView: View {
     }
 
     // MARK: - Helpers
+
+    private var focusStatusLabel: String {
+        if focusModeService.isTemporarilyUnlocked { return "Pass active" }
+        if focusModeService.isBlockingNow { return "Blocking" }
+        if focusModeService.shouldShowScheduledOffNow { return "Scheduled" }
+        return focusModeService.isEnabled ? "Ready" : "Off"
+    }
+
+    private var focusStatusColor: Color {
+        if focusModeService.isBlockingNow { return AppColors.accent }
+        if focusModeService.shouldShowScheduledOffNow { return AppColors.amber }
+        return .secondary
+    }
 
     private func unlockTimeRemaining(until date: Date) -> String {
         let remaining = max(0, Int(date.timeIntervalSinceNow))

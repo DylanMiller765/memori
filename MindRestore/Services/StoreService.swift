@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import RevenueCat
 
 @MainActor
 @Observable
@@ -21,7 +22,7 @@ final class StoreService {
     // Two SKU families exist due to the v2.0 single-tier pivot:
     //   • `com.memori.pro.*`   — LEGACY ($3.99 / $19.99). Grandfathered for old subscribers.
     //                            DO NOT use these for new purchases.
-    //   • `com.memori.ultra.*` — CANONICAL ($6.99 / $39.99 + 3-day annual trial). All
+    //   • `com.memori.ultra.*` — CANONICAL weekly + annual plans. All
     //                            new paywalls must charge these. They are kept under the
     //                            "ultra" name in App Store Connect even though Ultra-as-tier
     //                            no longer exists in the app — both families now grant the
@@ -30,22 +31,28 @@ final class StoreService {
     // Renaming the App Store Connect SKUs would invalidate active subscriptions, so the
     // "ultra" suffix is permanent. Any callsite reading these constants is correct in
     // semantics — only the name is misleading.
-    static let weeklyProductID = "com.memori.pro.weekly"
-    static let monthlyProductID = "com.memori.pro.monthly"
-    static let annualProductID = "com.memori.pro.annual"
+    nonisolated static let weeklyProductID = "com.memori.pro.weekly"
+    nonisolated static let monthlyProductID = "com.memori.pro.monthly"
+    nonisolated static let annualProductID = "com.memori.pro.annual"
 
-    static let weeklyUltraProductID = "com.memori.ultra.weekly"
-    static let monthlyUltraProductID = "com.memori.ultra.monthly"
-    static let annualUltraProductID = "com.memori.ultra.annual"
+    nonisolated static let weeklyUltraProductID = "com.memori.ultra.weekly"
+    nonisolated static let monthlyUltraProductID = "com.memori.ultra.monthly"
+    nonisolated static let annualUltraProductID = "com.memori.ultra.annual"
+    // Founder annual SKU: pay today and renew at the founder price while the subscription
+    // remains active. Kept under the existing product ID because the SKU is already approved.
+    nonisolated static let annualUltraExitOfferProductID = "com.memori.ultra.annual.firstyear"
 
     private var updateListenerTask: Task<Void, Error>?
+    private var revenueCatCustomerInfoTask: Task<Void, Never>?
 
-    init() {
+    init(loadProductsOnInit: Bool = true) {
         // Ensure install date is persisted on first launch
         if UserDefaults.standard.object(forKey: "installDate") == nil {
             UserDefaults.standard.set(Date.now, forKey: "installDate")
         }
+        guard loadProductsOnInit else { return }
         updateListenerTask = listenForTransactions()
+        revenueCatCustomerInfoTask = listenForRevenueCatCustomerInfo()
         Task { await loadProducts() }
         Task { await updateSubscriptionStatus() }
     }
@@ -55,11 +62,11 @@ final class StoreService {
         do {
             products = try await Product.products(for: [
                 Self.weeklyProductID,
-                Self.monthlyProductID,
                 Self.annualProductID,
                 Self.weeklyUltraProductID,
                 Self.monthlyUltraProductID,
-                Self.annualUltraProductID
+                Self.annualUltraProductID,
+                Self.annualUltraExitOfferProductID
             ])
             products.sort { $0.price < $1.price }
         } catch {
@@ -68,40 +75,54 @@ final class StoreService {
         isLoading = false
     }
 
-    func purchase(_ product: Product) async {
+    @discardableResult
+    func purchase(_ product: Product) async -> StorePurchaseOutcome {
         isLoading = true
         purchaseError = nil
+        defer { isLoading = false }
 
         do {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
+                await recordRevenueCatPurchase(result, productID: transaction.productID)
                 await transaction.finish()
-                await updateSubscriptionStatus()
+                await updateSubscriptionStatus(source: "storekit_purchase_success")
+                return .success(productID: transaction.productID)
             case .userCancelled:
-                break
+                return .userCancelled
             case .pending:
                 purchaseError = "Purchase is pending approval."
+                return .pending
             @unknown default:
-                break
+                return .failed(reason: "Unknown purchase result.")
             }
         } catch {
-            purchaseError = "Purchase failed: \(error.localizedDescription)"
+            let reason = error.localizedDescription
+            purchaseError = "Purchase failed: \(reason)"
+            return .failed(reason: reason)
         }
-        isLoading = false
     }
 
-    func restorePurchases() async {
+    @discardableResult
+    func restorePurchases() async -> Bool {
         isLoading = true
-        try? await AppStore.sync()
-        await updateSubscriptionStatus()
-        isLoading = false
+        defer { isLoading = false }
+        do {
+            try await AppStore.sync()
+        } catch {
+            purchaseError = "Restore failed: \(error.localizedDescription)"
+        }
+        await updateSubscriptionStatus(source: "storekit_restore")
+        return isProUser
     }
 
-    func updateSubscriptionStatus() async {
+    func updateSubscriptionStatus(source: String = "storekit_current_entitlements") async {
         var hasActiveProEntitlement = false
         var hasActiveUltraEntitlement = false
+        var activeProductIDs: [String] = []
+        let previousStatus = isProUser
 
         for await result in Transaction.currentEntitlements {
             if let transaction = try? checkVerified(result) {
@@ -109,20 +130,25 @@ final class StoreService {
                    transaction.productID == Self.monthlyProductID ||
                    transaction.productID == Self.annualProductID {
                     hasActiveProEntitlement = true
+                    activeProductIDs.append(transaction.productID)
                 } else if transaction.productID == Self.weeklyUltraProductID ||
                           transaction.productID == Self.monthlyUltraProductID ||
-                          transaction.productID == Self.annualUltraProductID {
+                          transaction.productID == Self.annualUltraProductID ||
+                          transaction.productID == Self.annualUltraExitOfferProductID {
                     hasActiveUltraEntitlement = true
+                    activeProductIDs.append(transaction.productID)
                 }
             }
         }
 
-        // Also check referral trial
-        let referralExpiry = UserDefaults.standard.object(forKey: "referral_trial_expiry") as? Date
-        let hasReferralTrial = referralExpiry.map { $0 > Date.now } ?? false
-
         // Single tier: any active sub (legacy Pro OR new Pro/formerly-Ultra) grants full Pro.
-        isProUser = hasActiveProEntitlement || hasActiveUltraEntitlement || hasReferralTrial
+        isProUser = hasActiveProEntitlement || hasActiveUltraEntitlement
+        Analytics.subscriptionStatusSynced(
+            source: source,
+            isMember: isProUser,
+            activeProductIDs: activeProductIDs.sorted(),
+            didChange: previousStatus != isProUser
+        )
     }
 
     private func listenForTransactions() -> Task<Void, Error> {
@@ -131,9 +157,37 @@ final class StoreService {
                 guard let self else { return }
                 if let transaction = try? await self.checkVerified(result) {
                     await transaction.finish()
-                    await self.updateSubscriptionStatus()
+                    await self.updateSubscriptionStatus(source: "storekit_transaction_update")
                 }
             }
+        }
+    }
+
+    private func listenForRevenueCatCustomerInfo() -> Task<Void, Never> {
+        Task { [weak self] in
+            for await customerInfo in Purchases.shared.customerInfoStream {
+                guard let self else { return }
+                let activeSubscriptions = Array(customerInfo.activeSubscriptions).sorted()
+                let previousStatus = isProUser
+                if !activeSubscriptions.isEmpty {
+                    isProUser = true
+                }
+                Analytics.subscriptionStatusSynced(
+                    source: "revenuecat_customer_info_stream",
+                    isMember: isProUser,
+                    activeProductIDs: activeSubscriptions,
+                    didChange: previousStatus != isProUser
+                )
+            }
+        }
+    }
+
+    private func recordRevenueCatPurchase(_ result: Product.PurchaseResult, productID: String) async {
+        do {
+            _ = try await Purchases.shared.recordPurchase(result)
+            Analytics.revenueCatPurchaseRecorded(productID: productID)
+        } catch {
+            Analytics.revenueCatPurchaseRecordFailed(productID: productID, reason: error.localizedDescription)
         }
     }
 
@@ -165,4 +219,11 @@ final class StoreService {
 
 enum StoreServiceError: Error {
     case failedVerification
+}
+
+enum StorePurchaseOutcome: Equatable {
+    case success(productID: String)
+    case userCancelled
+    case pending
+    case failed(reason: String)
 }

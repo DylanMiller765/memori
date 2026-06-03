@@ -50,7 +50,7 @@ private struct BrandingHeader: View {
             Image(systemName: "brain.fill")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(AppColors.accent)
-            Text("MEMORI")
+            Text("MEMO")
                 .font(.system(size: 12, weight: .heavy))
                 .tracking(3)
                 .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : Color(red: 0.45, green: 0.43, blue: 0.40))
@@ -274,7 +274,7 @@ struct TikTokBrainScoreCard: View {
                 HStack(spacing: 5) {
                     Text("🧠")
                         .font(.system(size: 10))
-                    Text("MEMORI")
+                    Text("MEMO")
                         .font(.system(size: 9, weight: .heavy))
                         .foregroundStyle(.white.opacity(0.25))
                         .tracking(3)
@@ -284,227 +284,6 @@ struct TikTokBrainScoreCard: View {
             }
         }
         .frame(width: 360, height: 640)
-    }
-}
-
-// MARK: - 2. ChallengeShareCard
-
-struct TikTokChallengeCard: View {
-    let challengerName: String
-    let challengerScore: Int
-    let challengeType: String
-
-    var body: some View {
-        ZStack {
-            CardBackground()
-
-            VStack(spacing: 0) {
-                Spacer().frame(height: 32)
-                BrandingHeader()
-                Spacer().frame(height: 28)
-
-                ShareCardSurface {
-                    VStack(spacing: 16) {
-                        Text("CHALLENGE")
-                            .font(.system(size: 36, weight: .bold))
-                            .tracking(6)
-                            .foregroundStyle(AppColors.coral)
-
-                        Text(challengeType.uppercased())
-                            .font(.system(size: 13, weight: .heavy))
-                            .tracking(3)
-                            .foregroundStyle(.secondary)
-
-                        Divider()
-
-                        VStack(spacing: 6) {
-                            Text(challengerName)
-                                .font(.system(size: 18, weight: .bold))
-
-                            Text("\(challengerScore)")
-                                .font(.system(size: 48, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColors.accent)
-                        }
-
-                        // VS
-                        ZStack {
-                            Circle()
-                                .fill(AppColors.coral)
-                                .frame(width: 52, height: 52)
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-
-                        // Mystery slot
-                        VStack(spacing: 6) {
-                            Text("???")
-                                .font(.system(size: 48, weight: .bold, design: .rounded))
-                                .foregroundStyle(.secondary.opacity(0.3))
-
-                            Text("YOUR SCORE")
-                                .font(.system(size: 12, weight: .heavy))
-                                .tracking(2)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(
-                                    Color.secondary.opacity(0.2),
-                                    style: StrokeStyle(lineWidth: 2, dash: [8, 6])
-                                )
-                        )
-                    }
-                }
-                .padding(.horizontal, 24)
-
-                Spacer()
-
-                Text("Think you're faster?")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 14)
-                    .background(AppColors.coral, in: Capsule())
-
-                Spacer().frame(height: 12)
-                BrandingFooter()
-                Spacer().frame(height: 28)
-            }
-        }
-        .frame(width: 360, height: 640)
-    }
-}
-
-// MARK: - 3. DuelResultShareCard
-
-struct TikTokDuelResultCard: View {
-    let player1Name: String
-    let player1Score: Int
-    let player2Name: String
-    let player2Score: Int
-    let exerciseType: String
-
-    private var player1Wins: Bool { player1Score >= player2Score }
-
-    var body: some View {
-        ZStack {
-            CardBackground()
-
-            VStack(spacing: 0) {
-                Spacer().frame(height: 32)
-                BrandingHeader()
-                Spacer().frame(height: 24)
-
-                ShareCardSurface {
-                    VStack(spacing: 16) {
-                        Text("1v1 DUEL")
-                            .font(.system(size: 36, weight: .bold))
-                            .tracking(4)
-                            .foregroundStyle(AppColors.violet)
-
-                        Text(exerciseType.uppercased())
-                            .font(.system(size: 13, weight: .heavy))
-                            .tracking(3)
-                            .foregroundStyle(.secondary)
-
-                        Divider()
-
-                        // Side by side
-                        HStack(spacing: 0) {
-                            playerColumn(
-                                name: player1Name,
-                                score: player1Score,
-                                isWinner: player1Wins,
-                                color: AppColors.accent
-                            )
-
-                            VStack(spacing: 6) {
-                                Rectangle()
-                                    .fill(Color.secondary.opacity(0.15))
-                                    .frame(width: 1, height: 30)
-                                Text("VS")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(.secondary)
-                                Rectangle()
-                                    .fill(Color.secondary.opacity(0.15))
-                                    .frame(width: 1, height: 30)
-                            }
-                            .frame(width: 44)
-
-                            playerColumn(
-                                name: player2Name,
-                                score: player2Score,
-                                isWinner: !player1Wins,
-                                color: AppColors.coral
-                            )
-                        }
-
-                        // Winner
-                        HStack(spacing: 6) {
-                            Image(systemName: "crown.fill")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(AppColors.amber)
-                            Text("\(player1Wins ? player1Name : player2Name) wins!")
-                                .font(.system(size: 18, weight: .bold))
-                        }
-                    }
-                }
-                .padding(.horizontal, 24)
-
-                Spacer()
-
-                Text("Who's next?")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.primary)
-
-                Spacer().frame(height: 12)
-                BrandingFooter()
-                Spacer().frame(height: 28)
-            }
-        }
-        .frame(width: 360, height: 640)
-    }
-
-    @ViewBuilder
-    private func playerColumn(name: String, score: Int, isWinner: Bool, color: Color) -> some View {
-        VStack(spacing: 8) {
-            if isWinner {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(AppColors.amber)
-            } else {
-                Spacer().frame(height: 18)
-            }
-
-            ZStack {
-                Circle()
-                    .fill(color.opacity(isWinner ? 0.15 : 0.06))
-                    .frame(width: 56, height: 56)
-
-                if isWinner {
-                    Circle()
-                        .stroke(color.opacity(0.4), lineWidth: 2)
-                        .frame(width: 56, height: 56)
-                }
-
-                Text(String(name.prefix(1)).uppercased())
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(isWinner ? color : .secondary)
-            }
-
-            Text(name)
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundStyle(isWinner ? .primary : .secondary)
-                .lineLimit(1)
-
-            Text("\(score)")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(isWinner ? color : .secondary.opacity(0.5))
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -834,7 +613,7 @@ struct ExerciseShareCard: View {
             Image(systemName: "brain.fill")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(accentColor)
-            Text("MEMORI")
+            Text("MEMO")
                 .font(.system(size: 13, weight: .heavy))
                 .tracking(4)
                 .foregroundStyle(isDark ? Color.white.opacity(0.50) : Color(red: 0.40, green: 0.38, blue: 0.36))
@@ -863,24 +642,6 @@ struct ExerciseShareCard: View {
         digitScore: 82,
         reactionScore: 95,
         visualScore: 78
-    )
-}
-
-#Preview("Challenge Card") {
-    TikTokChallengeCard(
-        challengerName: "Dylan",
-        challengerScore: 92,
-        challengeType: "Speed Round"
-    )
-}
-
-#Preview("Duel Result Card") {
-    TikTokDuelResultCard(
-        player1Name: "Dylan",
-        player1Score: 87,
-        player2Name: "Alex",
-        player2Score: 72,
-        exerciseType: "Dual N-Back"
     )
 }
 

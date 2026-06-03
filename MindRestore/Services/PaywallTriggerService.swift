@@ -9,87 +9,41 @@ final class PaywallTriggerService {
     private let defaults = UserDefaults.standard
     private let paywallDismissCountKey = "paywall_dismiss_count"
     private let lastPaywallDateKey = "last_paywall_date"
-    private let dailyExerciseCountKey = "daily_exercise_count"
-    private let dailyExerciseDateKey = "daily_exercise_date"
-    private let triedGameTypesKey = "tried_game_types"
+    private let trainingCountKey = "training_exercise_count"
+    private let trainingCountDateKey = "training_exercise_date"
 
     enum PaywallContext: String {
         case generic
         case afterAssessment
         case streakMilestone
-        case dailyLimit
         case lockedCategory
         case progressAnalytics
         case brainScoreHistory
         case leaderboard
     }
 
-    // MARK: - Try Each Game Once
-
-    private var triedGameTypes: Set<String> {
-        get { Set(defaults.stringArray(forKey: triedGameTypesKey) ?? []) }
-        set { defaults.set(Array(newValue), forKey: triedGameTypesKey) }
-    }
-
-    func isFirstTimeGame(_ type: ExerciseType) -> Bool {
-        !triedGameTypes.contains(type.rawValue)
-    }
-
-    // MARK: - Daily Exercise Limit (REMOVED in v2.0 — freemium with Focus Mode as paywall)
-    //
-    // Free users get unlimited brain games + leaderboards. Pro tier unlocks
-    // Focus Mode (block + train-to-unlock loop) and progression analytics.
-    // The exercisesToday counter still tracks for analytics + streak math
-    // but no longer gates access. `hasReachedDailyLimit` is hard-pinned false.
+    // MARK: - Training Counts
 
     var exercisesToday: Int {
-        guard let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
+        guard let savedDate = defaults.object(forKey: trainingCountDateKey) as? Date,
               Calendar.current.isDateInToday(savedDate) else {
             return 0
         }
-        return defaults.integer(forKey: dailyExerciseCountKey)
-    }
-
-    var freeExercisesRemaining: Int {
-        // No daily limit anymore; preserved for any callers, returns a high
-        // sentinel so legacy banner UI hides itself naturally.
-        Int.max
-    }
-
-    var hasReachedDailyLimit: Bool {
-        // Daily limit removed in v2.0. Always false.
-        false
+        return defaults.integer(forKey: trainingCountKey)
     }
 
     func recordExerciseCompleted(gameType: ExerciseType? = nil) {
-        // First-time game types don't count toward the daily limit
-        if let gameType, isFirstTimeGame(gameType) {
-            var tried = triedGameTypes
-            tried.insert(gameType.rawValue)
-            triedGameTypes = tried
-            return
-        }
-
         let today = Date.now
-        if let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
+        if let savedDate = defaults.object(forKey: trainingCountDateKey) as? Date,
            Calendar.current.isDateInToday(savedDate) {
-            defaults.set(exercisesToday + 1, forKey: dailyExerciseCountKey)
+            defaults.set(exercisesToday + 1, forKey: trainingCountKey)
         } else {
-            defaults.set(today, forKey: dailyExerciseDateKey)
-            defaults.set(1, forKey: dailyExerciseCountKey)
+            defaults.set(today, forKey: trainingCountDateKey)
+            defaults.set(1, forKey: trainingCountKey)
         }
     }
 
     // MARK: - Smart Trigger Logic
-
-    /// Call when free user tries to start an exercise but has hit daily limit
-    func triggerDailyLimit(isProUser: Bool) {
-        guard !isProUser else { return }
-        guard hasReachedDailyLimit else { return }
-        Analytics.dailyLimitReached(exercisesToday: exercisesToday)
-        triggerContext = .dailyLimit
-        shouldShowPaywall = true
-    }
 
     /// Call when user taps a locked category
     func triggerLockedCategory(isProUser: Bool) {

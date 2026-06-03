@@ -212,7 +212,7 @@ struct MemoriWidget: Widget {
             MemoriWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Memo")
-        .description("Track your memory training streak and progress.")
+        .description("Track your blocking streak and brain training progress.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

@@ -80,37 +80,6 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    var challengeEmoji: String {
-        switch self {
-        case .reactionTime: return "⚡"
-        case .colorMatch: return "🎨"
-        case .speedMatch: return "⚡"
-        case .visualMemory: return "🟦"
-        case .sequentialMemory: return "🔢"
-        case .mathSpeed: return "🧮"
-        case .dualNBack: return "🧠"
-        case .chunkingTraining: return "📦"
-        case .chimpTest: return "🐵"
-        case .verbalMemory: return "📝"
-        default: return "🧠"
-        }
-    }
-
-    func challengeDisplayText(score: Int) -> String {
-        switch self {
-        case .reactionTime: return "\(score)ms"
-        case .colorMatch: return "\(score)%"
-        case .speedMatch: return "\(score)%"
-        case .visualMemory: return "Level \(score)"
-        case .sequentialMemory: return "\(score) digits"
-        case .mathSpeed: return "\(score) solved"
-        case .dualNBack: return "N=\(score)"
-        case .chunkingTraining: return "\(score) correct"
-        case .chimpTest: return "Level \(score)"
-        case .verbalMemory: return "\(score) words"
-        default: return "\(score)"
-        }
-    }
 }
 
 // MARK: - Card Category

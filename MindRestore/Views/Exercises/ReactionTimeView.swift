@@ -144,9 +144,7 @@ struct ReactionTimeView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -176,31 +174,11 @@ struct ReactionTimeView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.averageMs,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Reaction Time")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .tabBar)
         .toolbar(viewModel.phase == .waiting || viewModel.phase == .ready || viewModel.phase == .tooEarly ? .hidden : .automatic, for: .navigationBar)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .setup {
                 Analytics.exerciseStarted(game: ExerciseType.reactionTime.rawValue)
                 viewModel.startGame()
@@ -413,12 +391,6 @@ struct ReactionTimeView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .reactionTime,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.averageMs,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Reaction Time",
             gameIcon: "bolt.fill",
@@ -435,8 +407,6 @@ struct ReactionTimeView: View {
             personalBest: PersonalBestTracker.shared.best(for: .reactionTime),
             exerciseType: .reactionTime,
             leaderboardScore: viewModel.averageMs,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

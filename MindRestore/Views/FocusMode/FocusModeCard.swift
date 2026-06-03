@@ -7,6 +7,9 @@ extension DeviceActivityReport.Context {
     /// Mirrors the context declared in the FocusUnlocksReport extension target.
     static let screenTime = Self("Screen Time")
     static let screenTimeWeekly = Self("Screen Time Weekly")
+    static let focusHomeDashboard = Self("Focus Home Dashboard")
+    static let focusInsightsReceipt = Self("Focus Insights Receipt")
+    static let focusInsightsInteractive = Self("Focus Insights Interactive")
 }
 
 // MARK: - Design tokens (matches Claude Design spec for Focus Mode)
@@ -41,11 +44,11 @@ struct FocusModeCard: View {
     @Environment(StoreService.self) private var storeService
 
     @State private var showingSettings = false
-    @State private var showingSetup = false
     @State private var showingAppPicker = false
     @State private var showingProPaywall = false
 
     private enum CardState { case notSetUp, idle, active, cooldown, unlocked, scheduled }
+    private enum TargetListMode { case empty, locked, unlocked }
 
     private var currentSelectionExceedsFreeLimit: Bool {
         focusModeService.activitySelection.applicationTokens.count > 1 ||
@@ -53,12 +56,16 @@ struct FocusModeCard: View {
         !focusModeService.activitySelection.webDomainTokens.isEmpty
     }
 
+    private var trainForPassTitle: String {
+        "Train for \(focusModeService.unlockDuration) min"
+    }
+
     private var cardState: CardState {
         if focusModeService.isTemporarilyUnlocked { return .unlocked }
         if focusModeService.isInCooldown { return .cooldown }
         if focusModeService.blockedAppCount == 0 { return .notSetUp }
         if !focusModeService.isEnabled { return .idle }
-        if focusModeService.scheduleEnabled && !isWithinSchedule { return .scheduled }
+        if focusModeService.shouldShowScheduledOffNow { return .scheduled }
         return .active
     }
 
@@ -82,163 +89,58 @@ struct FocusModeCard: View {
         // and require redoing every gradient/shadow. Pin the card to dark so it reads as a
         // deliberate "focus mode island" no matter the global appearance.
         .environment(\.colorScheme, .dark)
+        .task {
+            await focusModeService.checkAuthorizationStatus()
+        }
         .sheet(isPresented: $showingSettings) { FocusModeSettingsView() }
-        .sheet(isPresented: $showingSetup)    { FocusModeSetupView() }
+        .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
+            get: { focusModeService.activitySelection },
+            set: handlePickerSelection
+        ))
+        .sheet(isPresented: $showingProPaywall) {
+            PaywallView(triggerSource: "focus_mode_add_apps")
+        }
     }
 
     // MARK: - 00 · Not Set Up
 
     private var notSetUpCard: some View {
-        Button { showingSetup = true } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // eyebrow + step pill
-                HStack {
-                    HStack(spacing: 8) {
-                        PulsingDot(color: FM.accent, period: 1.6)
-                        eyebrow("MEMO'S WAITING", color: FM.accent)
-                    }
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Text("1").font(.system(size: 11, weight: .bold, design: .monospaced))
-                        Text("step left").font(.system(size: 11, weight: .semibold)).opacity(0.7)
-                    }
-                    .foregroundStyle(FM.accent)
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(FM.accent.opacity(0.14), in: Capsule())
-                }
-                .padding(.bottom, 14)
-
-                // hero copy
-                Text("Pick your poison.")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .kerning(-0.5)
-                    .foregroundStyle(FM.fg)
-                    .padding(.bottom, 6)
-
-                (Text("Choose the apps you want to block. ")
-                 + Text("Memo handles the rest.").foregroundColor(FM.fg).fontWeight(.semibold))
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(FM.fg2)
-                    .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.bottom, 18)
-
-                // ghost app row — 5 empty slots since no apps picked yet
-                HStack(spacing: 8) {
-                    ForEach(0..<5, id: \.self) { _ in ghostSlot() }
-                    Spacer()
-                    Text("0 PICKED")
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.6)
-                        .foregroundStyle(FM.fg3)
-                }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.white.opacity(0.025))
-                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3])).foregroundStyle(Color.white.opacity(0.10)))
-                )
-                .padding(.bottom, 16)
-
-                // CTA
-                ctaButton(title: "Hire Memo", showArrow: true) { showingSetup = true }
-
-                Text("Takes 30 seconds · You can change it anytime")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(FM.fg3)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
-        }
-        .buttonStyle(.plain)
-        .background(
-            cardBackground(halo: FM.accent, haloOpacity: 0.18, top: -30)
-                .clipShape(RoundedRectangle(cornerRadius: 26))
+        flatFocusSection(
+            accent: FM.accent,
+            status: "Not armed",
+            metric: "0",
+            metricLabel: "targets blocked",
+            leftTitle: "Focus Mode",
+            leftValue: "Off duty",
+            rightTitle: "Pass",
+            rightValue: "\(focusModeService.unlockDuration) min",
+            targetMode: .empty,
+            ctaTitle: "Pick targets",
+            ctaAction: { showingAppPicker = true }
         )
     }
 
     // MARK: - 01 · Idle (off — tension)
 
     private var idleCard: some View {
-        Button {
-            if !storeService.isProUser && currentSelectionExceedsFreeLimit {
-                showingProPaywall = true
-            } else {
-                focusModeService.enable()
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // eyebrow
-                HStack(spacing: 8) {
-                    PulsingDot(color: FM.speed, period: 2.0)
-                    eyebrow("MEMO'S OFF DUTY", color: FM.speed)
-                    Spacer()
-                }
-                .padding(.bottom, 12)
-
-                // Hero stat — real screen time pulled via DeviceActivityReport extension when authorized.
-                Group {
-                    if focusModeService.authorizationStatus == .approved {
-                        DeviceActivityReport(.screenTime, filter: yesterdayFilter)
-                            .frame(height: 64)
-                    } else {
-                        // Fallback when Screen Time access wasn't granted — clearly mark this as the
-                        // industry average (not the user's data) so a quick reader doesn't mistake it
-                        // for their own stat. The "AVG" eyebrow + "~" prefix make the framing explicit.
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("AVG")
-                                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                                    .tracking(0.9)
-                                    .foregroundStyle(FM.fg3)
-                                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                    Text("~4.3")
-                                        .font(.system(size: 56, weight: .bold, design: .monospaced))
-                                        .kerning(-1.5)
-                                        .foregroundStyle(FM.fg)
-                                    Text("HRS")
-                                        .font(.system(size: 22, weight: .bold, design: .monospaced))
-                                        .kerning(-0.3)
-                                        .foregroundStyle(FM.fg2)
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(.bottom, 4)
-
-                Text(idleSubtitle)
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(FM.fg2)
-                    .lineSpacing(2)
-                    .padding(.bottom, 18)
-
-                ctaButton(title: "Put Memo to Work", showArrow: true) {
-                    if !storeService.isProUser && currentSelectionExceedsFreeLimit {
-                        showingProPaywall = true
-                    } else {
-                        focusModeService.enable()
-                    }
+        flatFocusSection(
+            accent: FM.speed,
+            status: "Off duty",
+            metric: "\(focusModeService.blockedAppCount)",
+            metricLabel: focusModeService.blockedAppCount == 1 ? "target ready" : "targets ready",
+            leftTitle: "Focus Mode",
+            leftValue: "Off duty",
+            rightTitle: "Pass",
+            rightValue: "\(focusModeService.unlockDuration) min",
+            targetMode: .unlocked,
+            ctaTitle: "Start blocking",
+            ctaAction: {
+                if !storeService.isProUser && currentSelectionExceedsFreeLimit {
+                    showingProPaywall = true
+                } else {
+                    focusModeService.enable()
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
-        }
-        .buttonStyle(.plain)
-        .background(
-            ZStack {
-                cardBackground()
-                // amber/coral pulse behind number
-                Circle()
-                    .fill(FM.speed.opacity(0.14))
-                    .frame(width: 220, height: 220)
-                    .blur(radius: 40)
-                    .offset(x: -100, y: -20)
-                    .allowsHitTesting(false)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 26))
         )
     }
 
@@ -254,329 +156,86 @@ struct FocusModeCard: View {
         )
     }
 
+    /// Home should feel live, so this report reads today's Screen Time data.
+    private var todayFilter: DeviceActivityFilter {
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: Date())
+        return DeviceActivityFilter(
+            segment: .daily(during: DateInterval(start: todayStart, end: Date.now)),
+            users: .all,
+            devices: .init([.iPhone])
+        )
+    }
+
     // MARK: - 02 · Active (locked)
 
     private var activeCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                // eyebrow row
-                HStack {
-                    HStack(spacing: 8) {
-                        PulsingDot(color: FM.success, period: 2.0)
-                        eyebrow("MEMO ON PATROL", color: FM.success)
-                    }
-                    Spacer()
-                    Button { focusModeService.disable() } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.uturn.backward")
-                                .font(.system(size: 10, weight: .bold))
-                            Text("End")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundStyle(FM.fg2)
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(Color.white.opacity(0.05), in: Capsule())
-                        .overlay(Capsule().strokeBorder(FM.border2, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 14)
-
-                // live big timer
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let secondsLocked = Int(max(0, context.date.timeIntervalSince(focusModeService.currentBlockStartDate ?? context.date)))
-                    let intro = Text("Memo's been guarding since \(focusModeService.currentBlockStartDate.map(formatClockTime) ?? "now").")
-                    // Past 60min the headline already reads "Xh Xm", so the
-                    // "Saved you Xh Xm." trailer would just repeat it. Drop it.
-                    let trailer: Text = secondsLocked < 3600
-                        ? Text(" Saved you ") + Text(fmtHrsMin(secondsLocked)).foregroundColor(FM.fg).fontWeight(.semibold) + Text(".")
-                        : Text("")
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(fmtElapsedAdaptive(secondsLocked))
-                            .font(.system(size: 56, weight: .bold, design: .monospaced))
-                            .kerning(-1.5)
-                            .foregroundStyle(FM.fg)
-                            .contentTransition(.numericText())
-
-                        (intro + trailer)
-                            .font(.system(size: 13, design: .rounded))
-                            .foregroundStyle(FM.fg2)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(.bottom, 16)
-
-                // blocked apps — tappable to add apps mid-patrol (Pro only;
-                // Free tap shows the Pro paywall as the upsell moment).
-                Button {
-                    if storeService.isProUser {
-                        showingAppPicker = true
-                    } else {
-                        showingProPaywall = true
-                    }
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 6) {
-                                Text("Memo's blocklist")
-                                    .font(.system(size: 12, design: .rounded))
-                                    .foregroundStyle(FM.fg2)
-                                if storeService.isProUser {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(FM.accent)
-                                }
-                            }
-                            blockedAppsRow(locked: true)
-                        }
-                        Spacer()
-                        Text("\(focusModeService.blockedAppCount)")
-                            .font(.system(size: 22, weight: .bold, design: .monospaced))
-                            .kerning(-0.3)
-                            .foregroundStyle(FM.fg)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white.opacity(0.03))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(FM.border, lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-                .padding(.bottom, 14)
-
-                ctaButton(title: "bribe memo · \(focusModeService.unlockDuration)m") {
-                    deepLinkRouter.pendingDestination = .focusUnlock
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
-        }
-        .background(
-            ZStack {
-                cardBackground()
-                LinearGradient(colors: [FM.accent.opacity(0.20), .clear], startPoint: .top, endPoint: .bottom)
-                    .allowsHitTesting(false)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 26))
-        )
-        .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
-            get: { focusModeService.activitySelection },
-            set: { newSelection in
-                // Active session + Pro: additions only — discard removals so users
-                // can't unblock apps mid-patrol to escape the commitment.
-                guard storeService.isProUser else { return }
-                var merged = focusModeService.activitySelection
-                merged.applicationTokens.formUnion(newSelection.applicationTokens)
-                merged.categoryTokens.formUnion(newSelection.categoryTokens)
-                merged.webDomainTokens.formUnion(newSelection.webDomainTokens)
-                focusModeService.updateActivitySelection(merged)
-            }
-        ))
-        .sheet(isPresented: $showingProPaywall) {
-            PaywallView(triggerSource: "focus_mode_add_apps")
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let secondsLocked = Int(max(0, context.date.timeIntervalSince(focusModeService.currentBlockStartDate ?? context.date)))
+            flatFocusSection(
+                accent: FM.success,
+                status: "Blocking",
+                metric: fmtElapsedAdaptive(secondsLocked),
+                metricLabel: "protected",
+                leftTitle: "Focus Mode",
+                leftValue: "Blocking",
+                rightTitle: "Pass",
+                rightValue: "\(focusModeService.unlockDuration) min",
+                targetMode: .locked,
+                ctaTitle: trainForPassTitle,
+                ctaAction: { deepLinkRouter.pendingDestination = .focusUnlock }
+            )
         }
     }
 
     // MARK: - 03 · Cooldown
 
     private var cooldownCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // eyebrow
-            HStack(spacing: 8) {
-                PulsingDot(color: FM.amber, period: 2.0)
-                eyebrow("MEMO'S WINDED", color: FM.amber)
-                Spacer()
-            }
-            .padding(.bottom, 16)
-
-            // hero ring + text
-            HStack(alignment: .center, spacing: 18) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let remaining = max(0, Int(focusModeService.cooldownUntil?.timeIntervalSince(context.date) ?? 0))
-                    let total = 600 // 10 min cooldown (matches service default)
-                    let pct = 1 - (Double(remaining) / Double(total))
-                    ZStack {
-                        Circle()
-                            .stroke(Color.white.opacity(0.06), lineWidth: 9)
-                        Circle()
-                            .trim(from: 0, to: CGFloat(min(1, max(0, pct))))
-                            .stroke(FM.amber, style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                            .shadow(color: FM.amber.opacity(0.5), radius: 6)
-                        VStack(spacing: 3) {
-                            Text(fmtMMSS(remaining))
-                                .font(.system(size: 22, weight: .bold, design: .monospaced))
-                                .kerning(-0.3)
-                                .foregroundStyle(FM.fg)
-                            Text("TIL READY")
-                                .font(.system(size: 9, weight: .semibold))
-                                .tracking(0.9)
-                                .foregroundStyle(FM.fg3)
-                        }
-                    }
-                    .frame(width: 110, height: 110)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Memo's catching their breath")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .kerning(-0.2)
-                        .foregroundStyle(FM.fg)
-                        .lineSpacing(2)
-                    Text("Apps stay open until Memo's back. Bribe them with a brain game to skip the wait.")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(FM.fg2)
-                        .lineSpacing(2)
-                }
-            }
-            .padding(.bottom, 18)
-
-            HStack(spacing: 8) {
-                Button {
-                    deepLinkRouter.pendingDestination = .focusUnlock
-                } label: {
-                    Text("bribe memo · \(focusModeService.unlockDuration)m")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(FM.fg)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(FM.accent, in: RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: FM.accent.opacity(0.28), radius: 12, x: 0, y: 6)
-                }
-                .buttonStyle(.plain)
-
-                // Passive acknowledgment — during cooldown there's nothing actionable to do
-                // (disable button is hidden until cooldown ends), so this is just a "Got it"
-                // dismiss that visually does nothing but lets the user feel like they've handled it.
-                // Kept as a non-destructive button so the layout matches the bribe CTA.
-                Button {
-                    // No-op — cooldown will end on its own. Rely on TimelineView (1Hz) to
-                    // re-render the card into its post-cooldown state.
-                } label: {
-                    Text("Got it")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(FM.fg)
-                        .padding(.horizontal, 16).padding(.vertical, 13)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(FM.border2, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let remaining = max(0, Int(focusModeService.cooldownUntil?.timeIntervalSince(context.date) ?? 0))
+            flatFocusSection(
+                accent: FM.amber,
+                status: "Resetting",
+                metric: fmtMMSS(remaining),
+                metricLabel: "until ready",
+                leftTitle: "Focus Mode",
+                leftValue: "Cooling down",
+                rightTitle: "Pass",
+                rightValue: "\(focusModeService.unlockDuration) min",
+                targetMode: .unlocked,
+                ctaTitle: trainForPassTitle,
+                ctaAction: { deepLinkRouter.pendingDestination = .focusUnlock }
+            )
         }
-        .padding(20)
-        .background(
-            ZStack {
-                cardBackground()
-                LinearGradient(colors: [FM.amber.opacity(0.12), .clear], startPoint: .top, endPoint: .bottom)
-                    .allowsHitTesting(false)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 26))
-        )
     }
 
     // MARK: - 04 · Unlocked (window open)
 
     private var unlockedCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    HStack(spacing: 8) {
-                        PulsingDot(color: FM.speed, period: 1.4)
-                        eyebrow("MEMO'S CHILL", color: FM.speed)
-                    }
-                    Spacer()
-                    Button { focusModeService.cancelTemporaryUnlock() } label: {
-                        Text("Lock Early")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(FM.fg2)
-                            .padding(.horizontal, 10).padding(.vertical, 4)
-                            .background(Color.white.opacity(0.05), in: Capsule())
-                            .overlay(Capsule().strokeBorder(FM.border2, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 14)
-
-                // live countdown
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let remaining = max(0, Int(focusModeService.unlockUntil?.timeIntervalSince(context.date) ?? 0))
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(fmtMMSS(remaining))
-                            .font(.system(size: 56, weight: .bold, design: .monospaced))
-                            .kerning(-1.5)
-                            .foregroundStyle(FM.fg)
-                            .contentTransition(.numericText())
-                        Text("to scroll")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(FM.fg2)
-                    }
-                }
-                .padding(.bottom, 4)
-
-                Text("Memo locks the door at 0:00. Make it count.")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(FM.fg2)
-                    .padding(.bottom, 14)
-
-                // Open apps row
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Memo's letting through")
-                            .font(.system(size: 12, design: .rounded))
-                            .foregroundStyle(FM.fg2)
-                        blockedAppsRow(locked: false)
-                    }
-                    Spacer()
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.white.opacity(0.03))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(FM.border, lineWidth: 1))
-                )
-                .padding(.bottom, 12)
-
-                // Earn more CTA (secondary style)
-                Button {
-                    deepLinkRouter.pendingDestination = .focusUnlock
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "bolt.fill").font(.system(size: 13, weight: .bold))
-                        Text("bribe memo · +\(focusModeService.unlockDuration)m")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(FM.fg)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.05))
-                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FM.border2, lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let remaining = max(0, Int(focusModeService.unlockUntil?.timeIntervalSince(context.date) ?? 0))
+            flatFocusSection(
+                accent: FM.speed,
+                status: "Pass active",
+                metric: fmtMMSS(remaining),
+                metricLabel: "left",
+                leftTitle: "Focus Mode",
+                leftValue: "Unlocked",
+                rightTitle: "Locks in",
+                rightValue: fmtMMSS(remaining),
+                targetMode: .unlocked,
+                ctaTitle: "Train for more time",
+                ctaAction: { deepLinkRouter.pendingDestination = .focusUnlock },
+                secondaryActionTitle: "Lock early",
+                secondaryAction: { focusModeService.cancelTemporaryUnlock() }
+            )
         }
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 26).fill(FM.surface)
-                LinearGradient(colors: [FM.speed.opacity(0.24), .clear], startPoint: .top, endPoint: .bottom)
-                    .allowsHitTesting(false)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 26))
-        )
     }
 
     // MARK: - 05 · Scheduled Off
 
     private var scheduledCard: some View {
-        let resume = nextResumeDate()
+        let resume = focusModeService.nextScheduleStart(after: .now) ?? Date.now
         let resumeLabel = formatClockTime(resume)
         let dayLabel = resumeDayLabel(for: resume)
         return VStack(alignment: .leading, spacing: 0) {
@@ -584,7 +243,7 @@ struct FocusModeCard: View {
             HStack {
                 HStack(spacing: 8) {
                     PulsingDot(color: FM.amber, period: 2.4)
-                    eyebrow("MEMO'S OFF THE CLOCK", color: FM.amber)
+                    eyebrow("SCHEDULED", color: FM.amber)
                 }
                 Spacer()
                 HStack(spacing: 4) {
@@ -609,11 +268,11 @@ struct FocusModeCard: View {
                 .frame(width: 96, height: 96)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Memo's off the clock")
+                    Text("Blocking starts at \(resumeLabel)")
                         .font(.system(size: 19, weight: .bold, design: .rounded))
                         .kerning(-0.2)
                         .foregroundStyle(FM.fg)
-                    Text("Memo clocks back in at \(resumeLabel) \(dayLabel).")
+                    Text("Memo is off duty until your danger hours \(dayLabel).")
                         .font(.system(size: 13, design: .rounded))
                         .foregroundStyle(FM.fg2)
                         .lineSpacing(2)
@@ -622,18 +281,36 @@ struct FocusModeCard: View {
             }
             .padding(.bottom, 18)
 
-            Button { focusModeService.activateNow() } label: {
-                Text("Wake Memo Up")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(FM.amber)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(FM.amber, lineWidth: 1.5)
-                    )
+            flatDivider
+                .padding(.bottom, 12)
+
+            compactScheduledTargets
+                .padding(.bottom, 14)
+
+            HStack(spacing: 10) {
+                Button { showingSettings = true } label: {
+                    Text("Edit schedule")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(FM.onAccent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(FM.amber, in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+
+                Button { focusModeService.blockNowUntilNextSchedule() } label: {
+                    Text("Block now")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(FM.amber)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(FM.amber, lineWidth: 1.5)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(20)
         .background(
@@ -646,6 +323,25 @@ struct FocusModeCard: View {
         )
     }
 
+    private var compactScheduledTargets: some View {
+        HStack(spacing: 10) {
+            blockedAppsRow(locked: false)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(focusModeService.blockedAppCount) \(focusModeService.blockedAppCount == 1 ? "target" : "targets") ready")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(FM.fg)
+                Text("These block when the schedule starts.")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FM.fg2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Spacer()
+        }
+    }
+
     // MARK: - Helpers
 
     private func eyebrow(_ text: String, color: Color) -> some View {
@@ -653,6 +349,442 @@ struct FocusModeCard: View {
             .font(.system(size: 11, weight: .semibold, design: .rounded))
             .tracking(1.3)
             .foregroundStyle(color)
+    }
+
+    private func flatFocusSection(
+        accent: Color,
+        status: String,
+        metric: String,
+        metricLabel: String,
+        leftTitle: String,
+        leftValue: String,
+        rightTitle: String,
+        rightValue: String,
+        targetMode: TargetListMode,
+        ctaTitle: String,
+        ctaAction: @escaping () -> Void,
+        secondaryActionTitle: String? = nil,
+        secondaryAction: (() -> Void)? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let secondaryActionTitle, let secondaryAction {
+                HStack {
+                    Spacer()
+                    Button(action: secondaryAction) {
+                        Text(secondaryActionTitle)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(FM.fg2)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.white.opacity(0.05), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            focusProofSection(
+                fallbackLeftTitle: leftTitle,
+                fallbackLeftValue: leftValue,
+                fallbackRightTitle: rightTitle,
+                fallbackRightValue: rightValue
+            )
+
+            flatDivider
+
+            memoControlRow(
+                accent: accent,
+                status: status,
+                metric: metric,
+                metricLabel: metricLabel
+            )
+
+            flatDivider
+
+            targetList(mode: targetMode)
+
+            ctaButton(title: ctaTitle, showArrow: true, action: ctaAction)
+        }
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func focusProofSection(
+        fallbackLeftTitle: String,
+        fallbackLeftValue: String,
+        fallbackRightTitle: String,
+        fallbackRightValue: String
+    ) -> some View {
+        switch focusModeService.authorizationStatus {
+        case .approved:
+            DeviceActivityReport(.focusHomeDashboard, filter: todayFilter)
+                .frame(height: 204)
+        case .notDetermined:
+            connectScreenTimeRow(title: "Connect Screen Time", subtitle: "Show today's usage and top offenders.")
+        case .denied:
+            fallbackFocusStats(
+                leftTitle: fallbackLeftTitle,
+                leftValue: fallbackLeftValue,
+                rightTitle: fallbackRightTitle,
+                rightValue: fallbackRightValue
+            )
+        @unknown default:
+            fallbackFocusStats(
+                leftTitle: fallbackLeftTitle,
+                leftValue: fallbackLeftValue,
+                rightTitle: fallbackRightTitle,
+                rightValue: fallbackRightValue
+            )
+        }
+    }
+
+    private func connectScreenTimeRow(title: String, subtitle: String) -> some View {
+        Button {
+            Task { await focusModeService.requestAuthorization() }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(FM.accent)
+                    .frame(width: 36, height: 36)
+                    .background(FM.accent.opacity(0.14), in: Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(FM.fg)
+                    Text(subtitle)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(FM.fg2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(FM.fg3)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func memoControlRow(accent: Color, status: String, metric: String, metricLabel: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Memo control")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FM.fg2)
+                Text(status)
+                    .font(.system(size: 25, weight: .black, design: .rounded))
+                    .kerning(-0.5)
+                    .foregroundStyle(accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(metricLabel)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FM.fg2)
+                    .lineLimit(1)
+                Text(metric)
+                    .font(.system(size: metric.count > 5 ? 24 : 28, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(FM.fg)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+                    .contentTransition(.numericText())
+            }
+        }
+    }
+
+    private func fallbackFocusStats(leftTitle: String, leftValue: String, rightTitle: String, rightValue: String) -> some View {
+        HStack(spacing: 0) {
+            statColumn(title: leftTitle, value: leftValue)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Rectangle()
+                .fill(FM.border2)
+                .frame(width: 1, height: 42)
+
+            statColumn(title: rightTitle, value: rightValue)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 22)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func statColumn(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(FM.fg2)
+            Text(value)
+                .font(.system(size: 25, weight: .black, design: .rounded))
+                .kerning(-0.6)
+                .foregroundStyle(FM.fg)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+    }
+
+    private var flatDivider: some View {
+        Rectangle()
+            .fill(FM.border2)
+            .frame(height: 1)
+    }
+
+    private func targetList(mode: TargetListMode) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Text("Targets")
+                    .font(.system(size: 16, weight: .black, design: .rounded))
+                    .foregroundStyle(FM.fg)
+                Spacer()
+                if focusModeService.blockedAppCount > 0 {
+                    Button {
+                        if storeService.isProUser {
+                            showingAppPicker = true
+                        } else {
+                            showingProPaywall = true
+                        }
+                    } label: {
+                        Text(storeService.isProUser ? "Edit" : "Unlock")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(FM.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if focusModeService.blockedAppCount == 0 {
+                Button { showingAppPicker = true } label: {
+                    HStack(spacing: 12) {
+                        HStack(spacing: 7) {
+                            ForEach(0..<4, id: \.self) { _ in ghostSlot().frame(width: 30, height: 30) }
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("No targets yet")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundStyle(FM.fg)
+                            Text("Pick apps built to pull you back.")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundStyle(FM.fg2)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(targetRows.prefix(2)) { row in
+                        targetRow(row, mode: mode)
+                    }
+
+                    if focusModeService.blockedAppCount > 2 {
+                        Text("+\(focusModeService.blockedAppCount - 2) more targets")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(FM.fg3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+    }
+
+    private enum TargetRowContent {
+        case application(index: Int)
+        case category(index: Int)
+    }
+
+    private struct TargetRow: Identifiable {
+        let id: String
+        let content: TargetRowContent
+    }
+
+    private var targetRows: [TargetRow] {
+        let appRows = Array(focusModeService.activitySelection.applicationTokens).enumerated().map { index, _ in
+            TargetRow(
+                id: "app-\(index)",
+                content: .application(index: index)
+            )
+        }
+
+        let categoryRows = Array(focusModeService.activitySelection.categoryTokens).enumerated().map { index, _ in
+            TargetRow(
+                id: "category-\(index)",
+                content: .category(index: index)
+            )
+        }
+
+        return appRows + categoryRows
+    }
+
+    private func targetRow(_ row: TargetRow, mode: TargetListMode) -> some View {
+        HStack(spacing: 12) {
+            targetRowContent(row.content)
+
+            Spacer()
+
+            Text(mode == .locked ? "blocked" : "pass")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(mode == .locked ? FM.speed : FM.success)
+        }
+    }
+
+    @ViewBuilder
+    private func targetRowContent(_ content: TargetRowContent) -> some View {
+        switch content {
+        case .application(let index):
+            let tokens = Array(focusModeService.activitySelection.applicationTokens)
+            if tokens.indices.contains(index) {
+                targetTokenLabel(tokens[index])
+            }
+        case .category(let index):
+            let tokens = Array(focusModeService.activitySelection.categoryTokens)
+            if tokens.indices.contains(index) {
+                targetTokenLabel(tokens[index])
+            }
+        }
+    }
+
+    private func targetTokenLabel(_ token: ApplicationToken) -> some View {
+        HStack(spacing: 12) {
+            Label(token)
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 30)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+            Label(token)
+                .labelStyle(.titleOnly)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(FM.fg)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .scaleEffect(0.78, anchor: .leading)
+        }
+        .frame(height: 32, alignment: .leading)
+    }
+
+    private func targetTokenLabel(_ token: ActivityCategoryToken) -> some View {
+        HStack(spacing: 12) {
+            Label(token)
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 30)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+            Label(token)
+                .labelStyle(.titleOnly)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(FM.fg)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .scaleEffect(0.78, anchor: .leading)
+        }
+        .frame(height: 32, alignment: .leading)
+    }
+
+    private func handlePickerSelection(_ newSelection: FamilyActivitySelection) {
+        let exceedsFreeLimit = newSelection.applicationTokens.count > 1 ||
+            !newSelection.categoryTokens.isEmpty ||
+            !newSelection.webDomainTokens.isEmpty
+
+        if !storeService.isProUser && exceedsFreeLimit {
+            showingProPaywall = true
+        } else {
+            focusModeService.updateActivitySelection(newSelection)
+        }
+    }
+
+    private func statusPill(_ text: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .bold))
+            Text(text)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.14), in: Capsule())
+    }
+
+    private func cardTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 26, weight: .bold, design: .rounded))
+            .kerning(-0.5)
+            .foregroundStyle(FM.fg)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.bottom, 6)
+    }
+
+    private func cardBody(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13, design: .rounded))
+            .foregroundStyle(FM.fg2)
+            .lineSpacing(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.bottom, 14)
+    }
+
+    private var emptyTargetsRow: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<5, id: \.self) { _ in ghostSlot() }
+            Spacer()
+            Text("0 TARGETS")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.6)
+                .foregroundStyle(FM.fg3)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.025))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        .foregroundStyle(Color.white.opacity(0.10))
+                )
+        )
+    }
+
+    private func targetsRow(title: String, locked: Bool, showsCount: Bool, showAdd: Bool = false) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(FM.fg2)
+                    if showAdd {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(FM.accent)
+                    }
+                }
+                blockedAppsRow(locked: locked)
+            }
+
+            Spacer()
+
+            if showsCount {
+                Text("\(focusModeService.blockedAppCount)")
+                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .kerning(-0.3)
+                    .foregroundStyle(FM.fg)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.03))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(FM.border, lineWidth: 1))
+        )
     }
 
 
@@ -674,6 +806,45 @@ struct FocusModeCard: View {
             .shadow(color: FM.accent.opacity(0.30), radius: 14, x: 0, y: 6)
         }
         .buttonStyle(.plain)
+    }
+
+    private var focusMechanicRow: some View {
+        HStack(spacing: 10) {
+            mechanicStep(icon: "shield.fill", title: "Block", color: FM.accent)
+            mechanicArrow
+            mechanicStep(icon: "brain.head.profile", title: "Train", color: FM.memoPurple)
+            mechanicArrow
+            mechanicStep(icon: "lock.open.fill", title: "Unlock", color: FM.success)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.035))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(FM.border, lineWidth: 1))
+        )
+    }
+
+    private func mechanicStep(icon: String, title: String, color: Color) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(color)
+                .frame(width: 24, height: 24)
+                .background(color.opacity(0.16), in: Circle())
+
+            Text(title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(FM.fg)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var mechanicArrow: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(FM.fg3)
     }
 
     private func cardBackground(halo: Color? = nil, haloOpacity: Double = 0.0, top: CGFloat = 0) -> some View {
@@ -875,29 +1046,32 @@ struct FocusModeCard: View {
 private struct PulsingDot: View {
     let color: Color
     var period: Double = 1.6
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
 
     var body: some View {
         Circle()
             .fill(color)
             .frame(width: 8, height: 8)
-            .shadow(color: color.opacity(0.8), radius: pulse ? 6 : 2)
-            .scaleEffect(pulse ? 1.2 : 0.9)
-            .opacity(pulse ? 1 : 0.7)
+            .shadow(color: color.opacity(reduceMotion ? 0.45 : 0.8), radius: reduceMotion ? 2 : (pulse ? 6 : 2))
+            .scaleEffect(reduceMotion ? 1 : (pulse ? 1.2 : 0.9))
+            .opacity(reduceMotion ? 1 : (pulse ? 1 : 0.7))
             .onAppear {
-                withAnimation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true)) {
-                    pulse = true
-                }
+                startPulseIfAllowed()
+            }
+            .onChange(of: reduceMotion) { _, _ in
+                startPulseIfAllowed()
             }
     }
-}
 
-// MARK: - FocusModeService extension — block start time
+    private func startPulseIfAllowed() {
+        guard !reduceMotion else {
+            pulse = false
+            return
+        }
 
-extension FocusModeService {
-    /// The Date when the current contiguous block window started (nil if not currently blocking).
-    var currentBlockStartDate: Date? {
-        let defaults = UserDefaults(suiteName: "group.com.memori.shared") ?? .standard
-        return defaults.object(forKey: "focus_last_block_start") as? Date
+        withAnimation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true)) {
+            pulse = true
+        }
     }
 }

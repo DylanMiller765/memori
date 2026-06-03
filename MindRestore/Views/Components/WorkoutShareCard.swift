@@ -130,7 +130,7 @@ struct WorkoutShareCard: View {
             Spacer().frame(height: 32)
 
             // CTA
-            Text("Train your brain free \u{2014} Memo")
+            Text("Block apps. Train your brain. \u{2014} Memo")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.4))
         }

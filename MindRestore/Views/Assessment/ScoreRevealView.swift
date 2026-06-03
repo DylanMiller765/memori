@@ -21,7 +21,6 @@ struct ScoreRevealView: View {
     @State private var showBreakdown = false
     @State private var showComparison = false
     @State private var scoreTimer: Timer?
-    // @State private var showChallenge = false
     @AppStorage("celebratedBrainAgeBelow") private var celebratedBrainAgeBelow = false
 
     // Brain Age dramatic reveal states
@@ -293,22 +292,6 @@ struct ScoreRevealView: View {
                             }
 
                             HStack(spacing: 12) {
-                                /*
-                                Button {
-                                    showChallenge = true
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "person.2.fill")
-                                        Text("Challenge")
-                                    }
-                                    .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(AppColors.accent)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                                }
-                                */
-
                                 Button(action: onDone) {
                                     Text("Done")
                                         .font(.subheadline.weight(.bold))

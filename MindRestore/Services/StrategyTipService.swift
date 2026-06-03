@@ -239,9 +239,9 @@ final class StrategyTipService {
             )
         ],
 
-        // MARK: Daily Challenge — General
+        // MARK: General Training
 
-        .dailyChallenge: [
+        .generalTraining: [
             StrategyTip(
                 title: "Spaced Practice",
                 body: "Reviewing just before you forget is the sweet spot. That's why we schedule your reviews — trust the timing.",
@@ -286,7 +286,7 @@ final class StrategyTipService {
 
     /// Returns a random relevant strategy tip for the exercise type just completed.
     func tip(for domain: ExerciseDomain) -> StrategyTip {
-        let tips = tipsByDomain[domain] ?? tipsByDomain[.dailyChallenge] ?? []
+        let tips = tipsByDomain[domain] ?? tipsByDomain[.generalTraining] ?? []
         guard let selected = tips.randomElement() else {
             return fallbackTip
         }
@@ -312,7 +312,7 @@ final class StrategyTipService {
 
     /// Returns a general tip about memory and learning (not domain-specific).
     func generalTip() -> StrategyTip {
-        let generalTips = tipsByDomain[.dailyChallenge] ?? []
+        let generalTips = tipsByDomain[.generalTraining] ?? []
         guard let selected = generalTips.randomElement() else {
             return fallbackTip
         }
@@ -325,7 +325,7 @@ final class StrategyTipService {
     private var recentlyShownIDs: Set<UUID> = []
 
     func freshTip(for domain: ExerciseDomain) -> StrategyTip {
-        let tips = tipsByDomain[domain] ?? tipsByDomain[.dailyChallenge] ?? []
+        let tips = tipsByDomain[domain] ?? tipsByDomain[.generalTraining] ?? []
         let unseen = tips.filter { !recentlyShownIDs.contains($0.id) }
 
         let selected: StrategyTip

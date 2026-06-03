@@ -4,6 +4,24 @@ import PostHog
 enum Analytics {
     static let apiKey = "phc_mAu7DCNXJbqro9iG6KzYbxhTqa4s442BAmS3tCt7vPJu"
     static let host = "https://us.i.posthog.com"
+    static let onboardingStepNames = [
+        "welcome",
+        "name",
+        "goals",
+        "age",
+        "screenTimeAccess",
+        "lifetimeShock",
+        "lifeSquaresReceipt",
+        "protectTarget",
+        "feedWinMoment",
+        "personalizationBeat",
+        "memoPlan",
+        "trialTrustBridge",
+        "trialReminderBridge",
+        "planPersonalizing",
+        "focusMode",
+        "notificationPriming"
+    ]
 
     static func configure() {
         let config = PostHogConfig(apiKey: apiKey, host: host)
@@ -32,11 +50,83 @@ enum Analytics {
     /// Update user properties without re-identifying (call after subscription changes, brain score updates, etc.)
     static func updateUserProperties(isProUser: Bool? = nil, brainAge: Int? = nil, streak: Int? = nil) {
         var properties: [String: Any] = [:]
-        if let isProUser { properties["is_pro_user"] = isProUser }
+        if let isProUser {
+            properties["is_pro_user"] = isProUser
+            properties["is_member"] = isProUser
+        }
         if let brainAge { properties["brain_age"] = brainAge }
         if let streak { properties["streak"] = streak }
         guard !properties.isEmpty else { return }
         PostHogSDK.shared.capture("$set", userProperties: properties)
+    }
+
+    // MARK: - Subscription State
+
+    static func subscriptionStarted(
+        plan: String,
+        productID: String,
+        conversionKind: String,
+        trigger: String,
+        isHighIntent: Bool,
+        isExitOffer: Bool,
+        hasTrial: Bool,
+        price: Double?
+    ) {
+        var properties = paywallPurchaseProperties(
+            productID: productID,
+            plan: paywallPlanName(for: productID, fallback: plan),
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer,
+            price: price
+        )
+        properties["conversion_kind"] = conversionKind
+        properties["has_trial"] = hasTrial
+
+        PostHogSDK.shared.capture("subscription.started", properties: properties)
+
+        if conversionKind == "annual_trial" {
+            PostHogSDK.shared.capture("subscription.trial_started", properties: properties)
+        } else if conversionKind == "founder_forever" {
+            PostHogSDK.shared.capture("subscription.founder_purchased", properties: properties)
+        }
+
+        PostHogSDK.shared.capture("$set", userProperties: [
+            "is_member": true,
+            "is_pro_user": true,
+            "subscription_conversion_kind": conversionKind,
+            "subscription_product_id": productID
+        ])
+    }
+
+    static func subscriptionStatusSynced(
+        source: String,
+        isMember: Bool,
+        activeProductIDs: [String],
+        didChange: Bool
+    ) {
+        PostHogSDK.shared.capture("subscription.status_synced", properties: [
+            "source": source,
+            "is_member": isMember,
+            "is_pro_user": isMember,
+            "active_product_ids": activeProductIDs.joined(separator: ","),
+            "active_product_count": activeProductIDs.count,
+            "did_change": didChange
+        ])
+        updateUserProperties(isProUser: isMember)
+    }
+
+    static func revenueCatPurchaseRecorded(productID: String) {
+        PostHogSDK.shared.capture("revenuecat.purchase_recorded", properties: [
+            "product_id": productID
+        ])
+    }
+
+    static func revenueCatPurchaseRecordFailed(productID: String, reason: String) {
+        PostHogSDK.shared.capture("revenuecat.purchase_record_failed", properties: [
+            "product_id": productID,
+            "error_reason": reason
+        ])
     }
 
     // MARK: - Session Tracking
@@ -57,24 +147,210 @@ enum Analytics {
 
     // MARK: - Onboarding
 
-    static func onboardingDroppedOff(lastStep: String, totalSteps: Int) {
-        PostHogSDK.shared.capture("onboarding.dropped_off", properties: [
-            "last_step": lastStep,
-            "steps_completed": totalSteps
+    static func onboardingStepName(for index: Int) -> String {
+        guard onboardingStepNames.indices.contains(index) else { return "unknown" }
+        return onboardingStepNames[index]
+    }
+
+    static func onboardingStepProperties(
+        step: String,
+        stepIndex: Int? = nil,
+        totalSteps: Int = onboardingStepNames.count,
+        secondsSinceStart: TimeInterval? = nil,
+        secondsOnStep: TimeInterval? = nil,
+        goals: [String] = [],
+        selectedAge: Int? = nil,
+        screenTimeHours: Double? = nil,
+        screenTimeIsEstimate: Bool? = nil,
+        brainAge: Int? = nil,
+        brainScore: Int? = nil,
+        receiptCount: Int? = nil,
+        extraProperties: [String: Any] = [:]
+    ) -> [String: Any] {
+        var properties: [String: Any] = [
+            "step": step,
+            "total_steps": totalSteps
+        ]
+
+        if let stepIndex {
+            properties["step_index"] = stepIndex
+            let progress = Double(stepIndex + 1) / Double(max(totalSteps, 1)) * 100
+            properties["progress_percent"] = Int(progress.rounded())
+        }
+        if let secondsSinceStart {
+            properties["seconds_since_onboarding_start"] = Int(secondsSinceStart.rounded())
+        }
+        if let secondsOnStep {
+            properties["seconds_on_step"] = Int(secondsOnStep.rounded())
+        }
+        if !goals.isEmpty {
+            properties["goal_count"] = goals.count
+            properties["goals"] = goals.joined(separator: ",")
+        }
+        if let selectedAge {
+            properties["selected_age"] = selectedAge
+        }
+        if let screenTimeHours {
+            properties["screen_time_hours"] = screenTimeHours
+        }
+        if let screenTimeIsEstimate {
+            properties["screen_time_is_estimate"] = screenTimeIsEstimate
+        }
+        if let brainAge {
+            properties["brain_age"] = brainAge
+        }
+        if let brainScore {
+            properties["brain_score"] = brainScore
+        }
+        if let selectedAge, let brainAge {
+            properties["brain_age_delta"] = brainAge - selectedAge
+        }
+        if let receiptCount {
+            properties["receipt_count"] = receiptCount
+        }
+        extraProperties.forEach { properties[$0.key] = $0.value }
+        return properties
+    }
+
+    static func onboardingStarted(source: String = "first_launch", totalSteps: Int = onboardingStepNames.count) {
+        PostHogSDK.shared.capture("onboarding.started", properties: [
+            "source": source,
+            "total_steps": totalSteps
         ])
     }
 
-    static func onboardingCompleted(goals: [String]) {
-        PostHogSDK.shared.capture("onboarding.completed", properties: [
-            "goalCount": goals.count,
-            "goals": goals.joined(separator: ",")
-        ])
+    static func onboardingStepViewed(
+        step: String,
+        stepIndex: Int,
+        totalSteps: Int = onboardingStepNames.count,
+        secondsSinceStart: TimeInterval? = nil,
+        previousStep: String? = nil,
+        secondsOnPreviousStep: TimeInterval? = nil
+    ) {
+        var properties = onboardingStepProperties(
+            step: step,
+            stepIndex: stepIndex,
+            totalSteps: totalSteps,
+            secondsSinceStart: secondsSinceStart
+        )
+        if let previousStep {
+            properties["previous_step"] = previousStep
+        }
+        if let secondsOnPreviousStep {
+            properties["seconds_on_previous_step"] = Int(secondsOnPreviousStep.rounded())
+        }
+        PostHogSDK.shared.capture("onboarding.step_viewed", properties: properties)
     }
 
-    static func onboardingStep(step: String) {
-        PostHogSDK.shared.capture("onboarding.step", properties: [
-            "step": step
-        ])
+    static func onboardingDroppedOff(
+        lastStep: String,
+        totalSteps: Int,
+        stepIndex: Int? = nil,
+        secondsSinceStart: TimeInterval? = nil,
+        secondsOnStep: TimeInterval? = nil,
+        goals: [String] = [],
+        selectedAge: Int? = nil,
+        screenTimeHours: Double? = nil,
+        screenTimeIsEstimate: Bool? = nil,
+        brainAge: Int? = nil,
+        brainScore: Int? = nil,
+        receiptCount: Int? = nil
+    ) {
+        var properties = onboardingStepProperties(
+            step: lastStep,
+            stepIndex: stepIndex,
+            totalSteps: onboardingStepNames.count,
+            secondsSinceStart: secondsSinceStart,
+            secondsOnStep: secondsOnStep,
+            goals: goals,
+            selectedAge: selectedAge,
+            screenTimeHours: screenTimeHours,
+            screenTimeIsEstimate: screenTimeIsEstimate,
+            brainAge: brainAge,
+            brainScore: brainScore,
+            receiptCount: receiptCount
+        )
+        properties["last_step"] = lastStep
+        properties["steps_completed"] = totalSteps
+        PostHogSDK.shared.capture("onboarding.dropped_off", properties: properties)
+    }
+
+    static func onboardingCompleted(
+        goals: [String],
+        selectedAge: Int? = nil,
+        screenTimeHours: Double? = nil,
+        screenTimeIsEstimate: Bool? = nil,
+        brainAge: Int? = nil,
+        brainScore: Int? = nil,
+        receiptCount: Int? = nil,
+        focusModeWasSetUp: Bool? = nil,
+        notificationsEnabled: Bool? = nil,
+        secondsSinceStart: TimeInterval? = nil
+    ) {
+        var properties = onboardingStepProperties(
+            step: "completed",
+            stepIndex: onboardingStepNames.count - 1,
+            totalSteps: onboardingStepNames.count,
+            secondsSinceStart: secondsSinceStart,
+            goals: goals,
+            selectedAge: selectedAge,
+            screenTimeHours: screenTimeHours,
+            screenTimeIsEstimate: screenTimeIsEstimate,
+            brainAge: brainAge,
+            brainScore: brainScore,
+            receiptCount: receiptCount
+        )
+        properties["goalCount"] = goals.count
+        if let focusModeWasSetUp { properties["focus_mode_was_set_up"] = focusModeWasSetUp }
+        if let notificationsEnabled { properties["notifications_enabled"] = notificationsEnabled }
+        PostHogSDK.shared.capture("onboarding.completed", properties: properties)
+
+        var userProperties: [String: Any] = [
+            "onboarding_completed": true,
+            "onboarding_goal_count": goals.count
+        ]
+        if let selectedAge { userProperties["selected_age"] = selectedAge }
+        if let screenTimeHours { userProperties["onboarding_screen_time_hours"] = screenTimeHours }
+        if let screenTimeIsEstimate { userProperties["onboarding_screen_time_is_estimate"] = screenTimeIsEstimate }
+        if let brainAge { userProperties["brain_age"] = brainAge }
+        if let brainScore { userProperties["brain_score"] = brainScore }
+        if let focusModeWasSetUp { userProperties["focus_mode_was_set_up"] = focusModeWasSetUp }
+        if let notificationsEnabled { userProperties["notifications_enabled"] = notificationsEnabled }
+        PostHogSDK.shared.capture("$set", userProperties: userProperties)
+    }
+
+    static func onboardingStep(
+        step: String,
+        stepIndex: Int? = nil,
+        totalSteps: Int = onboardingStepNames.count,
+        secondsSinceStart: TimeInterval? = nil,
+        secondsOnStep: TimeInterval? = nil,
+        goals: [String] = [],
+        selectedAge: Int? = nil,
+        screenTimeHours: Double? = nil,
+        screenTimeIsEstimate: Bool? = nil,
+        brainAge: Int? = nil,
+        brainScore: Int? = nil,
+        receiptCount: Int? = nil,
+        extraProperties: [String: Any] = [:]
+    ) {
+        let properties = onboardingStepProperties(
+            step: step,
+            stepIndex: stepIndex,
+            totalSteps: totalSteps,
+            secondsSinceStart: secondsSinceStart,
+            secondsOnStep: secondsOnStep,
+            goals: goals,
+            selectedAge: selectedAge,
+            screenTimeHours: screenTimeHours,
+            screenTimeIsEstimate: screenTimeIsEstimate,
+            brainAge: brainAge,
+            brainScore: brainScore,
+            receiptCount: receiptCount,
+            extraProperties: extraProperties
+        )
+        PostHogSDK.shared.capture("onboarding.step", properties: properties)
+        PostHogSDK.shared.capture("onboarding.step_completed", properties: properties)
     }
 
     // MARK: - Navigation
@@ -126,41 +402,220 @@ enum Analytics {
         updateUserProperties(brainAge: brainAge)
     }
 
-    static func brainScoreDecayed(pointsLost: Int, newScore: Int) {
-        PostHogSDK.shared.capture("brainScore.decayed", properties: [
-            "pointsLost": pointsLost,
-            "newScore": newScore
-        ])
-    }
-
-    // MARK: - Daily Limit
-
-    static func dailyLimitReached(exercisesToday: Int) {
-        PostHogSDK.shared.capture("dailyLimit.reached", properties: [
-            "exercisesToday": exercisesToday
-        ])
-    }
-
     // MARK: - Paywall
 
-    static func paywallShown(trigger: String = "unknown") {
-        PostHogSDK.shared.capture("paywall.shown", properties: [
-            "trigger": trigger
+    static func paywallPurchaseProperties(
+        productID: String,
+        plan: String,
+        trigger: String,
+        isHighIntent: Bool,
+        isExitOffer: Bool,
+        price: Double? = nil,
+        errorReason: String? = nil
+    ) -> [String: Any] {
+        var properties: [String: Any] = [
+            "product_id": productID,
+            "plan": plan,
+            "trigger": trigger,
+            "is_high_intent": isHighIntent,
+            "is_exit_offer": isExitOffer
+        ]
+        if let price { properties["$revenue"] = price }
+        if let errorReason { properties["error_reason"] = errorReason }
+        return properties
+    }
+
+    static func paywallShown(trigger: String = "unknown", isHighIntent: Bool? = nil, selectedPlan: String? = nil) {
+        var properties: [String: Any] = ["trigger": trigger]
+        if let isHighIntent { properties["is_high_intent"] = isHighIntent }
+        if let selectedPlan { properties["selected_plan"] = selectedPlan }
+        PostHogSDK.shared.capture("paywall.shown", properties: properties)
+    }
+
+    static func paywallPlanSelected(plan: String, productID: String, trigger: String, isHighIntent: Bool) {
+        PostHogSDK.shared.capture("paywall.plan_selected", properties: [
+            "plan": plan,
+            "product_id": productID,
+            "trigger": trigger,
+            "is_high_intent": isHighIntent
         ])
     }
 
-    static func paywallConverted(plan: String, price: Double? = nil) {
-        var properties: [String: Any] = ["plan": plan]
-        if let price { properties["$revenue"] = price }
+    static func paywallCTATapped(plan: String, productID: String, trigger: String, isHighIntent: Bool, isExitOffer: Bool) {
+        PostHogSDK.shared.capture("paywall.cta_tapped", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer
+        ))
+    }
+
+    static func paywallPurchaseStarted(plan: String, productID: String, trigger: String, isHighIntent: Bool, isExitOffer: Bool) {
+        PostHogSDK.shared.capture("paywall.purchase_started", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer
+        ))
+    }
+
+    static func paywallPurchaseCancelled(plan: String, productID: String, trigger: String, isHighIntent: Bool, isExitOffer: Bool) {
+        PostHogSDK.shared.capture("paywall.purchase_cancelled", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer
+        ))
+    }
+
+    static func paywallPurchasePending(plan: String, productID: String, trigger: String, isHighIntent: Bool, isExitOffer: Bool) {
+        PostHogSDK.shared.capture("paywall.purchase_pending", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer
+        ))
+    }
+
+    static func paywallPurchaseFailed(
+        plan: String,
+        productID: String,
+        trigger: String,
+        isHighIntent: Bool,
+        isExitOffer: Bool,
+        reason: String
+    ) {
+        PostHogSDK.shared.capture("paywall.purchase_failed", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer,
+            errorReason: reason
+        ))
+    }
+
+    static func paywallProductUnavailable(productID: String, trigger: String, isHighIntent: Bool, isExitOffer: Bool) {
+        let plan = paywallPlanName(for: productID)
+        PostHogSDK.shared.capture("paywall.product_unavailable", properties: paywallPurchaseProperties(
+            productID: productID,
+            plan: plan,
+            trigger: trigger,
+            isHighIntent: isHighIntent,
+            isExitOffer: isExitOffer,
+            errorReason: "product_not_loaded"
+        ))
+    }
+
+    static func paywallRestoreTapped(trigger: String, isHighIntent: Bool) {
+        PostHogSDK.shared.capture("paywall.restore_tapped", properties: [
+            "trigger": trigger,
+            "is_high_intent": isHighIntent
+        ])
+    }
+
+    static func paywallRestoreCompleted(trigger: String, isHighIntent: Bool, isProUser: Bool) {
+        PostHogSDK.shared.capture("paywall.restore_completed", properties: [
+            "trigger": trigger,
+            "is_high_intent": isHighIntent,
+            "is_pro_user": isProUser
+        ])
+        if isProUser {
+            updateUserProperties(isProUser: true)
+        }
+    }
+
+    static func paywallExitOfferProperties(
+        trigger: String,
+        selectedPlan: String,
+        offerProductID: String,
+        displayedPrice: Double,
+        regularPrice: Double,
+        discountLabel: String,
+        displayedPriceText: String,
+        regularPriceText: String
+    ) -> [String: Any] {
+        [
+            "trigger": trigger,
+            "selected_plan": selectedPlan,
+            "offer_product_id": offerProductID,
+            "displayed_price": displayedPrice,
+            "regular_price": regularPrice,
+            "discount_label": discountLabel,
+            "displayed_price_text": displayedPriceText,
+            "regular_price_text": regularPriceText,
+            "is_exit_offer": true
+        ]
+    }
+
+    static func paywallExitOfferShown(
+        trigger: String,
+        selectedPlan: String,
+        offerProductID: String,
+        displayedPrice: Double,
+        regularPrice: Double,
+        discountLabel: String,
+        displayedPriceText: String,
+        regularPriceText: String
+    ) {
+        PostHogSDK.shared.capture("paywall.exit_offer_shown", properties: paywallExitOfferProperties(
+            trigger: trigger,
+            selectedPlan: selectedPlan,
+            offerProductID: offerProductID,
+            displayedPrice: displayedPrice,
+            regularPrice: regularPrice,
+            discountLabel: discountLabel,
+            displayedPriceText: displayedPriceText,
+            regularPriceText: regularPriceText
+        ))
+    }
+
+    static func paywallConverted(
+        plan: String,
+        price: Double? = nil,
+        trigger: String = "unknown",
+        productID: String? = nil,
+        isHighIntent: Bool? = nil,
+        isExitOffer: Bool = false
+    ) {
+        let resolvedProductID = productID ?? plan
+        let properties = paywallPurchaseProperties(
+            productID: resolvedProductID,
+            plan: paywallPlanName(for: resolvedProductID, fallback: plan),
+            trigger: trigger,
+            isHighIntent: isHighIntent ?? false,
+            isExitOffer: isExitOffer,
+            price: price
+        )
         PostHogSDK.shared.capture("paywall.converted", properties: properties)
         // Update pro status
         updateUserProperties(isProUser: true)
     }
 
-    static func paywallDismissed(trigger: String = "unknown") {
-        PostHogSDK.shared.capture("paywall.dismissed", properties: [
-            "trigger": trigger
-        ])
+    static func paywallDismissed(trigger: String = "unknown", selectedPlan: String? = nil, isHighIntent: Bool? = nil) {
+        var properties: [String: Any] = ["trigger": trigger]
+        if let selectedPlan { properties["selected_plan"] = selectedPlan }
+        if let isHighIntent { properties["is_high_intent"] = isHighIntent }
+        PostHogSDK.shared.capture("paywall.dismissed", properties: properties)
+    }
+
+    static func paywallPlanName(for productID: String, fallback: String = "unknown") -> String {
+        switch productID {
+        case "com.memori.ultra.annual", "com.memori.pro.annual":
+            return "annual"
+        case "com.memori.ultra.weekly", "com.memori.pro.weekly":
+            return "weekly"
+        case "com.memori.ultra.monthly", "com.memori.pro.monthly":
+            return "monthly"
+        case "com.memori.ultra.annual.firstyear":
+            return "annual_founder"
+        default:
+            return fallback
+        }
     }
 
     // MARK: - Sharing
@@ -190,20 +645,6 @@ enum Analytics {
         PostHogSDK.shared.capture("leaderboard.viewed", properties: [
             "category": category
         ])
-    }
-
-    // MARK: - Referrals
-
-    static func trackReferralShared() {
-        PostHogSDK.shared.capture("referral.shared")
-    }
-
-    static func trackReferralRedeemed() {
-        PostHogSDK.shared.capture("referral.redeemed")
-    }
-
-    static func trackReferralTrialStarted() {
-        PostHogSDK.shared.capture("referral.trial.started")
     }
 
     // MARK: - Focus Mode

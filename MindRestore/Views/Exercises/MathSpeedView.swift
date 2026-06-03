@@ -228,11 +228,9 @@ struct MathSpeedView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -254,29 +252,9 @@ struct MathSpeedView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.leaderboardScore,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Math Speed")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .setup {
                 Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
                 viewModel.startGame()
@@ -517,12 +495,6 @@ struct MathSpeedView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .mathSpeed,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.leaderboardScore,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Math Speed",
             gameIcon: "multiply.circle.fill",
@@ -539,8 +511,6 @@ struct MathSpeedView: View {
             personalBest: PersonalBestTracker.shared.best(for: .mathSpeed),
             exerciseType: .mathSpeed,
             leaderboardScore: viewModel.leaderboardScore,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

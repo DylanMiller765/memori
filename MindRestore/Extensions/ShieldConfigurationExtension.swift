@@ -30,7 +30,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         let subtitle: String
 
         if attemptCount <= 2 {
-            title = "Train your brain first!"
+            title = "Train to unlock first!"
             subtitle = "Complete a quick game to unlock this app"
         } else if attemptCount <= 4 {
             title = "Again? That's \(attemptCount) times today"

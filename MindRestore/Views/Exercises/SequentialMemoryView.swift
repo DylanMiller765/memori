@@ -164,11 +164,9 @@ struct SequentialMemoryView: View {
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -196,29 +194,9 @@ struct SequentialMemoryView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.maxCorrectLength,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Number Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
-            }
             if autoStart && viewModel.phase == .setup {
                 Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
                 viewModel.startGame()
@@ -486,12 +464,6 @@ struct SequentialMemoryView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .sequentialMemory,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.maxCorrectLength,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Number Memory",
             gameIcon: "number.circle.fill",
@@ -507,8 +479,6 @@ struct SequentialMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),
             exerciseType: .sequentialMemory,
             leaderboardScore: viewModel.maxCorrectLength,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

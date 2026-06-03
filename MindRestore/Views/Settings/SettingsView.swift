@@ -55,7 +55,9 @@ struct SettingsView: View {
                     resetDataButton
 
                     // Debug (7-tap easter egg)
+                    #if DEBUG
                     debugCard
+                    #endif
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -240,35 +242,6 @@ struct SettingsView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.cardBorder, lineWidth: 1))
     }
 
-    // MARK: - 2.5 Referral Card
-
-    private var referralCard: some View {
-        let service = ReferralService()
-        let count = service.referralCount
-        let daysLeft = service.trialDaysRemaining
-
-        return VStack(spacing: 8) {
-            ReferralBannerView()
-
-            if count > 0 || daysLeft > 0 {
-                HStack {
-                    if count > 0 {
-                        Label("\(count) friend\(count == 1 ? "" : "s") invited", systemImage: "person.2.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if daysLeft > 0 {
-                        Text("\(daysLeft)d Pro remaining")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppColors.teal)
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-        }
-    }
-
     private func formatTotalTime() -> String {
         let totalSeconds = sessions.reduce(0) { $0 + $1.durationSeconds }
         let totalMinutes = totalSeconds / 60
@@ -314,7 +287,7 @@ struct SettingsView: View {
                         .background(AppColors.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Pro Member")
+                        Text("Memo Member")
                             .font(.subheadline.weight(.semibold))
                         Text("All features unlocked")
                             .font(.caption)
@@ -351,7 +324,7 @@ struct SettingsView: View {
                             .foregroundStyle(.white)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Upgrade to Pro")
+                            Text("Unlock Memo")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.white)
                             Text("All exercises, detailed analytics")
@@ -559,7 +532,9 @@ struct SettingsView: View {
     private var aboutCard: some View {
         VStack(spacing: 0) {
             aboutRow(icon: "info.circle.fill", color: .gray, title: "Version", trailing: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                #if DEBUG
                 .onTapGesture { debugTapCount += 1 }
+                #endif
             Divider().padding(.leading, 52)
             if isProUser {
                 aboutRow(icon: "creditcard.fill", color: .blue, title: "Manage Subscription", isLink: true) {
@@ -724,12 +699,17 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var debugCard: some View {
+        #if DEBUG
         if debugTapCount >= 7 {
             debugCardContent
         }
+        #else
+        EmptyView()
+        #endif
     }
 
     private var debugCardContent: some View {
+        #if DEBUG
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: "Debug")
 
@@ -742,10 +722,10 @@ struct SettingsView: View {
                     .background(AppColors.amber, in: RoundedRectangle(cornerRadius: 7))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Debug Pro Mode")
+                    Text("Debug Membership")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
-                    Text(storeService.isProUser ? "Pro ON — tap to disable" : "Pro OFF — tap to enable")
+                    Text(storeService.isProUser ? "Full access ON — tap to disable" : "Full access OFF — tap to enable")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -759,31 +739,6 @@ struct SettingsView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 storeService.isProUser.toggle()
-            }
-
-            // Reset daily limit
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(AppColors.coral, in: RoundedRectangle(cornerRadius: 7))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Reset Daily Limit")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text("Resets the 3/day exercise counter")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                UserDefaults.standard.removeObject(forKey: "daily_exercise_count")
-                UserDefaults.standard.removeObject(forKey: "daily_exercise_date")
             }
 
             // Jump to Brain Age Reveal
@@ -909,6 +864,9 @@ struct SettingsView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.accent.opacity(0.3), lineWidth: 1)
         )
+        #else
+        EmptyView()
+        #endif
     }
 
     // Debug row helper

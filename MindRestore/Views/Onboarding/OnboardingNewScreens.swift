@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit
 import UserNotifications
+import AVKit
+import AVFoundation
 
 // MARK: - Processing Moment
 //
@@ -166,6 +168,38 @@ struct OnboardingPersonalSolutionView: View {
     }
     @State private var heroFormat: HeroFormat = .hours
 
+    init(
+        userGoals: Set<UserFocusGoal>,
+        brainAge: Int?,
+        userAge: Int,
+        dailyScreenTimeHours: Double,
+        projectedScreenTimeHours: Int,
+        projectionIsEstimate: Bool,
+        receiptCount: Int,
+        previewStartsAtPlan: Bool = false,
+        onContinue: @escaping () -> Void
+    ) {
+        self.userGoals = userGoals
+        self.brainAge = brainAge
+        self.userAge = userAge
+        self.dailyScreenTimeHours = dailyScreenTimeHours
+        self.projectedScreenTimeHours = projectedScreenTimeHours
+        self.projectionIsEstimate = projectionIsEstimate
+        self.receiptCount = receiptCount
+        self.onContinue = onContinue
+
+        guard previewStartsAtPlan else { return }
+        _cardsAppeared = State(initialValue: [true, true, true, true])
+        _revealBeat = State(initialValue: .plan)
+        _headlineAppeared = State(initialValue: true)
+        _animatedProjectionHours = State(initialValue: projectedScreenTimeHours)
+        _animatedReclaimedHours = State(initialValue: Int(Double(projectedScreenTimeHours) * Self.memoReductionFraction))
+        _revealStarted = State(initialValue: true)
+        _recoilProgress = State(initialValue: 1)
+        _planBarProgress = State(initialValue: 1)
+        _heroFormat = State(initialValue: .breakdown)
+    }
+
     /// Top 3 solutions to mirror back. Falls back to a sensible default trio
     /// if the user skipped goal selection (so the page still has substance).
     private var solutions: [UserFocusGoal] {
@@ -194,7 +228,7 @@ struct OnboardingPersonalSolutionView: View {
     private func solutionDetail(_ goal: UserFocusGoal) -> String {
         switch goal {
         case .screenTimeFrying: return "Until you train. No willpower required."
-        case .doomscrolling:    return "Play brain games to unlock minutes."
+        case .doomscrolling:    return "Train to unlock minutes."
         case .attentionShot:    return "10 games. 5 minutes a day. That's it."
         case .loseFocus:        return "Working memory exercises rebuild it."
         case .forgetInstantly:  return "Memory drills you'll actually feel work."
@@ -473,7 +507,7 @@ struct OnboardingPersonalSolutionView: View {
     private var beat1CTAButton: some View {
         Button(action: advanceToPlan) {
             HStack(spacing: 8) {
-                Text("Show me how")
+                Text("Show my plan")
                 Image(systemName: "arrow.right")
                     .font(.system(size: 15, weight: .heavy))
             }
@@ -521,7 +555,7 @@ struct OnboardingPersonalSolutionView: View {
             }
 
             // Supporting subhead
-            Text("Beat brain games, earn screen time, and keep the feed boxed out.")
+            Text("Train first, earn screen time, and keep the feed boxed out.")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColors.textPrimary.opacity(0.55))
                 .lineSpacing(2)
@@ -572,7 +606,7 @@ struct OnboardingPersonalSolutionView: View {
             planCardRow(
                 color: AppColors.violet,
                 label: "Train",
-                detail: "5 min brain games",
+                detail: "5 min training",
                 value: "5 min/day",
                 index: 0
             )
@@ -632,7 +666,7 @@ struct OnboardingPersonalSolutionView: View {
                 return "Memo's plan is built to push your Brain Age down."
             }
         }
-        return "Train your brain. Block the noise. Earn your time back."
+        return "Block the noise. Train your brain. Earn your time back."
     }
 
     private var projectionSubtitle: String {
@@ -1637,7 +1671,7 @@ struct OnboardingBrainAgeReveal: View {
                     }
 
                     Button(action: onContinue) {
-                        Text("See My Plan →")
+                        Text("See what the feed costs →")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white.opacity(0.55))
                     }
@@ -1777,6 +1811,21 @@ struct OnboardingBrainAgeReveal: View {
     )
 }
 
+#Preview("Plan Reveal — plan beat") {
+    OnboardingPersonalSolutionView(
+        userGoals: [.screenTimeFrying, .doomscrolling, .attentionShot],
+        brainAge: 35,
+        userAge: 28,
+        dailyScreenTimeHours: 4.3,
+        projectedScreenTimeHours: 50200,
+        projectionIsEstimate: false,
+        receiptCount: 4,
+        previewStartsAtPlan: true,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
 // MARK: - Onboarding Finale Sequence (reveal → paywall in one cover)
 
 /// Wraps the brain-age reveal and the paywall into a single full-screen cover so
@@ -1822,6 +1871,202 @@ struct OnboardingFinaleSequence: View {
     OnboardingBrainAgeReveal(brainAge: 55, userAge: 28, onContinue: {}, skipAnimation: true)
 }
 
+#if DEBUG
+private struct OnboardingTrapSelectionPreviewHost: View {
+    @State private var selectedApps: Set<OnboardingTrapApp> = [.tiktok, .youtube, .instagram]
+
+    var body: some View {
+        OnboardingTrapSelectionView(selectedApps: $selectedApps, onContinue: {})
+    }
+}
+
+#Preview("Processing") {
+    OnboardingProcessingView(onComplete: {})
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Notification Primer") {
+    OnboardingNotificationPrimingView(onResult: { _ in })
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Trap Selection") {
+    OnboardingTrapSelectionPreviewHost()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Unlock Loop Demo") {
+    OnboardingUnlockLoopDemoView(
+        blockedApps: [.tiktok, .youtube, .instagram],
+        onStarted: {},
+        onComplete: { _ in }
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Measured") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Years Ahead") {
+    OnboardingLifeSquaresReceiptView(
+        age: 20,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .yearsAhead,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Sleep Locked") {
+    OnboardingLifeSquaresReceiptView(
+        age: 20,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .sleepLocked,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Work Locked") {
+    OnboardingLifeSquaresReceiptView(
+        age: 20,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .workSchoolLocked,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Shock") {
+    OnboardingLifetimeShockView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Your Time") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .yourTime,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Phone Takeover") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .phoneTakeover,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Phone Truth") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .phoneTruth,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Memo Rescue") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        isLoadingScreenTime: false,
+        sourceLine: "Using your Screen Time",
+        previewBeat: .rescue,
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Lifetime Cost · Loading") {
+    OnboardingLifeSquaresReceiptView(
+        age: 25,
+        dailyScreenTimeHours: 4,
+        isEstimate: false,
+        isLoadingScreenTime: true,
+        sourceLine: "Reading your Screen Time",
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Willpower Proof") {
+    OnboardingWillpowerProofView(onContinue: {})
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Memo Plan") {
+    OnboardingMemoPlanView(
+        selectedGoals: [.screenTimeFrying, .doomscrolling, .attentionShot],
+        onContinue: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Plan Build · Screen Time Beat") {
+    OnboardingPlanBuildBeatOverlay(
+        beat: .screenTime,
+        goals: [.screenTimeFrying, .doomscrolling, .attentionShot],
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        onAdvance: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Plan Build · Final Beat") {
+    OnboardingPlanFinalBeatView(
+        goals: [.screenTimeFrying, .doomscrolling, .attentionShot],
+        age: 25,
+        dailyScreenTimeHours: 50.2 / 7.0,
+        isEstimate: false,
+        onComplete: {}
+    )
+    .preferredColorScheme(.dark)
+}
+#endif
+
 // MARK: - Shared Tokens for v2 Onboarding Pages
 //
 // Mirror the FO design tokens from FocusOnboardingPages.swift so the Industry
@@ -1849,6 +2094,8 @@ struct OBEyebrow: View {
         Text(text)
             .font(.brand(size: 13, weight: .bold))
             .tracking(1.0)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
             .foregroundStyle(color)
     }
 }
@@ -1868,6 +2115,2148 @@ struct OBContinueButton: View {
         .buttonStyle(.plain)
     }
 }
+
+// MARK: - Short Conversion Onboarding Screens
+
+enum OnboardingTrapApp: String, CaseIterable, Identifiable, Hashable {
+    case tiktok
+    case youtube
+    case instagram
+    case snapchat
+    case x
+    case reddit
+
+    var id: String { rawValue }
+
+    var sortOrder: Int {
+        switch self {
+        case .tiktok: return 0
+        case .youtube: return 1
+        case .instagram: return 2
+        case .snapchat: return 3
+        case .x: return 4
+        case .reddit: return 5
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .tiktok: return "TikTok"
+        case .youtube: return "YouTube"
+        case .instagram: return "Instagram"
+        case .snapchat: return "Snapchat"
+        case .x: return "X"
+        case .reddit: return "Reddit"
+        }
+    }
+
+    var assetName: String {
+        switch self {
+        case .tiktok: return "logo-tiktok"
+        case .youtube: return "logo-youtube"
+        case .instagram: return "logo-instagram"
+        case .snapchat: return "logo-snapchat"
+        case .x: return "logo-x"
+        case .reddit: return "logo-reddit"
+        }
+    }
+
+    var tileTint: Color {
+        switch self {
+        case .tiktok: return OB.memoPurple
+        case .youtube: return OB.coral
+        case .instagram: return OB.memoPurple
+        case .snapchat: return OB.amber
+        case .x: return OB.fg
+        case .reddit: return OB.coral
+        }
+    }
+}
+
+struct OnboardingTrapSelectionView: View {
+    @Binding var selectedApps: Set<OnboardingTrapApp>
+    let onContinue: () -> Void
+
+    private let maxSelections = 3
+    private var apps: [OnboardingTrapApp] { OnboardingTrapApp.allCases.sorted { $0.sortOrder < $1.sortOrder } }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 18)
+
+                VStack(alignment: .leading, spacing: 11) {
+                    OBEyebrow(text: "PREVIEW TARGETS")
+                    Text("Choose your\nfirst targets.")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(1)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("These build the preview. After your trial starts, Apple's Screen Time sheet handles the real app pick.")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 18)
+
+                previewNotice
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 14)
+
+                targetList
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 132)
+            }
+            .responsiveContent(maxWidth: 500)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(OB.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 8) {
+                OBContinueButton(title: "Build the preview", action: onContinue)
+                    .disabled(selectedApps.isEmpty)
+                    .opacity(selectedApps.isEmpty ? 0.42 : 1)
+
+                Text(selectedApps.isEmpty ? "Pick at least one preview target" : "Preview targets \(selectedApps.count)/\(maxSelections)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(OB.fg3)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+            .padding(.top, 20)
+            .background(
+                LinearGradient(
+                    colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var previewNotice: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "apple.logo")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(OB.fg2)
+                .frame(width: 20, height: 20)
+
+            Text("Preview only. Real app selection happens in Apple's Screen Time sheet after the trial starts.")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(OB.fg3)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var targetList: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(apps.enumerated()), id: \.element.id) { index, app in
+                trapRow(app)
+                if index < apps.count - 1 {
+                    Rectangle()
+                        .fill(OB.border)
+                        .frame(height: 1)
+                        .padding(.leading, 76)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.052), OB.surface.opacity(0.92)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+        )
+    }
+
+    private func trapRow(_ app: OnboardingTrapApp) -> some View {
+        let isSelected = selectedApps.contains(app)
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                if isSelected {
+                    selectedApps.remove(app)
+                } else if selectedApps.count < maxSelections {
+                    selectedApps.insert(app)
+                }
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack(alignment: .leading) {
+                    Image(app.assetName)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 42, height: 42)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(app == .x ? Color.white.opacity(0.92) : Color.white.opacity(0.08))
+                        )
+                }
+                .frame(width: 58, height: 58)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(app.displayName)
+                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.86)
+
+                    Text(isSelected ? "In your preview defense" : "Tap to add to the preview")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(isSelected ? OB.accent : OB.fg3)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.86)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? OB.accent : Color.white.opacity(0.045))
+                        .frame(width: 38, height: 38)
+                        .overlay(
+                            Circle()
+                                .stroke(isSelected ? OB.accent.opacity(0.0) : OB.fg3.opacity(0.65), lineWidth: 2)
+                        )
+
+                    Image(systemName: isSelected ? "lock.fill" : "plus")
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(isSelected ? OB.bg : OB.fg3)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(alignment: .leading) {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(OB.accent.opacity(0.11))
+                        .padding(.horizontal, 6)
+                        .transition(.opacity)
+                }
+            }
+            .overlay(alignment: .leading) {
+                if isSelected {
+                    Capsule()
+                        .fill(OB.accent)
+                        .frame(width: 4, height: 52)
+                        .padding(.leading, 4)
+                        .transition(.opacity.combined(with: .move(edge: .leading)))
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(app.displayName)\(isSelected ? ", selected" : "")")
+    }
+}
+
+struct OnboardingUnlockLoopDemoView: View {
+    let blockedApps: Set<OnboardingTrapApp>
+    let onStarted: () -> Void
+    let onComplete: (_ attempts: Int) -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = true
+    @State private var didTrackStart = false
+
+    private var sortedApps: [OnboardingTrapApp] {
+        blockedApps.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private var displayedApps: [OnboardingTrapApp] {
+        let apps = sortedApps.isEmpty ? [.tiktok] : sortedApps
+        return Array(apps.prefix(3))
+    }
+
+    private var appSummary: String {
+        let names = displayedApps.map(\.displayName)
+        guard let first = names.first else { return "TikTok" }
+        if names.count == 1 { return first }
+        return "\(first) + \(names.count - 1) targets"
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 18)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    OBEyebrow(text: "MISSION BRIEF")
+                    Text("Beat\nthe pull.")
+                        .font(.system(size: 42, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(1)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("10 brain games rotate. Win one quick rep to earn a short unlock window.")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 18)
+
+                interceptionScene
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
+
+                Spacer(minLength: 112)
+            }
+            .responsiveContent(maxWidth: 500)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(OB.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            OBContinueButton(title: "Personalize my plan") {
+                onComplete(0)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+            .padding(.top, 18)
+            .background(
+                LinearGradient(
+                    colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+        .preferredColorScheme(.dark)
+        .onAppear(perform: start)
+    }
+
+    private var interceptionScene: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            interceptHero
+                .frame(height: 178)
+
+            randomGameDraw
+
+            VStack(spacing: 2) {
+                Text("Win one rep. Get a short window.")
+                    .foregroundStyle(OB.fg.opacity(0.92))
+                Text("Then Memo guards it again.")
+                    .foregroundStyle(OB.fg2)
+            }
+            .font(.system(size: 16, weight: .heavy, design: .rounded))
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 12)
+        }
+        .frame(height: 342, alignment: .top)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var interceptHero: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+
+            ZStack(alignment: .topLeading) {
+                RadialGradient(
+                    colors: [OB.accent.opacity(0.18), OB.memoPurple.opacity(0.08), .clear],
+                    center: .leading,
+                    startRadius: 12,
+                    endRadius: 245
+                )
+                .frame(width: width * 1.08, height: 210)
+                .offset(x: -54, y: -14)
+                .accessibilityHidden(true)
+
+                RadialGradient(
+                    colors: [OB.coral.opacity(0.22), .clear],
+                    center: .center,
+                    startRadius: 5,
+                    endRadius: 104
+                )
+                .frame(width: 178, height: 134)
+                .offset(x: width - 176, y: 18)
+                .accessibilityHidden(true)
+
+                Image("memo-flashlight")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 282, height: 158)
+                    .offset(x: -8, y: 10)
+                    .shadow(color: OB.memoPurple.opacity(0.24), radius: 22, y: 12)
+                    .accessibilityHidden(true)
+
+                appInterceptCluster
+                    .frame(width: 168, height: 128)
+                    .offset(x: max(width - 172, 158), y: 16)
+            }
+            .frame(width: width, height: 178)
+        }
+    }
+
+    private var appInterceptCluster: some View {
+        ZStack(alignment: .topLeading) {
+            Text(appSummary)
+                .font(.system(size: 19, weight: .black, design: .rounded))
+                .foregroundStyle(OB.fg)
+                .lineLimit(1)
+                .minimumScaleFactor(0.66)
+                .offset(x: 2, y: 0)
+
+            ForEach(Array(displayedApps.enumerated()), id: \.element.id) { index, app in
+                interceptedAppIcon(app, index: index)
+            }
+        }
+    }
+
+    private func interceptedAppIcon(_ app: OnboardingTrapApp, index: Int) -> some View {
+        let offsets: [CGSize] = [
+            CGSize(width: 78, height: 34),
+            CGSize(width: 36, height: 76),
+            CGSize(width: 86, height: 108)
+        ]
+        let rotations: [Double] = [-8, 5, 9]
+        let sizes: [CGFloat] = [50, 48, 52]
+        let safeIndex = min(index, offsets.count - 1)
+
+        return Image(app.assetName)
+            .renderingMode(.original)
+            .resizable()
+            .scaledToFit()
+            .frame(width: sizes[safeIndex], height: sizes[safeIndex])
+            .rotationEffect(.degrees(rotations[safeIndex]))
+            .shadow(color: OB.coral.opacity(0.38), radius: 16, y: 8)
+            .background(
+                Circle()
+                    .fill(OB.coral.opacity(0.11))
+                    .frame(width: sizes[safeIndex] + 24, height: sizes[safeIndex] + 24)
+                    .blur(radius: 8)
+            )
+            .offset(offsets[safeIndex])
+            .zIndex(Double(index + 1))
+            .accessibilityHidden(true)
+    }
+
+    private var randomGameDraw: some View {
+        VStack(spacing: 8) {
+            Text("One random brain game appears")
+                .font(.system(size: 15, weight: .black, design: .rounded))
+                .foregroundStyle(OB.accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+
+            HStack(alignment: .center, spacing: -2) {
+                trainCoverPreview(title: "Memory", type: .visualMemory, tint: AppColors.indigo, scale: 0.70, rotation: -4, y: 7)
+                trainCoverPreview(title: "Speed", type: .speedMatch, tint: AppColors.sky, scale: 0.76, rotation: 0, y: 0)
+                    .zIndex(2)
+                trainCoverPreview(title: "Reaction", type: .reactionTime, tint: AppColors.coral, scale: 0.70, rotation: 4, y: 7)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func trainCoverPreview(
+        title: String,
+        type: ExerciseType,
+        tint: Color,
+        scale: CGFloat,
+        rotation: Double,
+        y: CGFloat
+    ) -> some View {
+        GameCard(
+            title: title,
+            type: type,
+            color: tint,
+            isLocked: false,
+            lastPlayedText: nil
+        )
+        .frame(width: 130, height: 140)
+        .scaleEffect(scale)
+        .rotationEffect(.degrees(rotation))
+        .offset(y: y)
+        .frame(width: 96, height: 108)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func start() {
+        guard !didTrackStart else { return }
+        didTrackStart = true
+        onStarted()
+        let animation: Animation = reduceMotion ? .linear(duration: 0.01) : .spring(response: 0.48, dampingFraction: 0.84)
+        withAnimation(animation.delay(0.06)) {
+            appeared = true
+        }
+    }
+}
+
+
+struct OnboardingLifetimeProjection: Equatable {
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let projectionAge: Int = 80
+
+    var clampedAge: Int {
+        min(max(age, 1), projectionAge)
+    }
+
+    var remainingYears: Double {
+        Double(max(projectionAge - clampedAge, 1))
+    }
+
+    var sleepYears: Double {
+        remainingYears * 8.0 / 24.0
+    }
+
+    var workSchoolYears: Double {
+        let yearsUntilWorkEnds = Double(max(min(65 - clampedAge, projectionAge - clampedAge), 0))
+        return yearsUntilWorkEnds * (50.0 / 168.0)
+    }
+
+    var phoneYears: Double {
+        remainingYears * min(max(dailyScreenTimeHours, 0), 16) / 24.0
+    }
+
+    var flexibleYearsBeforePhone: Double {
+        max(remainingYears - sleepYears - workSchoolYears, 0.1)
+    }
+
+    var phoneShareOfFreeYears: Int {
+        min(99, max(1, Int((phoneYears / flexibleYearsBeforePhone * 100).rounded())))
+    }
+
+    var freeYearsBeforePhoneText: String {
+        formatYearNumber(flexibleYearsBeforePhone)
+    }
+
+    var phoneYearsText: String {
+        formatYearAmount(min(phoneYears, flexibleYearsBeforePhone))
+    }
+
+    var finalQuestion: String {
+        let phoneCost = phoneYears >= flexibleYearsBeforePhone
+            ? "all of them (\(phoneShareOfFreeYears)%)"
+            : "\(phoneYearsText) of them (\(phoneShareOfFreeYears)%)"
+        return "You have about \(freeYearsBeforePhoneText) free years left. At this pace, your phone takes \(phoneCost). Do you really want that?"
+    }
+
+    func formatYearAmount(_ years: Double) -> String {
+        if years < 0.5 { return "less than 1 year" }
+        let rounded = (years * 10).rounded() / 10
+        if rounded == 1 { return "1 year" }
+        return "\(formatYearNumber(years)) years"
+    }
+
+    private func formatYearNumber(_ years: Double) -> String {
+        String(format: "%.1f", years)
+    }
+}
+
+enum OnboardingLifeReceiptBeat: Int, CaseIterable {
+    case allLife = 0
+    case yearsAhead
+    case sleepLocked
+    case workSchoolLocked
+    case yourTime
+    case phoneTakeover
+    case phoneTruth
+    case rescue
+}
+
+enum OnboardingLifeReceiptSquareRole: Equatable {
+    case life
+    case lived
+    case future
+    case sleep
+    case workSchool
+    case yourTime
+    case phone
+    case protectedPhone
+}
+
+struct OnboardingLifeReceiptSquareModel: Equatable {
+    let projection: OnboardingLifetimeProjection
+
+    var totalYearsCount: Int { projection.projectionAge }
+    var livedCount: Int { min(projection.clampedAge, totalYearsCount - 1) }
+    var yearsAheadCount: Int { max(totalYearsCount - livedCount, 1) }
+    var sleepCount: Int { clampedCount(projection.sleepYears, available: yearsAheadCount) }
+    var workSchoolCount: Int {
+        clampedCount(projection.workSchoolYears, available: yearsAheadCount - sleepCount)
+    }
+    var yourTimeBeforePhoneCount: Int {
+        max(yearsAheadCount - sleepCount - workSchoolCount, 1)
+    }
+    var phoneCount: Int {
+        clampedCount(projection.phoneYears, available: yourTimeBeforePhoneCount)
+    }
+    var yourTimeAfterPhoneCount: Int {
+        max(yourTimeBeforePhoneCount - phoneCount, 0)
+    }
+    var protectedPhoneCount: Int {
+        min(phoneCount, max(3, Int((Double(phoneCount) * 0.56).rounded())))
+    }
+    var remainingPhoneCountAfterProtection: Int {
+        max(phoneCount - protectedPhoneCount, 0)
+    }
+
+    var yearsAhead: Double { projection.remainingYears }
+    var sleepYears: Double { projection.sleepYears }
+    var workSchoolYears: Double { projection.workSchoolYears }
+    var freeYears: Double { projection.flexibleYearsBeforePhone }
+    var phoneYears: Double { projection.phoneYears }
+
+    var finalCostRoles: [OnboardingLifeReceiptSquareRole] {
+        repeated(.lived, livedCount)
+        + repeated(.sleep, sleepCount)
+        + repeated(.workSchool, workSchoolCount)
+        + repeated(.yourTime, yourTimeAfterPhoneCount)
+        + repeated(.phone, phoneCount)
+    }
+
+    func viewportRoles(for beat: OnboardingLifeReceiptBeat) -> [OnboardingLifeReceiptSquareRole] {
+        switch beat {
+        case .allLife:
+            return repeated(.life, totalYearsCount)
+        case .yearsAhead:
+            return repeated(.future, yearsAheadCount)
+        case .sleepLocked:
+            return repeated(.sleep, sleepCount)
+            + repeated(.future, max(yearsAheadCount - sleepCount, 0))
+        case .workSchoolLocked:
+            return repeated(.workSchool, workSchoolCount)
+            + repeated(.future, yourTimeBeforePhoneCount)
+        case .yourTime:
+            return repeated(.yourTime, yourTimeBeforePhoneCount)
+        case .phoneTakeover, .phoneTruth:
+            return repeated(.yourTime, yourTimeAfterPhoneCount)
+            + repeated(.phone, phoneCount)
+        case .rescue:
+            return repeated(.yourTime, yourTimeAfterPhoneCount)
+            + repeated(.phone, remainingPhoneCountAfterProtection)
+            + repeated(.protectedPhone, protectedPhoneCount)
+        }
+    }
+
+    func roles(for beat: OnboardingLifeReceiptBeat) -> [OnboardingLifeReceiptSquareRole] {
+        switch beat {
+        case .allLife:
+            return repeated(.life, totalYearsCount)
+        case .yearsAhead:
+            return repeated(.lived, livedCount)
+            + repeated(.future, yearsAheadCount)
+        case .sleepLocked:
+            return repeated(.lived, livedCount)
+            + repeated(.sleep, sleepCount)
+            + repeated(.future, max(yearsAheadCount - sleepCount, 0))
+        case .workSchoolLocked:
+            return repeated(.lived, livedCount)
+            + repeated(.sleep, sleepCount)
+            + repeated(.workSchool, workSchoolCount)
+            + repeated(.future, max(yearsAheadCount - sleepCount - workSchoolCount, 0))
+        case .yourTime:
+            return repeated(.lived, livedCount)
+            + repeated(.sleep, sleepCount)
+            + repeated(.workSchool, workSchoolCount)
+            + repeated(.yourTime, yourTimeBeforePhoneCount)
+        case .phoneTakeover, .phoneTruth:
+            return repeated(.lived, livedCount)
+            + repeated(.sleep, sleepCount)
+            + repeated(.workSchool, workSchoolCount)
+            + repeated(.yourTime, yourTimeAfterPhoneCount)
+            + repeated(.phone, phoneCount)
+        case .rescue:
+            return repeated(.lived, livedCount)
+            + repeated(.sleep, sleepCount)
+            + repeated(.workSchool, workSchoolCount)
+            + repeated(.yourTime, yourTimeAfterPhoneCount)
+            + repeated(.phone, remainingPhoneCountAfterProtection)
+            + repeated(.protectedPhone, protectedPhoneCount)
+        }
+    }
+
+    private func clampedCount(_ years: Double, available: Int) -> Int {
+        min(max(Int(years.rounded()), 0), max(available, 0))
+    }
+
+    private func repeated(
+        _ role: OnboardingLifeReceiptSquareRole,
+        _ count: Int
+    ) -> [OnboardingLifeReceiptSquareRole] {
+        Array(repeating: role, count: max(count, 0))
+    }
+}
+
+enum OnboardingLifeReceiptProgress {
+    static let finalStage = OnboardingLifeReceiptBeat.rescue.rawValue
+
+    static func canContinue(stage: Int, receiptFinished: Bool) -> Bool {
+        stage >= finalStage && receiptFinished
+    }
+}
+
+private struct LifeReceiptGridCamera {
+    let scale: CGFloat
+    let anchor: UnitPoint
+    let offset: CGSize
+
+    static let identity = LifeReceiptGridCamera(scale: 1, anchor: .center, offset: .zero)
+}
+
+struct OnboardingLifetimeShockView: View {
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let isEstimate: Bool
+    let isLoadingScreenTime: Bool
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var numberVisible = false
+    @State private var proofVisible = false
+    @State private var ctaVisible = false
+
+    private var projection: OnboardingLifetimeProjection {
+        OnboardingLifetimeProjection(age: age, dailyScreenTimeHours: dailyScreenTimeHours)
+    }
+
+    private var dailyHoursLabel: String {
+        OnboardingScreenTimeHoursFormatter.dailyLabel(hours: dailyScreenTimeHours, isEstimate: isEstimate)
+    }
+
+    private var sourceText: String {
+        if isLoadingScreenTime { return "reading your Screen Time" }
+        return isEstimate ? "using your estimate - \(dailyHoursLabel)/day" : "from your Screen Time - \(dailyHoursLabel)/day"
+    }
+
+    var body: some View {
+        ZStack {
+            OB.bg.ignoresSafeArea()
+
+            RadialGradient(
+                colors: [OB.coral.opacity(0.28), .clear],
+                center: .center,
+                startRadius: 10,
+                endRadius: 330
+            )
+            .offset(y: -40)
+            .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 18)
+
+                Text(sourceText)
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .tracking(0.7)
+                    .foregroundStyle(isEstimate ? OB.fg3 : OB.accent.opacity(0.86))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, 28)
+
+                Spacer(minLength: 58)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Oof.")
+                        .font(.system(size: 62, weight: .black, design: .rounded))
+                        .foregroundStyle(OB.coral)
+                        .shadow(color: OB.coral.opacity(0.28), radius: 18, y: 8)
+
+                    Text("At \(dailyHoursLabel)/day, the feed is on track to take")
+                        .font(.system(size: 20, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(projection.phoneYearsText)
+                            .font(.system(size: 54, weight: .black, design: .rounded))
+                            .foregroundStyle(OB.coral)
+                            .minimumScaleFactor(0.74)
+                            .lineLimit(1)
+                            .scaleEffect(numberVisible ? 1 : 0.92, anchor: .leading)
+                            .opacity(numberVisible ? 1 : 0)
+                        Text("of your life before age \(projection.projectionAge).")
+                            .font(.system(size: 20, weight: .black, design: .rounded))
+                            .foregroundStyle(OB.fg)
+                    }
+
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(OB.accent)
+                            .frame(width: 26)
+                        Text(isEstimate ? "This is based on your estimate. Memo will use real Screen Time when it is connected." : "Calculated from your Screen Time. This stays on your phone.")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(OB.fg2)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(OB.surface.opacity(0.72))
+                            .stroke(OB.accent.opacity(0.18), lineWidth: 1)
+                    )
+                    .opacity(proofVisible ? 1 : 0)
+                    .offset(y: proofVisible ? 0 : 8)
+                }
+                .padding(.horizontal, 28)
+
+                Spacer(minLength: 112)
+            }
+            .responsiveContent(maxWidth: 500)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            OBContinueButton(title: "Show me where it goes", action: onContinue)
+                .opacity(ctaVisible ? 1 : 0)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                .padding(.top, 18)
+                .background(
+                    LinearGradient(
+                        colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        }
+        .preferredColorScheme(.dark)
+        .onAppear { startReveal() }
+    }
+
+    private func startReveal() {
+        guard !numberVisible else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.05 : 0.28))
+            withAnimation(reduceMotion ? .linear(duration: 0.01) : .spring(response: 0.50, dampingFraction: 0.72)) {
+                numberVisible = true
+            }
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.90)
+            try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.05 : 0.70))
+            withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.38)) {
+                proofVisible = true
+            }
+            try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.05 : 0.36))
+            withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.34)) {
+                ctaVisible = true
+            }
+        }
+    }
+
+    private func nanoseconds(_ seconds: Double) -> UInt64 {
+        UInt64(max(0.01, seconds) * 1_000_000_000)
+    }
+}
+
+struct OnboardingWillpowerProofView: View {
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var headlineVisible = false
+    @State private var rowsVisible = false
+    @State private var ctaVisible = false
+
+    var body: some View {
+        ZStack {
+            OB.bg.ignoresSafeArea()
+
+            RadialGradient(
+                colors: [OB.memoPurple.opacity(0.18), .clear],
+                center: .topTrailing,
+                startRadius: 8,
+                endRadius: 340
+            )
+            .offset(x: 80, y: -70)
+            .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 64)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Willpower loses to dopamine loops.")
+                        .font(.system(size: 38, weight: .black, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(-1)
+                        .minimumScaleFactor(0.78)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Apps are built to pull you back. Memo changes what happens before the feed opens.")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .opacity(headlineVisible ? 1 : 0)
+                .offset(y: headlineVisible ? 0 : 10)
+                .padding(.horizontal, 28)
+
+                Spacer(minLength: 38)
+
+                VStack(spacing: 12) {
+                    proofRow(
+                        icon: "sparkles",
+                        title: "Feeds exploit variable rewards",
+                        detail: "You keep checking because the next hit might be good.",
+                        tint: OB.coral
+                    )
+                    proofRow(
+                        icon: "lock.open.fill",
+                        title: "Plain blockers create rebound",
+                        detail: "The app opens again and the same habit is still waiting.",
+                        tint: OB.fg3
+                    )
+                    proofRow(
+                        icon: "brain.head.profile",
+                        title: "Memo inserts training first",
+                        detail: "Memory, attention, and speed reps become the gate back in.",
+                        tint: OB.accent
+                    )
+                }
+                .opacity(rowsVisible ? 1 : 0)
+                .offset(y: rowsVisible ? 0 : 12)
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 112)
+            }
+            .responsiveContent(maxWidth: 500)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            OBContinueButton(title: "Build my counterattack", action: onContinue)
+                .opacity(ctaVisible ? 1 : 0)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                .padding(.top, 18)
+                .background(
+                    LinearGradient(
+                        colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        }
+        .preferredColorScheme(.dark)
+        .onAppear { startReveal() }
+    }
+
+    private func proofRow(icon: String, title: String, detail: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.16))
+                    .frame(width: 42, height: 42)
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(tint)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OB.fg2)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(OB.surface.opacity(0.70))
+                .stroke(tint.opacity(0.20), lineWidth: 1)
+        )
+    }
+
+    private func startReveal() {
+        guard !headlineVisible else { return }
+        Task { @MainActor in
+            withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.38)) {
+                headlineVisible = true
+            }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.62)
+            try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.05 : 0.52))
+            withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.42)) {
+                rowsVisible = true
+            }
+            try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.05 : 0.44))
+            withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.34)) {
+                ctaVisible = true
+            }
+        }
+    }
+
+    private func nanoseconds(_ seconds: Double) -> UInt64 {
+        UInt64(max(0.01, seconds) * 1_000_000_000)
+    }
+}
+
+struct OnboardingLifeSquaresReceiptView: View {
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let isEstimate: Bool
+    let isLoadingScreenTime: Bool
+    let sourceLine: String
+    var previewBeat: OnboardingLifeReceiptBeat? = nil
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var beat: OnboardingLifeReceiptBeat = .allLife
+    @State private var receiptFinished = false
+    @State private var animationTask: Task<Void, Never>?
+    @State private var activeDotIndex: Int?
+    @State private var isAdvancingBeat = false
+    @State private var receiptLineFinished = false
+
+    private var projection: OnboardingLifetimeProjection {
+        OnboardingLifetimeProjection(age: age, dailyScreenTimeHours: dailyScreenTimeHours)
+    }
+
+    private var squareModel: OnboardingLifeReceiptSquareModel {
+        OnboardingLifeReceiptSquareModel(projection: projection)
+    }
+
+    private var phoneYears: Double {
+        projection.phoneYears
+    }
+
+    private var headlineText: String {
+        switch beat {
+        case .allLife:
+            return "This is your life."
+        case .yearsAhead:
+            return "You are here."
+        case .sleepLocked:
+            return "Sleep is spoken for."
+        case .workSchoolLocked:
+            return "Work and school take their share."
+        case .yourTime:
+            return "This is what's left for you."
+        case .phoneTakeover:
+            return "Your phone starts taking years."
+        case .phoneTruth:
+            return "That is \(projection.phoneYearsText)."
+        case .rescue:
+            return "Memo gets there before the feed."
+        }
+    }
+
+    private var receiptLine: String {
+        switch beat {
+        case .allLife:
+            return "Each dot is one year."
+        case .yearsAhead:
+            return "\(projection.projectionAge) - \(projection.clampedAge) = \(squareModel.yearsAheadCount) years still in front of you."
+        case .sleepLocked:
+            return "\(projection.formatYearAmount(squareModel.sleepYears)) disappear into sleep."
+        case .workSchoolLocked:
+            return "\(projection.formatYearAmount(squareModel.workSchoolYears)) more go to work and school."
+        case .yourTime:
+            return "After that, \(projection.freeYearsBeforePhoneText) flexible years are actually yours."
+        case .phoneTakeover:
+            return "Now watch the feed take them one by one."
+        case .phoneTruth:
+            return "At \(dailyHoursLabel)/day, the feed gets that from the years that were actually yours."
+        case .rescue:
+            return "Memo cannot give back the years already gone."
+        }
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let compact = proxy.size.height < 760
+
+            ZStack {
+                lifetimeAtmosphere
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer().frame(height: compact ? 8 : 12)
+
+                    sourceHeader
+                        .padding(.horizontal, 28)
+
+                    Spacer().frame(height: compact ? 18 : 26)
+
+                    headlineBlock(compact: compact)
+                        .padding(.horizontal, 28)
+
+                    Spacer(minLength: compact ? 16 : 26)
+
+                    lifeGridSurface
+                        .padding(.horizontal, 24)
+
+                    Spacer(minLength: compact ? 20 : 32)
+
+                    if beat == .rescue {
+                        finalReceiptCallout
+                            .padding(.horizontal, 28)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    Spacer(minLength: 104)
+                }
+                .responsiveContent(maxWidth: 500)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        }
+        .background(OB.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            OBContinueButton(title: receiptCTATitle, action: handleReceiptCTA)
+                .disabled(!canUseReceiptCTA)
+                .opacity(canUseReceiptCTA ? 1 : 0)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                .padding(.top, 18)
+                .background(
+                    LinearGradient(
+                        colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            if applyPreviewBeatIfNeeded() {
+                return
+            }
+            if isLoadingScreenTime {
+                animationTask?.cancel()
+                beat = .allLife
+                receiptFinished = false
+                receiptLineFinished = false
+                isAdvancingBeat = false
+                activeDotIndex = nil
+            } else {
+                resetReceiptForManualStepping()
+            }
+        }
+        .onChange(of: isLoadingScreenTime) { _, isLoading in
+            if applyPreviewBeatIfNeeded() {
+                return
+            }
+            if isLoading {
+                animationTask?.cancel()
+                beat = .allLife
+                receiptFinished = false
+                receiptLineFinished = false
+                isAdvancingBeat = false
+                activeDotIndex = nil
+            } else {
+                resetReceiptForManualStepping()
+            }
+        }
+        .onDisappear { animationTask?.cancel() }
+    }
+
+    private var canUseReceiptCTA: Bool {
+        guard !isLoadingScreenTime, !isAdvancingBeat, receiptLineFinished else { return false }
+        if beat == .rescue {
+            return receiptFinished
+        }
+        return true
+    }
+
+    private var receiptCTATitle: String {
+        switch beat {
+        case .allLife:
+            return "Subtract my age"
+        case .yearsAhead:
+            return "Take out sleep"
+        case .sleepLocked:
+            return "Take out work & school"
+        case .workSchoolLocked:
+            return "Show what is actually mine"
+        case .yourTime, .phoneTakeover:
+            return "Show what the feed takes"
+        case .phoneTruth:
+            return "I don't want to give the feed that"
+        case .rescue:
+            return "Show me the counterattack"
+        }
+    }
+
+    private var lifetimeAtmosphere: some View {
+        ZStack {
+            OB.bg
+
+            RadialGradient(
+                colors: [
+                    (isDamageFocus ? OB.coral : OB.accent).opacity(0.18),
+                    OB.bg.opacity(0.02),
+                    .clear
+                ],
+                center: .topTrailing,
+                startRadius: 8,
+                endRadius: 360
+            )
+            .offset(x: 80, y: -70)
+
+            RadialGradient(
+                colors: [
+                    OB.memoPurple.opacity(0.12),
+                    .clear
+                ],
+                center: .bottomLeading,
+                startRadius: 10,
+                endRadius: 320
+            )
+            .offset(x: -76, y: 120)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+
+    private func headlineBlock(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
+            Text(headlineText)
+                .font(.system(size: compact ? 34 : 39, weight: .black, design: .rounded))
+                .foregroundStyle(beat == .phoneTruth ? OB.fg : OB.fg)
+                .lineSpacing(-1)
+                .minimumScaleFactor(0.74)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if beat == .phoneTruth {
+                Text("Not screen time. Years.")
+                    .font(.system(size: compact ? 26 : 30, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.coral)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                    .shadow(color: OB.coral.opacity(0.26), radius: 16, y: 7)
+                    .transition(.scale(scale: 0.94).combined(with: .opacity))
+            }
+
+            TypewriterText(
+                fullText: isLoadingScreenTime ? "Reading your Screen Time..." : receiptLine,
+                speed: reduceMotion ? 0.001 : 0.052,
+                hapticEnabled: !reduceMotion,
+                onComplete: {
+                    receiptLineFinished = true
+                    if beat == .rescue {
+                        receiptFinished = true
+                    }
+                }
+            )
+            .font(.system(size: compact ? 15 : 16, weight: .semibold, design: .rounded))
+            .foregroundStyle(copyColor)
+            .lineSpacing(3)
+            .frame(minHeight: compact ? 42 : 50, alignment: .topLeading)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .animation(.spring(response: 0.46, dampingFraction: 0.86), value: beat)
+    }
+
+    private var copyColor: Color {
+        switch beat {
+        case .phoneTruth:
+            return OB.coral.opacity(0.86)
+        case .rescue:
+            return OB.accent.opacity(0.92)
+        default:
+            return OB.fg2
+        }
+    }
+
+    private var lifeGridSurface: some View {
+        squareCanvas
+            .frame(maxWidth: .infinity)
+            .animation(.spring(response: 0.54, dampingFraction: 0.82), value: beat)
+    }
+
+    private var sourceHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Spacer(minLength: 0)
+
+            Text(sourceBadgeText)
+                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .tracking(0.7)
+                .foregroundStyle(sourceBadgeColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            if isLoadingScreenTime {
+                ProgressView()
+                    .tint(OB.accent)
+                    .scaleEffect(0.62)
+            }
+        }
+    }
+
+    private var sourceBadgeText: String {
+        if isLoadingScreenTime { return "reading your Screen Time" }
+        let source = isEstimate ? "using your estimate" : "from your Screen Time"
+        return "\(source) - \(dailyHoursLabel)/day"
+    }
+
+    private var sourceBadgeColor: Color {
+        if isDamageFocus { return OB.coral.opacity(0.92) }
+        if beat == .rescue { return OB.accent.opacity(0.86) }
+        return OB.fg3
+    }
+
+    private var squareCanvas: some View {
+        VStack(spacing: shouldShowLegend ? 16 : 0) {
+            let roles = squareModel.viewportRoles(for: beat)
+            let camera = receiptCamera
+
+            LazyVGrid(columns: gridColumns, spacing: squareSpacing) {
+                    ForEach(Array(roles.enumerated()), id: \.offset) { index, role in
+                        LifeReceiptSquare(
+                            role: role,
+                            isDamageFocus: isDamageFocus,
+                            isRescueBeat: beat == .rescue,
+                            isActive: activeDotIndex == index
+                        )
+                        .frame(width: dotSize, height: dotSize)
+                            .transition(.scale(scale: 0.86).combined(with: .opacity))
+                            .animation(
+                                squareAnimation.delay(squareDelay(index: index, role: role, roles: roles)),
+                                value: beat
+                            )
+                    }
+                }
+                .frame(maxWidth: gridMaxWidth)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(alignment: .bottomTrailing) {
+                    if isDamageFocus {
+                        LinearGradient(
+                            colors: [
+                                OB.coral.opacity(0.00),
+                                OB.coral.opacity(0.18),
+                                OB.coral.opacity(0.00)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 260, height: 96)
+                        .blur(radius: 18)
+                        .offset(x: 18, y: 18)
+                        .transition(.opacity)
+                    }
+                }
+                .scaleEffect(camera.scale, anchor: camera.anchor)
+                .offset(x: camera.offset.width, y: camera.offset.height)
+                .animation(receiptCameraAnimation, value: beat)
+
+            if shouldShowLegend {
+                gridLegend
+                    .frame(maxWidth: gridMaxWidth)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+        }
+        .accessibilityLabel(accessibilityGridLabel)
+        .frame(minHeight: 300, alignment: .center)
+        .animation(reduceMotion ? .linear(duration: 0.01) : .spring(response: 0.58, dampingFraction: 0.86), value: beat)
+    }
+
+    private var gridLegend: some View {
+        HStack(spacing: 8) {
+            ForEach(Array(legendItems.enumerated()), id: \.offset) { _, item in
+                legendItem(role: item.role, label: item.label)
+            }
+        }
+        .font(.system(size: 8.5, weight: .black, design: .monospaced))
+        .tracking(0.5)
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
+    }
+
+    private var legendItems: [(role: OnboardingLifeReceiptSquareRole, label: String)] {
+        switch beat {
+        case .sleepLocked:
+            return [(.sleep, "SLEEP"), (.future, "LEFT")]
+        case .workSchoolLocked:
+            return [(.workSchool, "WORK"), (.future, "LEFT")]
+        case .yourTime:
+            return [(.yourTime, "YOURS")]
+        case .phoneTakeover, .phoneTruth:
+            return [(.yourTime, "YOURS"), (.phone, "PHONE")]
+        case .rescue:
+            return [(.yourTime, "YOURS"), (.phone, "PHONE"), (.protectedPhone, "PROTECTED")]
+        case .allLife, .yearsAhead:
+            return []
+        }
+    }
+
+    private func legendItem(role: OnboardingLifeReceiptSquareRole, label: String) -> some View {
+        HStack(spacing: 4) {
+            LifeReceiptSquare(
+                role: role,
+                isDamageFocus: false,
+                isRescueBeat: beat == .rescue,
+                isActive: false
+            )
+            .frame(width: 8, height: 8)
+
+            Text(label)
+                .foregroundStyle(legendColor(for: role))
+        }
+    }
+
+    private func legendColor(for role: OnboardingLifeReceiptSquareRole) -> Color {
+        switch role {
+        case .phone:
+            return OB.coral.opacity(0.88)
+        case .protectedPhone, .lived:
+            return OB.accent.opacity(0.90)
+        case .future:
+            return OB.accent.opacity(0.76)
+        case .sleep:
+            return OB.memoPurple.opacity(0.86)
+        case .workSchool:
+            return OB.fg3.opacity(0.90)
+        default:
+            return OB.fg2
+        }
+    }
+
+    private var finalReceiptCallout: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image("memo-flashlight")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 70, height: 70)
+                .shadow(color: OB.accent.opacity(0.28), radius: 12, y: 6)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("The next year is still yours.")
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.80)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Train first. Then unlock.")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.accent)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var isDamageFocus: Bool {
+        beat == .phoneTakeover || beat == .phoneTruth
+    }
+
+    private var shouldShowLegend: Bool {
+        beat.rawValue >= OnboardingLifeReceiptBeat.sleepLocked.rawValue
+    }
+
+    private var gridColumnCount: Int {
+        8
+    }
+
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: squareSpacing), count: gridColumnCount)
+    }
+
+    private var squareSpacing: CGFloat {
+        9
+    }
+
+    private var gridMaxWidth: CGFloat {
+        248
+    }
+
+    private var dotSize: CGFloat {
+        17
+    }
+
+    private var receiptCamera: LifeReceiptGridCamera {
+        guard !reduceMotion else { return .identity }
+
+        switch beat {
+        case .allLife:
+            return .identity
+        case .yearsAhead:
+            return LifeReceiptGridCamera(
+                scale: 1.10,
+                anchor: .center,
+                offset: .zero
+            )
+        case .sleepLocked:
+            return LifeReceiptGridCamera(
+                scale: 1.14,
+                anchor: .center,
+                offset: .zero
+            )
+        case .workSchoolLocked:
+            return LifeReceiptGridCamera(
+                scale: 1.20,
+                anchor: .center,
+                offset: .zero
+            )
+        case .yourTime:
+            return LifeReceiptGridCamera(
+                scale: 1.30,
+                anchor: .center,
+                offset: .zero
+            )
+        case .phoneTakeover:
+            return LifeReceiptGridCamera(
+                scale: 1.36,
+                anchor: .center,
+                offset: .zero
+            )
+        case .phoneTruth:
+            return LifeReceiptGridCamera(
+                scale: 1.40,
+                anchor: .center,
+                offset: .zero
+            )
+        case .rescue:
+            return LifeReceiptGridCamera(
+                scale: 1.22,
+                anchor: .center,
+                offset: .zero
+            )
+        }
+    }
+
+    private var receiptCameraAnimation: Animation {
+        if reduceMotion { return .linear(duration: 0.01) }
+
+        switch beat {
+        case .phoneTakeover, .phoneTruth:
+            return .easeInOut(duration: 0.95)
+        case .rescue:
+            return .easeInOut(duration: 0.82)
+        default:
+            return .easeInOut(duration: 0.70)
+        }
+    }
+
+    private var squareAnimation: Animation {
+        reduceMotion ? .linear(duration: 0.01) : .easeOut(duration: 0.34)
+    }
+
+    private var accessibilityGridLabel: String {
+        switch beat {
+        case .allLife:
+            return "80 life squares"
+        case .yearsAhead:
+            return "\(squareModel.yearsAheadCount) visible years left after age"
+        case .sleepLocked:
+            return "\(squareModel.yearsAheadCount) years ahead, with sleep years removed as a connected block"
+        case .workSchoolLocked:
+            return "\(squareModel.yearsAheadCount - squareModel.sleepCount) years left after sleep, with work and school years removed"
+        case .yourTime:
+            return "\(squareModel.yourTimeBeforePhoneCount) your time squares"
+        case .phoneTakeover, .phoneTruth:
+            return "\(squareModel.phoneCount) phone squares taking from your time"
+        case .rescue:
+            return "\(squareModel.protectedPhoneCount) phone squares protected by Memo"
+        }
+    }
+
+    private var dailyHoursLabel: String {
+        OnboardingScreenTimeHoursFormatter.dailyLabel(
+            hours: dailyScreenTimeHours,
+            isEstimate: isEstimate
+        )
+    }
+
+    private func resetReceiptForManualStepping() {
+        guard !isLoadingScreenTime else { return }
+        guard previewBeat == nil else { return }
+        animationTask?.cancel()
+        beat = .allLife
+        receiptFinished = false
+        receiptLineFinished = false
+        isAdvancingBeat = false
+        activeDotIndex = nil
+    }
+
+    private func handleReceiptCTA() {
+        guard canUseReceiptCTA else { return }
+        if beat == .rescue {
+            onContinue()
+            return
+        }
+        guard let nextBeat = nextManualBeat(after: beat) else { return }
+        advanceReceipt(to: nextBeat)
+    }
+
+    private func nextManualBeat(after beat: OnboardingLifeReceiptBeat) -> OnboardingLifeReceiptBeat? {
+        switch beat {
+        case .allLife:
+            return .yearsAhead
+        case .yearsAhead:
+            return .sleepLocked
+        case .sleepLocked:
+            return .workSchoolLocked
+        case .workSchoolLocked:
+            return .yourTime
+        case .yourTime:
+            return .phoneTakeover
+        case .phoneTruth:
+            return .rescue
+        case .phoneTakeover, .rescue:
+            return nil
+        }
+    }
+
+    private func advanceReceipt(to nextBeat: OnboardingLifeReceiptBeat) {
+        animationTask?.cancel()
+        isAdvancingBeat = true
+        receiptLineFinished = false
+        receiptFinished = false
+        activeDotIndex = nil
+
+        withAnimation(reduceMotion ? .linear(duration: 0.01) : .spring(response: 0.58, dampingFraction: 0.86)) {
+            beat = nextBeat
+        }
+
+        animationTask = Task { @MainActor in
+            let hapticDuration = await playHapticSequence(for: nextBeat)
+            guard !Task.isCancelled else { return }
+
+            if nextBeat == .phoneTakeover {
+                try? await Task.sleep(nanoseconds: nanoseconds(reduceMotion ? 0.12 : 0.72))
+                guard !Task.isCancelled else { return }
+                withAnimation(reduceMotion ? .linear(duration: 0.01) : .spring(response: 0.58, dampingFraction: 0.86)) {
+                    beat = .phoneTruth
+                }
+                receiptLineFinished = false
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.92)
+                isAdvancingBeat = false
+                return
+            }
+
+            let hold = max(reduceMotion ? 0.04 : 0.22, min(0.65, duration(for: nextBeat) - hapticDuration))
+            try? await Task.sleep(nanoseconds: nanoseconds(hold))
+            guard !Task.isCancelled else { return }
+            isAdvancingBeat = false
+        }
+    }
+
+    @discardableResult
+    private func applyPreviewBeatIfNeeded() -> Bool {
+        guard let previewBeat else { return false }
+        animationTask?.cancel()
+        beat = previewBeat
+        receiptFinished = previewBeat == .rescue
+        receiptLineFinished = true
+        isAdvancingBeat = false
+        activeDotIndex = nil
+        return true
+    }
+
+    private func duration(for beat: OnboardingLifeReceiptBeat) -> Double {
+        if reduceMotion { return 0.12 }
+        switch beat {
+        case .allLife:
+            return 0.72
+        case .yearsAhead:
+            return max(4.20, Double(squareModel.yearsAheadCount) * hapticInterval(for: beat) + 0.92)
+        case .sleepLocked:
+            return max(2.25, Double(squareModel.sleepCount) * hapticInterval(for: beat) + 0.68)
+        case .workSchoolLocked:
+            return max(1.85, Double(squareModel.workSchoolCount) * hapticInterval(for: beat) + 0.62)
+        case .yourTime:
+            return max(2.65, Double(squareModel.yourTimeBeforePhoneCount) * hapticInterval(for: beat) + 0.74)
+        case .phoneTakeover:
+            return max(9.40, Double(squareModel.phoneCount) * hapticInterval(for: beat) + 1.20)
+        case .phoneTruth:
+            return 2.50
+        case .rescue:
+            return max(1.72, Double(squareModel.protectedPhoneCount) * hapticInterval(for: beat) + 0.68)
+        }
+    }
+
+    private func nanoseconds(_ seconds: Double) -> UInt64 {
+        UInt64(max(0.01, seconds) * 1_000_000_000)
+    }
+
+    private func squareDelay(index: Int, role: OnboardingLifeReceiptSquareRole, roles: [OnboardingLifeReceiptSquareRole]) -> Double {
+        guard !reduceMotion else { return 0 }
+        guard isRoleAnimated(role, for: beat) else { return 0 }
+        let ordinal = roles.prefix(index).filter { $0 == role }.count
+        return Double(ordinal) * hapticInterval(for: beat)
+    }
+
+    private func isRoleAnimated(_ role: OnboardingLifeReceiptSquareRole, for beat: OnboardingLifeReceiptBeat) -> Bool {
+        switch beat {
+        case .yearsAhead:
+            return role == .future
+        case .sleepLocked:
+            return role == .sleep
+        case .workSchoolLocked:
+            return role == .workSchool
+        case .yourTime:
+            return role == .yourTime
+        case .phoneTakeover:
+            return role == .phone
+        case .rescue:
+            return role == .protectedPhone
+        case .allLife, .phoneTruth:
+            return false
+        }
+    }
+
+    @MainActor
+    private func playHapticSequence(for beat: OnboardingLifeReceiptBeat) async -> Double {
+        guard !reduceMotion else { return 0 }
+        let indexes = hapticIndexes(for: beat)
+
+        if beat == .phoneTruth {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.82)
+            return 0.12
+        }
+
+        if beat == .rescue {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+
+        guard !indexes.isEmpty else { return 0 }
+        let interval = hapticInterval(for: beat)
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        var elapsed = 0.0
+
+        for (ordinal, index) in indexes.enumerated() {
+            guard !Task.isCancelled else {
+                activeDotIndex = nil
+                return elapsed
+            }
+            activeDotIndex = index
+            generator.impactOccurred(intensity: hapticIntensity(for: beat, ordinal: ordinal))
+            try? await Task.sleep(nanoseconds: nanoseconds(interval))
+            elapsed += interval
+        }
+
+        activeDotIndex = nil
+        return elapsed
+    }
+
+    private func hapticIndexes(for beat: OnboardingLifeReceiptBeat) -> [Int] {
+        let roles = squareModel.viewportRoles(for: beat)
+        return roles.enumerated().compactMap { index, role in
+            isRoleAnimated(role, for: beat) ? index : nil
+        }
+    }
+
+    private func hapticInterval(for beat: OnboardingLifeReceiptBeat) -> Double {
+        switch beat {
+        case .yearsAhead:
+            return 0.095
+        case .sleepLocked:
+            return 0.125
+        case .workSchoolLocked:
+            return 0.140
+        case .yourTime:
+            return 0.110
+        case .phoneTakeover:
+            return 0.500
+        case .rescue:
+            return 0.220
+        case .allLife, .phoneTruth:
+            return 0.076
+        }
+    }
+
+    private func hapticIntensity(for beat: OnboardingLifeReceiptBeat, ordinal: Int) -> CGFloat {
+        switch beat {
+        case .phoneTakeover:
+            return ordinal == squareModel.phoneCount - 1 ? 0.74 : 0.48
+        case .rescue:
+            return 0.42
+        default:
+            return 0.24
+        }
+    }
+}
+
+private struct LifeReceiptSquare: View {
+    let role: OnboardingLifeReceiptSquareRole
+    let isDamageFocus: Bool
+    let isRescueBeat: Bool
+    let isActive: Bool
+
+    var body: some View {
+        Circle()
+            .fill(fill)
+            .overlay(
+                Circle()
+                    .stroke(stroke, lineWidth: 1)
+            )
+            .overlay {
+                if isActive {
+                    Circle()
+                        .stroke(activeColor.opacity(0.70), lineWidth: 2)
+                        .scaleEffect(role == .phone ? 2.05 : 1.85)
+                        .opacity(0.82)
+                }
+            }
+            .shadow(color: glow, radius: glowRadius, y: 3)
+            .scaleEffect(isActive ? activeScale : 1)
+            .opacity(opacity)
+            .animation(.easeOut(duration: role == .phone ? 0.30 : 0.22), value: isActive)
+    }
+
+    private var fill: Color {
+        switch role {
+        case .life:
+            return OB.fg2.opacity(0.16)
+        case .lived:
+            return OB.accent.opacity(0.94)
+        case .future:
+            return OB.accent.opacity(0.24)
+        case .sleep:
+            return OB.memoPurple.opacity(0.72)
+        case .workSchool:
+            return OB.fg3.opacity(0.34)
+        case .yourTime:
+            return isDamageFocus ? OB.success.opacity(0.08) : OB.success.opacity(0.18)
+        case .phone:
+            return OB.coral
+        case .protectedPhone:
+            return OB.accent
+        }
+    }
+
+    private var stroke: Color {
+        switch role {
+        case .life:
+            return OB.fg2.opacity(0.16)
+        case .future:
+            return OB.accent.opacity(0.34)
+        case .lived:
+            return OB.accent.opacity(0.66)
+        case .sleep:
+            return OB.memoPurple.opacity(0.58)
+        case .workSchool:
+            return OB.fg3.opacity(0.30)
+        case .yourTime:
+            return OB.success.opacity(isDamageFocus ? 0.42 : 0.76)
+        case .phone:
+            return OB.coral.opacity(0.86)
+        case .protectedPhone:
+            return OB.accent.opacity(0.90)
+        }
+    }
+
+    private var glow: Color {
+        switch role {
+        case .yourTime:
+            return OB.success.opacity(isDamageFocus ? 0.04 : 0.18)
+        case .phone:
+            return OB.coral.opacity(isDamageFocus ? 0.52 : 0.34)
+        case .protectedPhone:
+            return OB.accent.opacity(0.34)
+        case .future, .lived:
+            return OB.accent.opacity(0.12)
+        default:
+            return .clear
+        }
+    }
+
+    private var opacity: Double {
+        if isDamageFocus {
+            switch role {
+            case .phone:
+                return 1
+            case .yourTime:
+                return 0.58
+            case .lived, .sleep, .workSchool:
+                return 0.50
+            default:
+                return 0.42
+            }
+        }
+
+        if isRescueBeat {
+            switch role {
+            case .phone:
+                return 0.96
+            case .protectedPhone:
+                return 1
+            case .yourTime:
+                return 0.74
+            default:
+                return 0.68
+            }
+        }
+
+        switch role {
+        case .sleep, .workSchool, .lived:
+            return 0.86
+        default:
+            return 1
+        }
+    }
+
+    private var activeColor: Color {
+        switch role {
+        case .phone:
+            return OB.coral
+        case .future, .protectedPhone, .lived:
+            return OB.accent
+        case .sleep:
+            return OB.memoPurple
+        case .yourTime:
+            return OB.success
+        default:
+            return OB.fg2
+        }
+    }
+
+    private var glowRadius: CGFloat {
+        switch role {
+        case .phone where isDamageFocus:
+            return 13
+        case .phone, .protectedPhone:
+            return 10
+        case .yourTime:
+            return 6
+        default:
+            return 7
+        }
+    }
+
+    private var activeScale: CGFloat {
+        role == .phone ? 1.24 : 1.14
+    }
+}
+
+struct OnboardingMemoPlanView: View {
+    let selectedGoals: Set<UserFocusGoal>
+    var selectedGoalOrder: [UserFocusGoal] = []
+    let onContinue: () -> Void
+
+    @State private var appeared = false
+    @State private var mascotWorking = false
+    @State private var cardsVisible: [Bool] = [false, false, false]
+    @State private var visibleSteps = 0
+
+    private var goalPhrase: String {
+        PlanBuildBeatContent.memoPlanPhrase(selectedGoals, selectedGoalOrder: selectedGoalOrder)
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: 10)
+
+                VStack(alignment: .leading, spacing: 9) {
+                    Text("Here's the\ncounterattack.")
+                        .font(.system(size: 35, weight: .heavy, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .lineSpacing(0)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("10 brain games rotate. Win one quick rep to earn a short unlock window.")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 14)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 8)
+
+                planHero
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 12)
+
+                planSteps
+                    .padding(.horizontal, 28)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 12)
+
+                Spacer(minLength: 126)
+            }
+            .responsiveContent(maxWidth: 500)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(OB.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            OBContinueButton(title: "Personalize my plan", action: onContinue)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                .padding(.top, 18)
+                .background(
+                    LinearGradient(
+                        colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        }
+        .preferredColorScheme(.dark)
+        .onAppear(perform: startPlanAnimation)
+    }
+
+    private func startPlanAnimation() {
+        appeared = false
+        mascotWorking = false
+        cardsVisible = [false, false, false]
+        visibleSteps = 0
+
+        withAnimation(.spring(response: 0.48, dampingFraction: 0.86)) {
+            appeared = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            mascotWorking = true
+        }
+        for index in 0..<cardsVisible.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.34 + Double(index) * 0.13) {
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
+                    cardsVisible[index] = true
+                }
+            }
+        }
+        for step in 1...4 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.72 + Double(step - 1) * 0.18) {
+                withAnimation(.easeOut(duration: 0.32)) {
+                    visibleSteps = step
+                }
+            }
+        }
+    }
+
+    private var planHero: some View {
+        ZStack(alignment: .leading) {
+            Circle()
+                .fill(OB.memoPurple.opacity(0.18))
+                .frame(width: 250, height: 250)
+                .blur(radius: 58)
+                .offset(x: -112, y: 16)
+
+            Circle()
+                .fill(OB.accent.opacity(0.14))
+                .frame(width: 240, height: 240)
+                .blur(radius: 64)
+                .offset(x: 118, y: 20)
+
+            Image("mascot-working-out")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 128)
+                .rotationEffect(.degrees(mascotWorking ? -2.5 : 2.0))
+                .offset(x: -12, y: mascotWorking ? 5 : 12)
+                .shadow(color: OB.memoPurple.opacity(0.28), radius: 18, y: 8)
+                .animation(.easeInOut(duration: 0.95).repeatForever(autoreverses: true), value: mascotWorking)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .trailing, spacing: 6) {
+                Text("10 rotating games")
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Text("picked at random")
+                    .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                    .tracking(0.8)
+                    .textCase(.uppercase)
+                    .foregroundStyle(OB.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+
+                HStack(spacing: -9) {
+                    trainCover(title: "Visual", type: .visualMemory, tint: AppColors.indigo, rotation: -8)
+                        .opacity(cardsVisible[0] ? 1 : 0)
+                        .offset(x: cardsVisible[0] ? 0 : 18, y: cardsVisible[0] ? 0 : 12)
+                    trainCover(title: "Speed", type: .speedMatch, tint: AppColors.sky, rotation: 1)
+                        .opacity(cardsVisible[1] ? 1 : 0)
+                        .offset(x: cardsVisible[1] ? 0 : 18, y: cardsVisible[1] ? 0 : 12)
+                    trainCover(title: "Reaction", type: .reactionTime, tint: AppColors.coral, rotation: 8)
+                        .opacity(cardsVisible[2] ? 1 : 0)
+                        .offset(x: cardsVisible[2] ? 0 : 18, y: cardsVisible[2] ? 0 : 12)
+                }
+                .frame(height: 78)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 4)
+        }
+        .frame(height: 148)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var planSteps: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            planStep("01", title: "Guard before the feed opens", detail: "After trial starts, pick the exact apps in Apple's Screen Time sheet.", tint: OB.coral)
+                .opacity(visibleSteps >= 1 ? 1 : 0)
+                .offset(x: visibleSteps >= 1 ? 0 : -8)
+            connector.opacity(visibleSteps >= 2 ? 1 : 0)
+            planStep("02", title: "A random game rolls", detail: "Memory, attention, speed, reaction, and focus rotate.", tint: OB.memoPurple)
+                .opacity(visibleSteps >= 2 ? 1 : 0)
+                .offset(x: visibleSteps >= 2 ? 0 : -8)
+            connector.opacity(visibleSteps >= 3 ? 1 : 0)
+            planStep("03", title: "Win one quick rep", detail: "Beat the challenge to earn a short unlock window.", tint: OB.accent)
+                .opacity(visibleSteps >= 3 ? 1 : 0)
+                .offset(x: visibleSteps >= 3 ? 0 : -8)
+            connector.opacity(visibleSteps >= 4 ? 1 : 0)
+            planStep("04", title: "Focus League keeps score", detail: "Protected minutes become momentum you can climb.", tint: OB.success)
+                .opacity(visibleSteps >= 4 ? 1 : 0)
+                .offset(x: visibleSteps >= 4 ? 0 : -8)
+        }
+    }
+
+    private var connector: some View {
+        Rectangle()
+            .fill(OB.border.opacity(0.72))
+            .frame(width: 2, height: 8)
+            .padding(.leading, 17)
+    }
+
+    private func planStep(_ number: String, title: String, detail: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(number)
+                .font(.system(size: 12, weight: .black, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(tint)
+                .frame(width: 36, alignment: .leading)
+                .padding(.top, 5)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                Text(detail)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OB.fg2)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func trainCover(title: String, type: ExerciseType, tint: Color, rotation: Double) -> some View {
+        GameCard(title: title, type: type, color: tint, isLocked: false, lastPlayedText: nil)
+            .frame(width: 116, height: 128)
+            .scaleEffect(0.56)
+            .rotationEffect(.degrees(rotation))
+            .frame(width: 52, height: 74)
+            .accessibilityHidden(true)
+    }
+}
+
 
 // MARK: - Pain Cards (NEW)
 //
@@ -2399,7 +4788,7 @@ struct OnboardingComparisonView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
-            OBContinueButton(title: "Why Memo wins", action: {
+            OBContinueButton(title: "See why Memo works", action: {
                 Analytics.onboardingStep(step: "comparison")
                 onContinue()
             })
@@ -2641,7 +5030,7 @@ struct OnboardingSocialProofView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(OB.bg.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
-            OBContinueButton(title: "Continue", action: {
+            OBContinueButton(title: "Set up Focus Mode", action: {
                 Analytics.onboardingStep(step: "socialProof")
                 onContinue()
             })
@@ -2775,7 +5164,7 @@ struct OnboardingDifferentiationView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
-            OBContinueButton(title: "See my offer", action: {
+            OBContinueButton(title: "Unlock my plan", action: {
                 Analytics.onboardingStep(step: "differentiation")
                 onContinue()
             })
@@ -2923,5 +5312,456 @@ private struct LinearCongruentialRNG: RandomNumberGenerator {
         // Numerical Recipes constants — fast, well-distributed.
         state = state &* 6364136223846793005 &+ 1442695040888963407
         return state
+    }
+}
+
+// MARK: - Memo Plan Build Beats (NEW)
+//
+// Transient, auto-advancing beats shown after each data-collection milestone
+// (goals / age / screen time). Memo "thinks", a speech bubble reflects the
+// latest answer, and a new line snaps onto the cumulative "YOUR PLAN"
+// clipboard. A final presenting beat (page 6) holds up the complete plan right
+// before the hard paywall. Copy/clipboard content comes from the pure,
+// unit-tested PlanBuildBeatContent model.
+
+struct OnboardingPersonalizationQuestionView<Option: Identifiable & Equatable>: View where Option.ID == String {
+    let title: String
+    let subtitle: String
+    let options: [Option]
+    let selectedOption: Option?
+    let emoji: (Option) -> String
+    let label: (Option) -> String
+    let onSelect: (Option) -> Void
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Spacer(minLength: 42)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(subtitle)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OB.fg2)
+                    .lineSpacing(3)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(options) { option in
+                    Button {
+                        onSelect(option)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text(emoji(option))
+                                .font(.system(size: 24))
+                                .frame(width: 34, height: 34)
+
+                            Text(label(option))
+                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                                .foregroundStyle(OB.fg)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.82)
+
+                            Spacer(minLength: 8)
+
+                            ZStack {
+                                Circle()
+                                    .stroke(isSelected(option) ? OB.accent : OB.border, lineWidth: 1.5)
+                                    .frame(width: 20, height: 20)
+                                if isSelected(option) {
+                                    Circle()
+                                        .fill(OB.accent)
+                                        .frame(width: 10, height: 10)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(height: 56)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(isSelected(option) ? OB.accent.opacity(0.16) : OB.surface.opacity(0.72))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(isSelected(option) ? OB.accent.opacity(0.82) : OB.border, lineWidth: isSelected(option) ? 1.5 : 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.top, 10)
+
+            Spacer(minLength: 20)
+
+            Button(action: onContinue) {
+                Text(selectedOption == nil ? "Pick one" : "Continue")
+                    .font(.system(size: 17, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(selectedOption == nil ? OB.accent.opacity(0.34) : OB.accent)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(selectedOption == nil)
+        }
+        .padding(.horizontal, 28)
+        .padding(.bottom, 18)
+        .frame(maxWidth: 500)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func isSelected(_ option: Option) -> Bool {
+        selectedOption == option
+    }
+}
+
+/// Thin AVPlayerLooper wrapper so beats can loop a bundled Memo clip.
+/// Self-contained (its own host view) so it doesn't depend on the private
+/// LoopingVideoPlayer in OnboardingView.swift. Transparent background +
+/// aspect-fit so the alpha Memo composites cleanly on the dark onboarding bg.
+struct OnboardingLoopingVideo: UIViewRepresentable {
+    let videoName: String
+    var videoExt: String = "mov"
+
+    final class Coordinator {
+        var player: AVQueuePlayer?
+        var looper: AVPlayerLooper?
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class HostView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+
+    func makeUIView(context: Context) -> HostView {
+        let view = HostView()
+        view.backgroundColor = .clear
+        guard let url = Bundle.main.url(forResource: videoName, withExtension: videoExt) else { return view }
+        let item = AVPlayerItem(url: url)
+        let queue = AVQueuePlayer(playerItem: item)
+        queue.isMuted = true
+        queue.actionAtItemEnd = .advance
+        let looper = AVPlayerLooper(player: queue, templateItem: item)
+        context.coordinator.player = queue
+        context.coordinator.looper = looper
+        view.playerLayer.player = queue
+        view.playerLayer.videoGravity = .resizeAspect
+        queue.play()
+        return view
+    }
+
+    func updateUIView(_ uiView: HostView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: HostView, coordinator: Coordinator) {
+        coordinator.player?.pause()
+        coordinator.looper = nil
+        coordinator.player = nil
+        uiView.playerLayer.player = nil
+    }
+}
+
+private struct OnboardingPlanBuildBackground: View {
+    var body: some View {
+        ZStack {
+            OB.bg
+
+            LinearGradient(
+                colors: [
+                    OB.bg,
+                    OB.surface.opacity(0.96),
+                    OB.bg
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            RadialGradient(
+                colors: [
+                    OB.accent.opacity(0.24),
+                    OB.memoPurple.opacity(0.08),
+                    OB.bg.opacity(0)
+                ],
+                center: UnitPoint(x: 0.5, y: 0.30),
+                startRadius: 12,
+                endRadius: 330
+            )
+
+            RadialGradient(
+                colors: [
+                    OB.success.opacity(0.12),
+                    OB.accent.opacity(0.06),
+                    OB.bg.opacity(0)
+                ],
+                center: UnitPoint(x: 0.5, y: 0.69),
+                startRadius: 24,
+                endRadius: 300
+            )
+
+            RadialGradient(
+                colors: [
+                    OB.bg.opacity(0),
+                    OB.bg.opacity(0.46)
+                ],
+                center: .center,
+                startRadius: 190,
+                endRadius: 560
+            )
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+}
+
+/// Transient full-screen beat shown after a data-collection milestone. Memo
+/// "thinks", a bubble appears reflecting the latest answer, the new clipboard
+/// line snaps in, then `onAdvance` fires automatically (no CTA).
+struct OnboardingPlanBuildBeatOverlay: View {
+    let beat: PlanBuildBeatContent.Beat
+    let goals: Set<UserFocusGoal>
+    var selectedGoalOrder: [UserFocusGoal] = []
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let isEstimate: Bool
+    var protectTarget: PlanBuildBeatContent.ProtectTarget?
+    var feedWinMoment: PlanBuildBeatContent.FeedWinMoment?
+    let onAdvance: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var bubbleVisible = false
+    @State private var revealedLineCount = 0
+    @State private var didStart = false
+
+    private var content: PlanBuildBeatContent {
+        PlanBuildBeatContent(beat: beat, goals: goals, selectedGoalOrder: selectedGoalOrder, age: age,
+                             dailyScreenTimeHours: dailyScreenTimeHours, isEstimate: isEstimate,
+                             protectTarget: protectTarget, feedWinMoment: feedWinMoment)
+    }
+
+    private var lines: [PlanBuildBeatContent.Line] {
+        PlanBuildBeatContent.cumulativeLines(upTo: beat, goals: goals, selectedGoalOrder: selectedGoalOrder, age: age,
+                                             dailyScreenTimeHours: dailyScreenTimeHours, isEstimate: isEstimate,
+                                             protectTarget: protectTarget, feedWinMoment: feedWinMoment)
+    }
+
+    private var memoVideoName: String { "memo-building" }
+
+    var body: some View {
+        ZStack {
+            OnboardingPlanBuildBackground()
+
+            VStack(spacing: 18) {
+                Text("MEMO IS BUILDING YOUR PLAN")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(OB.fg3)
+                    .padding(.top, 40)
+
+                memoView
+                    .frame(width: 170, height: 170)
+
+                speechBubble
+
+                clipboard
+
+                Spacer()
+            }
+            .padding(.horizontal, 26)
+            .frame(maxWidth: 500)
+        }
+        .onAppear(perform: start)
+    }
+
+    @ViewBuilder
+    private var memoView: some View {
+        if Bundle.main.url(forResource: memoVideoName, withExtension: "mov") != nil {
+            OnboardingLoopingVideo(videoName: memoVideoName)
+        } else if let img = UIImage(named: "focus-memo-neutral") {
+            Image(uiImage: img).resizable().scaledToFit()
+        } else {
+            RoundedRectangle(cornerRadius: 28, style: .continuous).fill(OB.surface)
+        }
+    }
+
+    private var speechBubble: some View {
+        Text(content.bubble)
+            .font(.system(size: 17, weight: .heavy, design: .rounded))
+            .foregroundStyle(OB.fg)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 18).padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous).fill(OB.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(OB.border, lineWidth: 1)
+            )
+            .opacity(bubbleVisible ? 1 : 0)
+            .offset(y: bubbleVisible ? 0 : 8)
+    }
+
+    private var clipboard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("YOUR PLAN")
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(OB.fg3)
+
+            ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                HStack(spacing: 9) {
+                    ZStack {
+                        Circle().fill(OB.success).frame(width: 18, height: 18)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundStyle(OB.bg)
+                    }
+                    Text("\(line.label): \(line.value)")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                }
+                .opacity(idx < revealedLineCount ? 1 : 0)
+                .offset(x: idx < revealedLineCount ? 0 : -10)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(OB.surface.opacity(0.6)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(OB.border, lineWidth: 1))
+    }
+
+    private func start() {
+        guard !didStart else { return }
+        didStart = true
+
+        // The personalization beat adds two lines as one receipt moment.
+        let addedLineCount = (beat == .personalization) ? 2 : 1
+        let priorCount = max(0, lines.count - addedLineCount)
+        revealedLineCount = priorCount
+
+        if reduceMotion {
+            bubbleVisible = true
+            revealedLineCount = lines.count
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { onAdvance() }
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.35).delay(0.25)) { bubbleVisible = true }
+        // New line snaps in after the bubble reads.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                revealedLineCount = lines.count
+            }
+        }
+        // Auto-advance once the bubble and clipboard line have registered.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { onAdvance() }
+    }
+}
+
+/// Final beat, shown on page 6 right before the hard paywall. Memo flips to a
+/// proud "presenting" pose, holds up the now-complete clipboard with a
+/// "Personalized for you" stamp, then fires `onComplete` → paywall.
+struct OnboardingPlanFinalBeatView: View {
+    let goals: Set<UserFocusGoal>
+    var selectedGoalOrder: [UserFocusGoal] = []
+    let age: Int
+    let dailyScreenTimeHours: Double
+    let isEstimate: Bool
+    var protectTarget: PlanBuildBeatContent.ProtectTarget?
+    var feedWinMoment: PlanBuildBeatContent.FeedWinMoment?
+    let onComplete: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var didStart = false
+    @State private var stampVisible = false
+
+    private var lines: [PlanBuildBeatContent.Line] {
+        PlanBuildBeatContent.cumulativeLines(upTo: .final, goals: goals, selectedGoalOrder: selectedGoalOrder, age: age,
+                                             dailyScreenTimeHours: dailyScreenTimeHours, isEstimate: isEstimate,
+                                             protectTarget: protectTarget, feedWinMoment: feedWinMoment)
+    }
+    private var bubble: String {
+        PlanBuildBeatContent(beat: .final, goals: goals, selectedGoalOrder: selectedGoalOrder, age: age,
+                             dailyScreenTimeHours: dailyScreenTimeHours, isEstimate: isEstimate,
+                             protectTarget: protectTarget, feedWinMoment: feedWinMoment).bubble
+    }
+    private var memoVideoName: String { "memo-presenting" }
+
+    var body: some View {
+        ZStack {
+            OnboardingPlanBuildBackground()
+
+            VStack(spacing: 18) {
+                Spacer(minLength: 30)
+
+                Group {
+                    if Bundle.main.url(forResource: memoVideoName, withExtension: "mov") != nil {
+                        OnboardingLoopingVideo(videoName: memoVideoName)
+                    } else if let img = UIImage(named: "focus-memo-happy") {
+                        Image(uiImage: img).resizable().scaledToFit()
+                    } else {
+                        RoundedRectangle(cornerRadius: 28, style: .continuous).fill(OB.surface)
+                    }
+                }
+                .frame(width: 190, height: 190)
+
+                Text(bubble)
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .multilineTextAlignment(.center)
+
+                VStack(alignment: .leading, spacing: 9) {
+                    HStack {
+                        Text("YOUR PLAN")
+                            .font(.system(size: 9, weight: .black, design: .monospaced)).tracking(1.4)
+                            .foregroundStyle(OB.fg3)
+                        Spacer()
+                        Text("PERSONALIZED FOR YOU")
+                            .font(.system(size: 8, weight: .black, design: .monospaced)).tracking(1.2)
+                            .foregroundStyle(OB.success)
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(Capsule().fill(OB.success.opacity(0.14)))
+                            .opacity(stampVisible ? 1 : 0)
+                            .scaleEffect(stampVisible ? 1 : 0.8)
+                    }
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        HStack(spacing: 9) {
+                            ZStack {
+                                Circle().fill(OB.success).frame(width: 18, height: 18)
+                                Image(systemName: "checkmark").font(.system(size: 10, weight: .black)).foregroundStyle(OB.bg)
+                            }
+                            Text("\(line.label): \(line.value)")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(OB.fg)
+                        }
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(OB.surface.opacity(0.6)))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(OB.border, lineWidth: 1))
+
+                Spacer()
+            }
+            .padding(.horizontal, 26)
+            .frame(maxWidth: 500)
+        }
+        .onAppear(perform: start)
+    }
+
+    private func start() {
+        guard !didStart else { return }
+        didStart = true
+        let stampDelay = reduceMotion ? 0.2 : 0.8
+        let advanceDelay = reduceMotion ? 1.2 : 2.8
+        DispatchQueue.main.asyncAfter(deadline: .now() + stampDelay) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { stampVisible = true }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + advanceDelay) { onComplete() }
     }
 }

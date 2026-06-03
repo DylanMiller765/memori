@@ -20,7 +20,7 @@ enum ExerciseDomain: String, CaseIterable, Codable {
     case patterns
     case nBack
     case activeRecall
-    case dailyChallenge
+    case generalTraining
     case visualMemory
     case mathSpeed
     case colorMatch
@@ -58,7 +58,7 @@ struct DifficultyParameters {
     let readingTimeSeconds: Double
     let detailCount: Int
 
-    // Daily Challenge
+    // General training
     let memorizeTimeSeconds: Double
     let itemCount: Int
 }
@@ -111,7 +111,7 @@ final class AdaptiveDifficultyEngine {
         .patterns:       1...10,
         .nBack:          1...7,
         .activeRecall:   1...10,
-        .dailyChallenge: 1...10,
+        .generalTraining: 1...10,
         .visualMemory:   1...10,
         .mathSpeed:      1...5,
         .colorMatch:     1...8,
@@ -132,7 +132,7 @@ final class AdaptiveDifficultyEngine {
         .patterns:       1,   // 3x3 / 3 cells
         .nBack:          1,   // N=1
         .activeRecall:   1,   // 30s / 4 details
-        .dailyChallenge: 1,
+        .generalTraining: 1,
         .visualMemory:   1,   // grid level 1
         .mathSpeed:      2,   // start at medium
         .colorMatch:     1,   // round count/speed scaling
@@ -262,7 +262,7 @@ final class AdaptiveDifficultyEngine {
             // Reading time decreases with difficulty
             return max(30.0 - Double(difficulty) * 2.5, 8.0)
 
-        case .dailyChallenge:
+        case .generalTraining:
             // Memorize time per item
             let itemCount = 3 + difficulty
             let perItemTime = max(3.0 - Double(difficulty) * 0.15, 1.2)
@@ -403,7 +403,7 @@ final class AdaptiveDifficultyEngine {
         let readingTime = max(30.0 - Double(level - 1) * 2.5, 8.0)
         let detailCount = min(3 + level, 12)
 
-        // Daily Challenge
+        // General training
         let memorizeTime = max(25.0 - Double(level - 1) * 2.0, 8.0)
         let itemCount = min(3 + level, 15)
 

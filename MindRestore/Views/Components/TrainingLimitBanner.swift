@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// - At 15-19 min: encouraging "sweet spot" message (Lampit 2014).
 /// - At 20+ min: rest prompt explaining diminishing returns, with a dismiss action.
-struct TrainingLimitBanner: View {
+struct TrainingPaceBanner: View {
     let trainingMinutes: Double
     var onDoneForToday: (() -> Void)?
 
@@ -111,13 +111,13 @@ struct TrainingLimitBanner: View {
 // MARK: - Preview
 
 #Preview("Sweet Spot") {
-    TrainingLimitBanner(trainingMinutes: 16)
+    TrainingPaceBanner(trainingMinutes: 16)
         .padding()
         .pageBackground()
 }
 
-#Preview("Daily Limit") {
-    TrainingLimitBanner(trainingMinutes: 22) {
+#Preview("Training Target") {
+    TrainingPaceBanner(trainingMinutes: 22) {
         print("Done tapped")
     }
     .padding()

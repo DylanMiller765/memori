@@ -33,17 +33,20 @@ struct ProfileView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    playerCard
+                    MainScreenTitle(text: "Profile")
                         .staggered(index: 0)
 
-                    xpProgress
+                    playerCard
                         .staggered(index: 1)
 
-                    achievementsSection
+                    xpProgress
                         .staggered(index: 2)
 
-                    settingsButton
+                    achievementsSection
                         .staggered(index: 3)
+
+                    settingsButton
+                        .staggered(index: 4)
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -52,7 +55,7 @@ struct ProfileView: View {
                 .frame(maxWidth: .infinity)
             }
             .pageBackground()
-            .navigationTitle("Profile")
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
@@ -275,3 +278,11 @@ struct ProfileView: View {
         .buttonStyle(.plain)
     }
 }
+
+#if DEBUG
+#Preview("Profile") {
+    MainScreenPreview {
+        ProfileView()
+    }
+}
+#endif

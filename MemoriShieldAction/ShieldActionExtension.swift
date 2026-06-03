@@ -44,7 +44,7 @@ class ShieldActionExtension: ShieldActionDelegate {
         content.title = "Ready to unlock?"
         content.body = "Tap to play a quick brain game and earn screen time."
         content.sound = .default
-        content.userInfo = ["deepLink": "memori://focus-unlock"]
+        content.userInfo = ["deepLink": "memo://focus-unlock"]
 
         // Fire immediately
         let request = UNNotificationRequest(

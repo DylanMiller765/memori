@@ -22,5 +22,14 @@ struct FocusUnlocksReport: DeviceActivityReportExtension {
         ScreenTimeWeeklyReport { hoursByDay in
             WeeklyScreenTimeChartView(hoursByDay: hoursByDay)
         }
+        OnboardingWeeklyScreenTimeReport { configuration in
+            OnboardingWeeklyScreenTimeView(configuration: configuration)
+        }
+        FocusHomeDashboardReport { configuration in
+            FocusHomeDashboardView(configuration: configuration)
+        }
+        FocusInsightsInteractiveReport { configuration in
+            FocusInsightsReportView(configuration: configuration)
+        }
     }
 }

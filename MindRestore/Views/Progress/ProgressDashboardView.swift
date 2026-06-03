@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Charts
 import FamilyControls
+import DeviceActivity
 
 // MARK: - Time Range
 
@@ -18,6 +19,14 @@ private enum TimeRange: String, CaseIterable {
         }
     }
 }
+
+#if DEBUG
+#Preview("Insights") {
+    MainScreenPreview {
+        ProgressDashboardView()
+    }
+}
+#endif
 
 private enum InsightsMode: String, CaseIterable {
     case focus = "Focus"
@@ -70,11 +79,13 @@ struct ProgressDashboardView: View {
     private var isProUser: Bool { storeService.isProUser }
     private var hasBrainInsightData: Bool { !sessions.isEmpty || !brainScores.isEmpty }
     private var hasFocusInsightData: Bool {
-        focusModeService.isEnabled
+        screenshotMode
+            || focusDemoDataEnabled
+            || focusModeService.isEnabled
             || focusModeService.blockedAppCount > 0
             || focusModeService.dailyAttemptCount > 0
             || focusModeService.weeklyBlockedMinutes > 0
-            || focusDemoDataEnabled
+            || focusModeService.authorizationStatus == .approved
     }
     private var hasAnyInsightData: Bool { hasBrainInsightData || hasFocusInsightData }
 
@@ -124,22 +135,12 @@ struct ProgressDashboardView: View {
                 if !hasAnyInsightData {
                     emptyState
                 } else {
-                    VStack(spacing: 20) {
-                        insightsHeader
-                        insightsModePicker
-
-                        switch selectedMode {
-                        case .focus:
-                            focusInsightsTab
-                        case .brain:
-                            brainInsightsTab
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 4)
-                    .padding(.bottom, 120)
-                    .responsiveContent()
-                    .frame(maxWidth: .infinity)
+                    insightsContent()
+                        .padding(.horizontal)
+                        .padding(.top, 4)
+                        .padding(.bottom, 120)
+                        .responsiveContent()
+                        .frame(maxWidth: .infinity)
                 }
             }
             .pageBackground()
@@ -153,6 +154,24 @@ struct ProgressDashboardView: View {
             }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
+            }
+        }
+    }
+
+    private func insightsContent() -> some View {
+        VStack(spacing: 20) {
+            insightsHeader
+                .staggeredEntrance(index: 0)
+            insightsModePicker
+                .staggeredEntrance(index: 1)
+
+            switch selectedMode {
+            case .focus:
+                focusInsightsTab()
+                    .staggeredEntrance(index: 2)
+            case .brain:
+                brainInsightsTab
+                    .staggeredEntrance(index: 2)
             }
         }
     }
@@ -187,16 +206,13 @@ struct ProgressDashboardView: View {
         .appCard()
         .padding(.horizontal)
         .padding(.top, 8)
+        .staggeredEntrance(index: 0)
     }
 
     // MARK: - Mode Picker
 
     private var insightsHeader: some View {
-        Text("Insights")
-            .font(.system(size: 38, weight: .black, design: .rounded))
-            .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityAddTraits(.isHeader)
+        MainScreenTitle(text: "Insights")
     }
 
     private var insightsModePicker: some View {
@@ -229,14 +245,157 @@ struct ProgressDashboardView: View {
 
     // MARK: - Focus Tab
 
-    private var focusInsightsTab: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            focusReportHeader
-            focusMascotWeekStrip
-            focusStatsCard
-            focusBarChartSection
-            focusOffendersSection
+    @ViewBuilder
+    private func focusInsightsTab() -> some View {
+        #if DEBUG
+        if screenshotMode {
+            focusScreenshotInsightsTab
+        } else {
+            focusPermissionBackedInsightsTab
         }
+        #else
+        focusPermissionBackedInsightsTab
+        #endif
+    }
+
+    private var focusPermissionBackedInsightsTab: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            switch focusModeService.authorizationStatus {
+            case .approved:
+                DeviceActivityReport(.focusInsightsInteractive, filter: focusInsightsDeviceActivityFilter)
+                    .frame(height: 900, alignment: .topLeading)
+            case .notDetermined:
+                focusScreenTimePermissionCard(
+                    title: "Connect Screen Time",
+                    subtitle: "Show your real weekly usage, daily breakdowns, and top offenders."
+                )
+            case .denied:
+                focusScreenTimePermissionCard(
+                    title: "Screen Time is off",
+                    subtitle: "Allow Screen Time access in Settings to show real Insights data."
+                )
+            @unknown default:
+                focusScreenTimePermissionCard(
+                    title: "Screen Time unavailable",
+                    subtitle: "Memo can show Focus insights after Screen Time access is available."
+                )
+            }
+        }
+    }
+
+    #if DEBUG
+    private var screenshotMode: Bool {
+        ProcessInfo.processInfo.arguments.contains("--screenshot-mode")
+    }
+
+    private var focusScreenshotInsightsTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("TODAY'S FEED RECEIPT")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(AppColors.coral)
+                    .textCase(.uppercase)
+
+                statsRow(label: "Time on distractions", value: "4h 14m", delta: nil, inverted: false)
+                thinDivider
+                statsRow(label: "Pickups stopped", value: "33", delta: nil, inverted: false)
+                thinDivider
+                statsRow(label: "Protected this week", value: "10h 14m", delta: nil, inverted: false)
+            }
+            .appCard()
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("7-DAY TREND")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(AppColors.accent)
+                    .textCase(.uppercase)
+
+                HStack(alignment: .bottom, spacing: 10) {
+                    ForEach(Array(focusWeekDays.enumerated()), id: \.element.id) { index, day in
+                        VStack(spacing: 7) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(index >= 5 ? AppColors.mint : AppColors.coral.opacity(0.64))
+                                .frame(height: max(28, day.hours / 6.5 * 126))
+
+                            Text(day.dayLabel.prefix(1))
+                                .font(.system(size: 10, weight: .black, design: .rounded))
+                                .foregroundStyle(AppColors.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(height: 160, alignment: .bottom)
+            }
+            .appCard()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("BY AGE 80")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(AppColors.mint)
+                    .textCase(.uppercase)
+
+                Text("This pace costs about 10.6 years.")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .foregroundStyle(.primary)
+
+                Text("Cutting even one hour a day gives years back.")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            .appCard()
+        }
+    }
+    #else
+    private var screenshotMode: Bool { false }
+    #endif
+
+    private var focusInsightsDeviceActivityFilter: DeviceActivityFilter {
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: .now)
+        let windowStart = calendar.date(byAdding: .day, value: -6, to: todayStart) ?? todayStart
+        return DeviceActivityFilter(
+            segment: .hourly(during: DateInterval(start: windowStart, end: .now)),
+            devices: DeviceActivityFilter.Devices([.iPhone])
+        )
+    }
+
+    private func focusScreenTimePermissionCard(title: String, subtitle: String) -> some View {
+        Button {
+            if focusModeService.authorizationStatus == .notDetermined {
+                Task { await focusModeService.requestAuthorization() }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(AppColors.accent)
+                    .frame(width: 42, height: 42)
+                    .background(AppColors.accent.opacity(0.14), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .foregroundStyle(.primary)
+
+                    Text(subtitle)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .background(AppColors.cardSurface.opacity(0.64), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(AppColors.cardBorder.opacity(0.50), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var focusReportHeader: some View {
@@ -606,7 +765,7 @@ struct ProgressDashboardView: View {
                 Button {
                     showingPaywall = true
                 } label: {
-                    Text("Go Pro")
+                    Text("Unlock Memo")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
@@ -1145,7 +1304,7 @@ struct ProgressDashboardView: View {
                 Button {
                     showingPaywall = true
                 } label: {
-                    Text("Go Pro")
+                    Text("Unlock Memo")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)

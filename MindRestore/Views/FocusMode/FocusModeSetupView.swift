@@ -14,6 +14,13 @@ struct FocusModeSetupView: View {
     /// Optional completion handler — used when embedded in onboarding.
     /// When nil, the view dismisses itself via `dismiss()`.
     var onComplete: (() -> Void)?
+    var onSkip: (() -> Void)?
+
+    init(initialStep: Int = 1, onComplete: (() -> Void)? = nil, onSkip: (() -> Void)? = nil) {
+        self.onComplete = onComplete
+        self.onSkip = onSkip
+        _currentStep = State(initialValue: initialStep)
+    }
 
     // MARK: Environment
 
@@ -24,7 +31,7 @@ struct FocusModeSetupView: View {
     // MARK: State
 
     /// Start at "pick apps" — the intro step is skipped when used inline in onboarding.
-    @State private var currentStep = 1
+    @State private var currentStep: Int
     @State private var scheduleEnabled = false
     // Default to evening/bedtime block (22:00 → 08:00) — matches FocusModeService's default and
     // the feature's primary intent (block distractions when winding down / sleeping).
@@ -32,13 +39,12 @@ struct FocusModeSetupView: View {
     @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 8)) ?? Date()
     @State private var scheduleDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7] // 1=Sun, 7=Sat
     @State private var unlockDuration = 15
+    @State private var passPulse = false
     @State private var showingProPaywall = false
     @State private var showingAppPicker = false
 
     private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
     private let dayIndices = [1, 2, 3, 4, 5, 6, 7] // Sunday=1 through Saturday=7
-
-    private let durationOptions = [5, 15, 30, 60]
 
     /// True when this view is being shown as part of OnboardingView — hides the inner page dots
     /// because the outer onboarding flow renders its own progress indicator.
@@ -50,11 +56,17 @@ struct FocusModeSetupView: View {
         !focusModeService.activitySelection.webDomainTokens.isEmpty
     }
 
+    private var totalSelectedCount: Int {
+        focusModeService.activitySelection.applicationTokens.count +
+        focusModeService.activitySelection.categoryTokens.count +
+        focusModeService.activitySelection.webDomainTokens.count
+    }
+
     // MARK: Body
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.pageBg.ignoresSafeArea()
+            AppColors.pageBgDark.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TabView(selection: $currentStep) {
@@ -84,103 +96,43 @@ struct FocusModeSetupView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, .dark)
     }
 
     // MARK: - Step 1: Pick Apps
 
     private var pickAppsStep: some View {
-        VStack(spacing: 24) {
-            Spacer().frame(height: 32)
+        let totalSelected = totalSelectedCount
 
-            VStack(spacing: 8) {
-                Text("Pick what\nMemo bounces")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
+        return VStack(spacing: 20) {
+            Spacer().frame(height: 26)
 
-                Text("Distracting apps stay locked until you earn them back.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Pick what\nMemo bounces.")
+                    .font(.brand(size: 38, weight: .heavy))
+                    .multilineTextAlignment(.leading)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+
+                Text("Put your worst apps behind the rope.")
+                    .font(.brand(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 32)
 
-            // Free-user limit note — tappable to open paywall
-            if !storeService.isProUser {
-                Button {
-                    showingProPaywall = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.fill")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.amber)
-                        Text("Free plan: 1 app. Pro lets Memo bounce the whole feed.")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.amber)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(AppColors.amber.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(AppColors.amber.opacity(0.3), lineWidth: 1)
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
+            targetBouncerScene(totalSelected: totalSelected)
                 .padding(.horizontal, 24)
-            }
-
-            // Selected apps summary
-            let appCount = focusModeService.activitySelection.applicationTokens.count
-            let catCount = focusModeService.activitySelection.categoryTokens.count
-            let webCount = focusModeService.activitySelection.webDomainTokens.count
-            let totalSelected = appCount + catCount + webCount
-
-            Button {
-                showingAppPicker = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: totalSelected > 0 ? "checkmark.circle.fill" : "plus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(totalSelected > 0 ? AppColors.mint : AppColors.accent)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(totalSelected > 0 ? "\(totalSelected) targets picked" : "Choose Memo's targets")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text(totalSelected > 0 ? "Tap to change the hit list" : "Pick one app free, or go Pro for the feed")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(16)
-                .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(totalSelected > 0 ? AppColors.mint.opacity(0.3) : AppColors.cardBorder, lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
 
             Spacer()
 
-            continueButton(disabled: totalSelected == 0) {
-                if !storeService.isProUser && currentSelectionExceedsFreeLimit {
-                    showingProPaywall = true
-                } else {
-                    currentStep = 2
-                }
-            }
+            setupBottomActions(totalSelected: totalSelected)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, onSkip == nil ? 8 : 2)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
         .familyActivityPicker(isPresented: $showingAppPicker, selection: Binding(
@@ -196,6 +148,12 @@ struct FocusModeSetupView: View {
                 }
 
                 focusModeService.updateActivitySelection(newSelection)
+
+                if isEmbeddedInOnboarding && totalCount(for: newSelection) > 0 {
+                    withAnimation(.easeInOut(duration: 0.24)) {
+                        currentStep = 2
+                    }
+                }
             }
         ))
         .sheet(isPresented: $showingProPaywall) {
@@ -203,195 +161,553 @@ struct FocusModeSetupView: View {
         }
     }
 
+    private func targetBouncerScene(totalSelected: Int) -> some View {
+        Button {
+            showingAppPicker = true
+        } label: {
+            VStack(spacing: 12) {
+                ZStack(alignment: .bottomTrailing) {
+                    hitListSurface(totalSelected: totalSelected)
+
+                    Image("mascot-detective")
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 88)
+                        .shadow(color: AppColors.accent.opacity(0.22), radius: 16, y: 7)
+                        .offset(x: 4, y: 18)
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 300)
+
+                HStack(spacing: 8) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 11, weight: .heavy))
+                    Text(storeService.isProUser ? "Memo guards the whole feed" : "Starter access guards 1 app")
+                        .font(.brand(size: 12, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+                .foregroundStyle(AppColors.amber)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(totalSelected > 0 ? "\(totalSelected) Focus Mode targets selected. Edit targets." : "No Focus Mode targets selected. Pick targets.")
+    }
+
+    private func hitListSurface(totalSelected: Int) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center) {
+                Text("MEMO'S HIT LIST")
+                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                    .tracking(1.4)
+                    .foregroundStyle(AppColors.accent)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(AppColors.accent.opacity(0.72))
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(totalSelected > 0 ? "\(totalSelected) targets blocked" : "Waiting for targets")
+                    .font(.brand(size: 25, weight: .heavy))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                    Text(totalSelected > 0 ? "Tap to edit the apps Memo blocks." : "Pick the apps built to pull you back.")
+                    .font(.brand(size: 14, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ZStack(alignment: .bottomTrailing) {
+                hitListEvidenceGrid(totalSelected: totalSelected)
+
+                if totalSelected > 0 {
+                    Text("BLOCKED")
+                        .font(.system(size: 22, weight: .black, design: .monospaced))
+                        .tracking(2.0)
+                        .foregroundStyle(AppColors.accent)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(AppColors.accent, lineWidth: 2)
+                        }
+                        .rotationEffect(.degrees(-8))
+                        .offset(x: -74, y: -6)
+                        .transition(.scale(scale: 1.08).combined(with: .opacity))
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 134, alignment: .leading)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: 286, alignment: .topLeading)
+        .background {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(AppColors.cardSurface.opacity(0.72))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(AppColors.cardBorder.opacity(0.82), lineWidth: 1)
+                }
+                .shadow(color: AppColors.accent.opacity(0.08), radius: 24, y: 12)
+        }
+    }
+
+    private func hitListEvidenceGrid(totalSelected: Int) -> some View {
+        let appTokens = Array(focusModeService.activitySelection.applicationTokens)
+        let categoryTokens = Array(focusModeService.activitySelection.categoryTokens)
+        let totalTokens = appTokens.count + categoryTokens.count + focusModeService.activitySelection.webDomainTokens.count
+
+        return HStack(alignment: .center, spacing: 12) {
+            if totalSelected == 0 {
+                ForEach(0..<3, id: \.self) { index in
+                    ghostEvidenceSlot(index: index)
+                }
+            } else {
+                ForEach(Array(appTokens.prefix(4).enumerated()), id: \.element) { index, token in
+                    Label(token)
+                        .labelStyle(.iconOnly)
+                        .scaleEffect(1.42)
+                        .frame(width: 82, height: 82)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .rotationEffect(.degrees([-6, 4, -3, 5][min(index, 3)]))
+                        .shadow(color: AppColors.pageBg.opacity(0.56), radius: 12, y: 7)
+                }
+
+                let categorySlots = max(0, 4 - appTokens.prefix(4).count)
+                ForEach(Array(categoryTokens.prefix(categorySlots).enumerated()), id: \.element) { index, token in
+                    Label(token)
+                        .labelStyle(.iconOnly)
+                        .scaleEffect(1.42)
+                        .frame(width: 82, height: 82)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .rotationEffect(.degrees([5, -5, 3, -3][min(index, 3)]))
+                        .shadow(color: AppColors.pageBg.opacity(0.56), radius: 12, y: 7)
+                }
+
+                if totalTokens > 4 {
+                    Text("+\(totalTokens - 4)")
+                        .font(.system(size: 19, weight: .black, design: .monospaced))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .frame(width: 62, height: 62)
+                        .background(AppColors.accent.opacity(0.24), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(AppColors.accent.opacity(0.46), lineWidth: 1.2)
+                        }
+                        .rotationEffect(.degrees(5))
+                }
+            }
+
+            Spacer(minLength: 44)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func ghostEvidenceSlot(index: Int) -> some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .strokeBorder(style: StrokeStyle(lineWidth: 1.4, dash: [5, 4]))
+            .foregroundStyle(AppColors.textTertiary.opacity(0.46))
+            .frame(width: 62, height: 62)
+            .overlay {
+                Image(systemName: ["app.dashed", "lock.fill", "plus"][min(index, 2)])
+                    .font(.system(size: 18, weight: .heavy))
+                    .foregroundStyle(AppColors.textTertiary.opacity(0.54))
+            }
+            .rotationEffect(.degrees([-5, 3, -2][min(index, 2)]))
+    }
+
+    private func totalCount(for selection: FamilyActivitySelection) -> Int {
+        selection.applicationTokens.count +
+        selection.categoryTokens.count +
+        selection.webDomainTokens.count
+    }
+
+    private func setupBottomActions(totalSelected: Int) -> some View {
+        VStack(spacing: 12) {
+            Button {
+                guard totalSelected > 0 else {
+                    showingAppPicker = true
+                    return
+                }
+
+                if !storeService.isProUser && currentSelectionExceedsFreeLimit {
+                    showingProPaywall = true
+                } else {
+                    currentStep = 2
+                }
+            } label: {
+                Text(totalSelected > 0 ? "Bounce these apps" : "Pick apps")
+                    .gradientButton()
+            }
+
+            if let onSkip {
+                Button {
+                    onSkip()
+                } label: {
+                    Text("Set up later")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .frame(minHeight: 28)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 32)
+    }
+
     // MARK: - Step 2: Schedule
 
     private var scheduleStep: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 24)
+            Spacer().frame(height: 14)
 
-            Text("When is Memo\non patrol?")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 6)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("When should\nMemo block?")
+                    .font(.brand(size: 36, weight: .heavy))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text("Choose when the algorithm has to get through Memo first.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 24)
-
-            // Schedule option cards
-            VStack(spacing: 10) {
-                scheduleCard(
-                    mascot: "mascot-streak-fire",
-                    title: "All day",
-                    subtitle: "Maximum patrol. No easy exits.",
-                    isSelected: !scheduleEnabled
-                ) { scheduleEnabled = false }
-
-                scheduleCard(
-                    mascot: "mascot-thinking",
-                    title: "Set hours",
-                    subtitle: "Memo clocks in when you need backup.",
-                    isSelected: scheduleEnabled
-                ) { scheduleEnabled = true }
+                Text("All day, or only when the feed usually wins.")
+                    .font(.brand(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.bottom, 20)
+
+            targetReceiptLine
+                .padding(.horizontal, 32)
+                .padding(.bottom, 18)
+
+            shiftChoiceList
+                .padding(.horizontal, 32)
 
             // Time + day pickers when schedule is selected
             if scheduleEnabled {
-                VStack(spacing: 10) {
-                    // Time pickers
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Start")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            DatePicker("", selection: $scheduleStart, displayedComponents: .hourAndMinute)
-                                .labelsHidden()
-                        }
-
-                        Spacer()
-
-                        VStack(alignment: .trailing, spacing: 6) {
-                            Text("End")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            DatePicker("", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
-                                .labelsHidden()
-                        }
-                    }
-                    .padding(16)
-                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(AppColors.cardBorder, lineWidth: 1)
-                    )
-
-                    // Day picker
-                    HStack(spacing: 6) {
-                        ForEach(Array(zip(dayIndices, dayLabels)), id: \.0) { index, label in
-                            let isActive = scheduleDays.contains(index)
-                            Text(label)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(isActive ? .white : .secondary)
-                                .frame(width: 38, height: 38)
-                                .background(
-                                    isActive ? AppColors.accent : Color.white.opacity(0.05),
-                                    in: Circle()
-                                )
-                                .onTapGesture {
-                                    if scheduleDays.contains(index) {
-                                        if scheduleDays.count > 1 {
-                                            scheduleDays.remove(index)
-                                        }
-                                    } else {
-                                        scheduleDays.insert(index)
-                                    }
-                                }
-                        }
-                    }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(AppColors.cardBorder, lineWidth: 1)
-                    )
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
+                dangerHoursControls
+                    .padding(.horizontal, 32)
+                    .padding(.top, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             Spacer()
 
-            continueButton { currentStep = 3 }
+            continueButton("Set block schedule") { currentStep = 3 }
         }
         .padding(.bottom, 8)
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
     }
 
-    private func scheduleCard(mascot: String, title: String, subtitle: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private var targetReceiptLine: some View {
         HStack(spacing: 14) {
-            Image(mascot)
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 44)
+            selectedTargetTokensStrip
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(scheduleEnabled ? "DANGER-HOURS TARGETS" : "ALWAYS-ON TARGETS")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(scheduleEnabled ? AppColors.violet : AppColors.accent)
+
+                Text(scheduleEnabled ? "Blocking these when the feed gets loud." : "Blocking these until you train.")
+                    .font(.brand(size: 14, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(14)
-        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? AppColors.violet : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture(perform: action)
+        .padding(.vertical, 12)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.50))
+                .frame(height: 1)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.50))
+                .frame(height: 1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var selectedTargetTokensStrip: some View {
+        let appTokens = Array(focusModeService.activitySelection.applicationTokens)
+        let categoryTokens = Array(focusModeService.activitySelection.categoryTokens)
+        let webCount = focusModeService.activitySelection.webDomainTokens.count
+        let visibleAppTokens = Array(appTokens.prefix(4))
+        let categorySlots = max(0, 4 - visibleAppTokens.count)
+        let visibleCategoryTokens = Array(categoryTokens.prefix(categorySlots))
+        let visibleCount = visibleAppTokens.count + visibleCategoryTokens.count
+        let hiddenCount = max(0, appTokens.count + categoryTokens.count + webCount - visibleCount)
+        let tokenSlots = visibleCount + (hiddenCount > 0 ? 1 : 0)
+        let stripWidth = tokenSlots > 0 ? CGFloat(tokenSlots * 40 - max(0, tokenSlots - 1) * 8) : 0
+
+        return HStack(spacing: -8) {
+            ForEach(Array(visibleAppTokens.enumerated()), id: \.element) { index, token in
+                Label(token)
+                    .labelStyle(.iconOnly)
+                    .scaleEffect(1.04)
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .rotationEffect(.degrees([-6, 4, -3, 5][min(index, 3)]))
+                    .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
+            }
+
+            ForEach(Array(visibleCategoryTokens.enumerated()), id: \.element) { index, token in
+                Label(token)
+                    .labelStyle(.iconOnly)
+                    .scaleEffect(1.04)
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .rotationEffect(.degrees([5, -5, 3, -3][min(index, 3)]))
+                    .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
+            }
+
+            if hiddenCount > 0 {
+                Text("+\(hiddenCount)")
+                    .font(.system(size: 14, weight: .black, design: .monospaced))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .frame(width: 38, height: 38)
+                    .background(AppColors.accent.opacity(0.22), in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(AppColors.accent.opacity(0.42), lineWidth: 1)
+                    }
+                    .rotationEffect(.degrees(5))
+            }
+        }
+        .frame(width: stripWidth, height: 44, alignment: .leading)
+        .opacity(visibleCount + hiddenCount > 0 ? 1 : 0)
+        .accessibilityHidden(visibleCount + hiddenCount == 0)
+    }
+
+    private var shiftChoiceList: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.62))
+                .frame(height: 1)
+
+            shiftModeButton(
+                title: "Always on",
+                subtitle: "No weak hours. Apps stay blocked until you train.",
+                icon: "lock.fill",
+                tint: AppColors.accent,
+                isSelected: !scheduleEnabled
+            ) { selectSchedule(enabled: false) }
+
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.62))
+                .frame(height: 1)
+
+            shiftModeButton(
+                title: "Danger hours",
+                subtitle: "Nights, mornings, or whenever the feed wins.",
+                icon: "moon.fill",
+                tint: AppColors.violet,
+                isSelected: scheduleEnabled
+            ) { selectSchedule(enabled: true) }
+
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.62))
+                .frame(height: 1)
+        }
+    }
+
+    private func shiftModeButton(title: String, subtitle: String, icon: String, tint: Color, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? tint.opacity(0.20) : AppColors.cardBorder.opacity(0.20))
+                        .frame(width: 42, height: 42)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(isSelected ? tint : AppColors.textSecondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.brand(size: 20, weight: .heavy))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    Text(subtitle)
+                        .font(.brand(size: 12, weight: .semibold))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(tint)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.vertical, 14)
+            .padding(.leading, 14)
+            .padding(.trailing, 2)
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                if isSelected {
+                    Capsule()
+                        .fill(tint)
+                        .frame(width: 4, height: 48)
+                        .shadow(color: tint.opacity(0.42), radius: 12, x: 0, y: 0)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    private func selectSchedule(enabled: Bool) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
+            scheduleEnabled = enabled
+        }
+    }
+
+    private var dangerHoursControls: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Text("DANGER HOURS")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(AppColors.violet)
+
+                Spacer()
+
+                Text("\(formattedTime(scheduleStart)) - \(formattedTime(scheduleEnd))")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColors.violet)
+                    .monospacedDigit()
+            }
+
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.50))
+                .frame(height: 1)
+
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Start")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                    DatePicker("", selection: $scheduleStart, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                }
+
+                Spacer()
+
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(AppColors.violet.opacity(0.86))
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 5) {
+                    Text("End")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary)
+                    DatePicker("", selection: $scheduleEnd, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                }
+            }
+
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.50))
+                .frame(height: 1)
+
+            HStack(spacing: 6) {
+                ForEach(Array(zip(dayIndices, dayLabels)), id: \.0) { index, label in
+                    let isActive = scheduleDays.contains(index)
+                    Button {
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.88)) {
+                            if scheduleDays.contains(index) {
+                                if scheduleDays.count > 1 {
+                                    scheduleDays.remove(index)
+                                }
+                            } else {
+                                scheduleDays.insert(index)
+                            }
+                        }
+                    } label: {
+                        Text(label)
+                            .font(.system(size: 13, weight: .black, design: .rounded))
+                            .foregroundStyle(isActive ? AppColors.textPrimary : AppColors.textSecondary)
+                            .frame(width: 34, height: 34)
+                            .background(
+                                isActive ? AppColors.violet.opacity(0.34) : AppColors.cardBorder.opacity(0.18),
+                                in: Circle()
+                            )
+                            .overlay {
+                                Circle()
+                                    .stroke(isActive ? AppColors.violet.opacity(0.62) : AppColors.cardBorder.opacity(0.28), lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(label) schedule day")
+                    .accessibilityValue(isActive ? "Selected" : "Not selected")
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.top, 2)
     }
 
     // MARK: - Step 3: Duration + Enable
 
     private var durationStep: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 24)
+            Spacer().frame(height: 14)
 
-            Text("Choose your\nunlock rules")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 6)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("How long is\nthe pass?")
+                    .font(.brand(size: 36, weight: .heavy))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text("Every brain game earns screen time back.\nScrolling costs reps now.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Short enough to check in. Not long enough to disappear.")
+                    .font(.brand(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
                 .padding(.bottom, 24)
 
-            // Preset cards
-            VStack(spacing: 10) {
-                paceCard(
-                    mascot: "mascot-streak-fire",
-                    name: "Hard mode",
-                    description: "Apps snap shut fast.",
-                    minutes: 5,
-                    isRecommended: false
-                )
+            passDurationHero
+                .padding(.horizontal, 32)
+                .padding(.top, 4)
+                .padding(.bottom, 30)
 
-                paceCard(
-                    mascot: "mascot-cool",
-                    name: "Balanced",
-                    description: "Enough time to reply. Not enough to spiral.",
-                    minutes: 15,
-                    isRecommended: true
-                )
-
-                paceCard(
-                    mascot: "mascot-welcome",
-                    name: "Breathing room",
-                    description: "A softer start while Memo trains you up.",
-                    minutes: 30,
-                    isRecommended: false
-                )
-
-                paceCard(
-                    mascot: "mascot-bored",
-                    name: "Training wheels",
-                    description: "Light patrol while you build the habit.",
-                    minutes: 60,
-                    isRecommended: false
-                )
-            }
-            .padding(.horizontal, 20)
+            passTextSelector
+                .padding(.horizontal, 32)
 
             Spacer()
 
@@ -420,7 +736,7 @@ struct FocusModeSetupView: View {
                     }
                 }
             } label: {
-                Text("Put Memo on patrol")
+                Text("Turn on app blocking")
                     .gradientButton()
             }
             .padding(.horizontal, 32)
@@ -430,67 +746,162 @@ struct FocusModeSetupView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func paceCard(mascot: String, name: String, description: String, minutes: Int, isRecommended: Bool) -> some View {
-        let isSelected = unlockDuration == minutes
+    private var passDurationHero: some View {
+        VStack(spacing: 14) {
+            passHeroTokenRow
 
-        return HStack(spacing: 14) {
-            Image(mascot)
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 44)
+            ZStack {
+                Circle()
+                    .fill(AppColors.violet.opacity(0.14))
+                    .frame(width: 188, height: 188)
+                    .blur(radius: 22)
+                    .scaleEffect(passPulse ? 1.08 : 1.0)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(name)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                VStack(spacing: -4) {
+                    Text("\(unlockDuration)")
+                        .font(.system(size: 112, weight: .black, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(unlockDuration)))
+                        .minimumScaleFactor(0.86)
 
-                    if isRecommended {
-                        Text("RECOMMENDED")
-                            .font(.system(size: 8, weight: .heavy))
-                            .tracking(0.5)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(AppColors.violet, in: Capsule())
-                    }
+                    Text("MIN PASS")
+                        .font(.system(size: 15, weight: .black, design: .monospaced))
+                        .tracking(2.0)
+                        .foregroundStyle(AppColors.mint)
+                }
+            }
+            .frame(height: 184)
+            .scaleEffect(passPulse ? 1.025 : 1.0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: passPulse)
+
+            Text("Earned by one brain game")
+                .font(.brand(size: 14, weight: .bold))
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(unlockDuration) minute pass. Earned by one brain game.")
+    }
+
+    @ViewBuilder
+    private var passHeroTokenRow: some View {
+        let appTokens = Array(focusModeService.activitySelection.applicationTokens)
+        let categoryTokens = Array(focusModeService.activitySelection.categoryTokens)
+        let webCount = focusModeService.activitySelection.webDomainTokens.count
+        let visibleAppTokens = Array(appTokens.prefix(3))
+        let categorySlots = max(0, 3 - visibleAppTokens.count)
+        let visibleCategoryTokens = Array(categoryTokens.prefix(categorySlots))
+        let visibleCount = visibleAppTokens.count + visibleCategoryTokens.count
+        let hiddenCount = max(0, appTokens.count + categoryTokens.count + webCount - visibleCount)
+
+        if visibleCount > 0 || hiddenCount > 0 {
+            HStack(spacing: -10) {
+                ForEach(Array(visibleAppTokens.enumerated()), id: \.element) { index, token in
+                    Label(token)
+                        .labelStyle(.iconOnly)
+                        .scaleEffect(1.10)
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .rotationEffect(.degrees([-6, 3, 5][min(index, 2)]))
+                        .shadow(color: AppColors.pageBg.opacity(0.62), radius: 8, y: 4)
                 }
 
-                Text(description)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+                ForEach(Array(visibleCategoryTokens.enumerated()), id: \.element) { index, token in
+                    Label(token)
+                        .labelStyle(.iconOnly)
+                        .scaleEffect(1.10)
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .rotationEffect(.degrees([5, -4, 3][min(index, 2)]))
+                        .shadow(color: AppColors.pageBg.opacity(0.62), radius: 8, y: 4)
+                }
 
-            Spacer()
-
-            VStack(spacing: 1) {
-                Text("\(minutes)")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(isSelected ? AppColors.violet : .primary)
-                Text("MIN")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.secondary)
+                if hiddenCount > 0 {
+                    Text("+\(hiddenCount)")
+                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .frame(width: 40, height: 40)
+                        .background(AppColors.accent.opacity(0.22), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(AppColors.accent.opacity(0.42), lineWidth: 1)
+                        }
+                        .rotationEffect(.degrees(6))
+                }
             }
+            .frame(height: 48)
+            .accessibilityHidden(true)
         }
-        .padding(14)
-        .background(AppColors.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? AppColors.violet : AppColors.cardBorder, lineWidth: isSelected ? 2 : 1)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+    }
+
+    private var passTextSelector: some View {
+        HStack(spacing: 0) {
+            passTextOption(minutes: 5, title: "Strict")
+            passTextOption(minutes: 15, title: "Balanced", footnote: "recommended")
+            passTextOption(minutes: 30, title: "Soft")
+        }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.48))
+                .frame(height: 1)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(AppColors.cardBorder.opacity(0.48))
+                .frame(height: 1)
+        }
+    }
+
+    private func passTextOption(minutes: Int, title: String, footnote: String? = nil) -> some View {
+        let isSelected = unlockDuration == minutes
+
+        return Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
                 unlockDuration = minutes
             }
+            passPulse.toggle()
+        } label: {
+            VStack(spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(minutes)")
+                        .font(.system(size: 21, weight: .black, design: .rounded))
+                        .monospacedDigit()
+
+                    Text(title)
+                        .font(.brand(size: 13, weight: .heavy))
+                }
+                .foregroundStyle(isSelected ? AppColors.violet : AppColors.textSecondary)
+
+                Capsule()
+                    .fill(isSelected ? AppColors.violet : AppColors.cardBorder.opacity(0.0))
+                    .frame(width: 34, height: 3)
+
+                if let footnote, isSelected {
+                    Text(footnote)
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                        .tracking(0.6)
+                        .foregroundStyle(AppColors.violet.opacity(0.92))
+                        .lineLimit(1)
+                } else {
+                    Text(" ")
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 76)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(minutes) minute pass, \(title.lowercased())")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Helpers
 
-    private func continueButton(disabled: Bool = false, action: @escaping () -> Void) -> some View {
+    private func continueButton(_ title: String = "Continue", disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text("Continue")
+            Text(title)
                 .gradientButton()
                 .opacity(disabled ? 0.45 : 1.0)
         }
@@ -601,3 +1012,12 @@ private struct FamilyActivityPickerWrapper: UIViewControllerRepresentable {
         }
     }
 }
+
+#if DEBUG
+#Preview("Focus Pass Duration") {
+    FocusModeSetupView(initialStep: 3, onComplete: {})
+        .environment(FocusModeService())
+        .environment(StoreService())
+        .preferredColorScheme(.dark)
+}
+#endif
