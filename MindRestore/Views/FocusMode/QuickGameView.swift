@@ -97,19 +97,25 @@ struct FocusUnlockSlotView: View {
 
     var body: some View {
         ZStack {
-            AppColors.focusSlotBackground.ignoresSafeArea()
+            slotBackdrop
 
-            VStack(spacing: 14) {
-                Spacer(minLength: 14)
+            GeometryReader { geometry in
+                let contentWidth = min(max(geometry.size.width - 44, 280), 390)
 
-                header
+                VStack(spacing: 14) {
+                    Spacer(minLength: 24)
 
-                machine
-                    .scaleEffect(idlePulse && phase == .idle && !reduceMotion ? 1.010 : 1.0)
+                    header
 
-                Spacer(minLength: 18)
+                    machine
+                        .scaleEffect(idlePulse && phase == .idle && !reduceMotion ? 1.010 : 1.0)
+
+                    Spacer(minLength: 20)
+                }
+                .padding(.horizontal, 14)
+                .frame(width: contentWidth)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .padding(.horizontal, 16)
         }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(true)
@@ -131,15 +137,53 @@ struct FocusUnlockSlotView: View {
         .accessibilityElement(children: .contain)
     }
 
+    private var slotBackdrop: some View {
+        ZStack {
+            Image("focus-unlock-slot-bg")
+                .resizable()
+                .scaledToFill()
+                .scaleEffect(1.06)
+                .offset(y: 18)
+                .ignoresSafeArea()
+
+            AppColors.focusSlotBackground
+                .opacity(0.54)
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [
+                    AppColors.focusSlotBackground.opacity(0.86),
+                    AppColors.focusSlotBackground.opacity(0.18),
+                    AppColors.focusSlotBackground.opacity(0.58),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    AppColors.accent.opacity(0.18),
+                    AppColors.focusSlotBackground.opacity(0),
+                ],
+                center: .bottom,
+                startRadius: 40,
+                endRadius: 340
+            )
+            .ignoresSafeArea()
+        }
+        .accessibilityHidden(true)
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(FocusUnlockSlotCopy.eyebrow)
-                .font(.system(size: 11, weight: .black))
-                .tracking(1.2)
-                .foregroundStyle(.white.opacity(0.48))
+                .font(.system(size: 11, weight: .heavy))
+                .tracking(1.4)
+                .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.82))
 
             Text(FocusUnlockSlotCopy.headline)
-                .font(.system(size: 34, weight: .black))
+                .font(.system(size: 32, weight: .black))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
@@ -151,7 +195,6 @@ struct FocusUnlockSlotView: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 4)
     }
 
     private var machine: some View {
@@ -163,7 +206,7 @@ struct FocusUnlockSlotView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(AppColors.focusSlotSurface)
+                .fill(AppColors.focusSlotSurface.opacity(0.92))
                 .overlay(
                     RoundedRectangle(cornerRadius: 34, style: .continuous)
                         .stroke(.white.opacity(0.12), lineWidth: 1)
