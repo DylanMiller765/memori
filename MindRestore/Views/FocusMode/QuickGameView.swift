@@ -74,8 +74,8 @@ struct FocusUnlockSlotView: View {
     @State private var reelKick: CGFloat = 0
     @State private var launchTask: Task<Void, Never>?
 
-    private let reelHeight: CGFloat = 398
-    private let tileHeight: CGFloat = 112
+    private let reelHeight: CGFloat = 352
+    private let tileHeight: CGFloat = 102
     private let tileSpacing: CGFloat = 8
 
     private enum SlotPhase {
@@ -100,10 +100,10 @@ struct FocusUnlockSlotView: View {
             slotBackdrop
 
             GeometryReader { geometry in
-                let contentWidth = min(max(geometry.size.width - 28, 300), 400)
+                let contentWidth = min(max(geometry.size.width - 56, 292), 348)
 
-                VStack(spacing: 14) {
-                    Spacer(minLength: 24)
+                VStack(spacing: 12) {
+                    Spacer(minLength: 32)
 
                     header
 
@@ -151,15 +151,15 @@ struct FocusUnlockSlotView: View {
                 .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.82))
 
             Text(FocusUnlockSlotCopy.headline)
-                .font(.system(size: 32, weight: .black))
+                .font(.system(size: 29, weight: .black))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
                 .accessibilityAddTraits(.isHeader)
 
             Text(FocusUnlockSlotCopy.subhead)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.58))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.64))
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -172,14 +172,15 @@ struct FocusUnlockSlotView: View {
             controlDeck
             spinButton
         }
-        .padding(10)
+        .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            AppColors.focusSlotTileSurface.opacity(0.98),
-                            AppColors.focusSlotSurface,
+                            AppColors.accent.opacity(0.24),
+                            AppColors.focusSlotTileSurface.opacity(1.0),
+                            AppColors.rose.opacity(0.18),
                             AppColors.focusSlotReelSurface,
                         ],
                         startPoint: .topLeading,
@@ -188,7 +189,7 @@ struct FocusUnlockSlotView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 34, style: .continuous)
-                        .stroke(.white.opacity(0.22), lineWidth: 1)
+                        .stroke(.white.opacity(0.34), lineWidth: 1.3)
                 )
                 .overlay(machineCabinetHighlights)
                 .overlay(machineNeonStroke)
@@ -202,8 +203,8 @@ struct FocusUnlockSlotView: View {
             ForEach(0..<11, id: \.self) { index in
                 Capsule()
                     .fill(topLightColor(index: index).opacity(topLightOpacity(index: index)))
-                    .frame(width: index == 5 ? 46 : 18, height: index == 5 ? 9 : 7)
-                    .shadow(color: topLightColor(index: index).opacity(0.88), radius: phase == .spinning ? 14 : 9)
+                    .frame(width: index == 5 ? 48 : 18, height: index == 5 ? 9 : 7)
+                    .shadow(color: topLightColor(index: index).opacity(1.0), radius: phase == .spinning ? 17 : 11)
             }
         }
         .frame(maxWidth: .infinity)
@@ -225,11 +226,11 @@ struct FocusUnlockSlotView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: phase == .spinning ? 6.0 : 4.6
+                    lineWidth: phase == .spinning ? 7.2 : 5.6
                 )
 
             RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .stroke(.white.opacity(phase == .spinning ? 0.58 : 0.38), lineWidth: 1.2)
+                .stroke(.white.opacity(phase == .spinning ? 0.72 : 0.52), lineWidth: 1.4)
                 .padding(2)
         }
     }
@@ -249,10 +250,10 @@ struct FocusUnlockSlotView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                AppColors.rose.opacity(0.85),
-                                AppColors.accent.opacity(0.92),
-                                AppColors.focusSlotSuccess.opacity(0.82),
-                                AppColors.amber.opacity(0.78),
+                                AppColors.rose,
+                                AppColors.accent,
+                                AppColors.focusSlotSuccess,
+                                AppColors.amber,
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -260,7 +261,7 @@ struct FocusUnlockSlotView: View {
                     )
                     .frame(height: 5)
                     .padding(.horizontal, 26)
-                    .shadow(color: AppColors.accent.opacity(0.55), radius: 12)
+                    .shadow(color: AppColors.accent.opacity(0.85), radius: 16)
 
                 Spacer()
 
@@ -268,9 +269,9 @@ struct FocusUnlockSlotView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                AppColors.focusSlotSuccess.opacity(0.68),
-                                AppColors.accent.opacity(0.90),
-                                AppColors.rose.opacity(0.72),
+                                AppColors.focusSlotSuccess.opacity(0.90),
+                                AppColors.accent,
+                                AppColors.rose.opacity(0.94),
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -278,7 +279,7 @@ struct FocusUnlockSlotView: View {
                     )
                     .frame(height: 4)
                     .padding(.horizontal, 18)
-                    .shadow(color: AppColors.accent.opacity(0.48), radius: 12)
+                    .shadow(color: AppColors.accent.opacity(0.78), radius: 16)
             }
             .padding(.vertical, 13)
         }
@@ -290,42 +291,42 @@ struct FocusUnlockSlotView: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        .white.opacity(0.42),
-                        color.opacity(phase == .spinning ? 1 : 0.76),
-                        color.opacity(0.22),
+                        .white.opacity(0.70),
+                        color.opacity(phase == .spinning ? 1 : 0.98),
+                        color.opacity(0.42),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
-            .frame(width: 11)
-            .shadow(color: color.opacity(0.95), radius: phase == .spinning ? 22 : 15)
+            .frame(width: 12)
+            .shadow(color: color.opacity(1.0), radius: phase == .spinning ? 24 : 18)
     }
 
     private var machineGlow: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 38, style: .continuous)
-                .stroke(AppColors.accent.opacity(phase == .spinning ? 0.92 : 0.70), lineWidth: 10)
-                .blur(radius: phase == .spinning ? 22 : 16)
+                .stroke(AppColors.accent.opacity(phase == .spinning ? 1.0 : 0.92), lineWidth: 12)
+                .blur(radius: phase == .spinning ? 24 : 18)
 
             RoundedRectangle(cornerRadius: 38, style: .continuous)
-                .stroke(AppColors.rose.opacity(phase == .spinning ? 0.72 : 0.48), lineWidth: 8)
-                .blur(radius: phase == .spinning ? 28 : 21)
+                .stroke(AppColors.rose.opacity(phase == .spinning ? 0.96 : 0.76), lineWidth: 9)
+                .blur(radius: phase == .spinning ? 30 : 23)
 
             RoundedRectangle(cornerRadius: 38, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            AppColors.accent.opacity(0.28),
+                            AppColors.accent.opacity(0.42),
                             AppColors.focusSlotBackground.opacity(0),
-                            AppColors.rose.opacity(0.22),
+                            AppColors.rose.opacity(0.34),
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .blur(radius: 30)
-                .scaleEffect(1.08)
+                .blur(radius: 32)
+                .scaleEffect(1.12)
         }
         .padding(-14)
         .allowsHitTesting(false)
@@ -342,15 +343,15 @@ struct FocusUnlockSlotView: View {
         .stroke(
             LinearGradient(
                 colors: [
-                    AppColors.accent.opacity(0.86),
-                    .white.opacity(0.30),
-                    AppColors.rose.opacity(0.70),
+                    AppColors.accent,
+                    .white.opacity(0.50),
+                    AppColors.rose.opacity(0.94),
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             ,
-            lineWidth: 2.3
+            lineWidth: 3.0
         )
     }
 
@@ -364,7 +365,7 @@ struct FocusUnlockSlotView: View {
             return index.isMultiple(of: 2) ? 1.0 : 0.46
         }
 
-        return index == 4 ? 0.92 : 0.52
+        return index == 5 ? 1.0 : 0.78
     }
 
     private var reelWindow: some View {
@@ -376,7 +377,17 @@ struct FocusUnlockSlotView: View {
                 topTrailingRadius: 28,
                 style: .continuous
             )
-                .fill(AppColors.focusSlotReelSurface)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.focusSlotTileSurface.opacity(0.94),
+                            AppColors.focusSlotReelSurface,
+                            AppColors.focusSlotTileSurface.opacity(0.76),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .overlay(
                     UnevenRoundedRectangle(
                         topLeadingRadius: 28,
@@ -389,8 +400,8 @@ struct FocusUnlockSlotView: View {
                 )
                 .overlay(reelNeonStroke)
                 .overlay(reelGlass)
-                .shadow(color: AppColors.accent.opacity(0.48), radius: 28)
-                .shadow(color: AppColors.rose.opacity(0.32), radius: 22)
+                .shadow(color: AppColors.accent.opacity(0.74), radius: 30)
+                .shadow(color: AppColors.rose.opacity(0.54), radius: 24)
 
             arcadeRails
 
@@ -440,8 +451,8 @@ struct FocusUnlockSlotView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    .white.opacity(0.24),
-                    .white.opacity(0.08),
+                    .white.opacity(0.34),
+                    .white.opacity(0.12),
                     .clear,
                     .black.opacity(0.10),
                 ],
@@ -451,16 +462,16 @@ struct FocusUnlockSlotView: View {
 
             HStack {
                 Capsule()
-                    .fill(AppColors.accent.opacity(phase == .spinning ? 1.0 : 0.88))
-                    .frame(width: 7)
-                    .blur(radius: phase == .spinning ? 0.4 : 0.9)
-                    .shadow(color: AppColors.accent.opacity(0.92), radius: 15)
+                    .fill(AppColors.accent)
+                    .frame(width: 8)
+                    .blur(radius: phase == .spinning ? 0.2 : 0.5)
+                    .shadow(color: AppColors.accent, radius: 18)
                 Spacer()
                 Capsule()
-                    .fill(AppColors.rose.opacity(phase == .spinning ? 0.98 : 0.82))
-                    .frame(width: 7)
-                    .blur(radius: phase == .spinning ? 0.4 : 0.9)
-                    .shadow(color: AppColors.rose.opacity(0.86), radius: 15)
+                    .fill(AppColors.rose)
+                    .frame(width: 8)
+                    .blur(radius: phase == .spinning ? 0.2 : 0.5)
+                    .shadow(color: AppColors.rose, radius: 18)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 14)
@@ -474,17 +485,17 @@ struct FocusUnlockSlotView: View {
             railStack(colors: [AppColors.accent, AppColors.violet, AppColors.focusSlotSuccess])
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 22)
+        .padding(.vertical, 18)
         .allowsHitTesting(false)
     }
 
     private func railStack(colors: [Color]) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             ForEach(0..<9, id: \.self) { index in
                 Capsule()
-                    .fill(colors[index % colors.count].opacity(index == 4 || phase == .spinning ? 1 : 0.82))
-                    .frame(width: index == 4 ? 9 : 7, height: index == 4 ? 38 : 22)
-                    .shadow(color: colors[index % colors.count].opacity(0.86), radius: index == 4 || phase == .spinning ? 14 : 7)
+                    .fill(colors[index % colors.count])
+                    .frame(width: index == 4 ? 10 : 8, height: index == 4 ? 34 : 20)
+                    .shadow(color: colors[index % colors.count].opacity(0.95), radius: index == 4 || phase == .spinning ? 16 : 9)
             }
         }
     }
@@ -494,26 +505,26 @@ struct FocusUnlockSlotView: View {
             LinearGradient(
                 colors: [
                     AppColors.focusSlotReelSurface,
-                    AppColors.focusSlotReelSurface.opacity(0.34),
+                    AppColors.focusSlotReelSurface.opacity(0.18),
                     AppColors.focusSlotReelSurface.opacity(0),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 78)
+            .frame(height: 52)
 
             Spacer()
 
             LinearGradient(
                 colors: [
                     AppColors.focusSlotReelSurface.opacity(0),
-                    AppColors.focusSlotReelSurface.opacity(0.38),
+                    AppColors.focusSlotReelSurface.opacity(0.20),
                     AppColors.focusSlotReelSurface,
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 88)
+            .frame(height: 60)
         }
         .allowsHitTesting(false)
     }
@@ -521,7 +532,7 @@ struct FocusUnlockSlotView: View {
     private var centerScanner: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.13 : 0.075))
+                .fill(AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.20 : 0.12))
                 .frame(height: tileHeight + 18)
                 .padding(.horizontal, 2)
 
@@ -530,7 +541,7 @@ struct FocusUnlockSlotView: View {
                     LinearGradient(
                         colors: [
                             .clear,
-                            AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.78 : phase == .spinning ? 0.58 : 0.34),
+                            AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.96 : phase == .spinning ? 0.78 : 0.56),
                             .clear,
                         ],
                         startPoint: .leading,
@@ -538,7 +549,7 @@ struct FocusUnlockSlotView: View {
                     )
                 )
                 .frame(height: phase == .spinning ? 4 : 3)
-                .shadow(color: AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.62 : 0.34), radius: phase == .spinning ? 16 : 10)
+                .shadow(color: AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.86 : 0.58), radius: phase == .spinning ? 20 : 14)
 
             HStack {
                 scannerBracket
@@ -560,8 +571,8 @@ struct FocusUnlockSlotView: View {
             Rectangle()
                 .frame(width: 22, height: 3)
         }
-        .foregroundStyle(AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.95 : 0.58))
-        .shadow(color: AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.42 : 0.16), radius: 8)
+        .foregroundStyle(AppColors.focusSlotSuccess.opacity(phase == .landed ? 1.0 : 0.86))
+        .shadow(color: AppColors.focusSlotSuccess.opacity(phase == .landed ? 0.70 : 0.42), radius: 10)
     }
 
     private var controlDeck: some View {
@@ -570,13 +581,13 @@ struct FocusUnlockSlotView: View {
                 Circle()
                     .fill(controlLightColor(index: index))
                     .frame(width: index == 1 ? 9 : 7, height: index == 1 ? 9 : 7)
-                    .shadow(color: controlLightColor(index: index).opacity(0.42), radius: phase == .idle ? 4 : 8)
-                    .opacity(phase == .spinning && index == 1 ? 1 : 0.74)
+                    .shadow(color: controlLightColor(index: index).opacity(0.78), radius: phase == .idle ? 6 : 10)
+                    .opacity(phase == .spinning && index == 1 ? 1 : 0.92)
             }
 
             Text(statusText)
                 .font(.system(size: phase == .landed ? 15 : 12, weight: .bold))
-                .foregroundStyle(phase == .landed ? AppColors.focusSlotSuccess : .white.opacity(0.50))
+                .foregroundStyle(phase == .landed ? AppColors.focusSlotSuccess : .white.opacity(0.72))
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
                 .contentTransition(.opacity)
@@ -584,11 +595,11 @@ struct FocusUnlockSlotView: View {
             Spacer(minLength: 0)
 
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(AppColors.focusSlotSuccess.opacity(phase == .spinning ? 0.45 : 0.18))
+                .fill(AppColors.focusSlotSuccess.opacity(phase == .spinning ? 0.70 : 0.32))
                 .frame(width: 34, height: 3)
                 .overlay(alignment: .trailing) {
                     Circle()
-                        .fill(AppColors.focusSlotSuccess.opacity(phase == .spinning ? 0.95 : 0.36))
+                        .fill(AppColors.focusSlotSuccess.opacity(phase == .spinning ? 1.0 : 0.70))
                         .frame(width: 6, height: 6)
                 }
         }
@@ -596,10 +607,10 @@ struct FocusUnlockSlotView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(.black.opacity(0.18))
+                .fill(.black.opacity(0.28))
                 .overlay(
                     RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                        .stroke(.white.opacity(0.18), lineWidth: 1)
                 )
         )
         .animation(.easeInOut(duration: 0.22), value: statusText)
@@ -630,8 +641,10 @@ struct FocusUnlockSlotView: View {
             .background(
                 LinearGradient(
                     colors: [
-                        AppColors.accent.opacity(1),
-                        AppColors.sky.opacity(0.95),
+                            .white.opacity(0.28),
+                            AppColors.accent,
+                            AppColors.sky,
+                            AppColors.accent.opacity(0.96),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -650,10 +663,10 @@ struct FocusUnlockSlotView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(.white.opacity(0.28), lineWidth: 1)
+                    .stroke(.white.opacity(0.62), lineWidth: 1.4)
             )
-            .shadow(color: AppColors.accent.opacity(phase == .spinning ? 0.92 : 0.72), radius: phase == .spinning ? 34 : 26, y: 12)
-            .shadow(color: AppColors.sky.opacity(0.48), radius: 16)
+            .shadow(color: AppColors.accent.opacity(phase == .spinning ? 1.0 : 0.95), radius: phase == .spinning ? 40 : 32, y: 12)
+            .shadow(color: AppColors.sky.opacity(0.76), radius: 22)
         }
         .disabled(!canSpin)
         .opacity(canSpin ? 1 : 0.62)
@@ -792,29 +805,29 @@ private struct FocusUnlockReelTile: View {
     }
 
     private var depthScale: CGFloat {
-        max(0.74, 1 - normalizedDistance * 0.105)
+        max(0.82, 1 - normalizedDistance * 0.075)
     }
 
     private var depthOpacity: Double {
-        max(0.30, 1 - Double(normalizedDistance) * 0.24)
+        max(0.58, 1 - Double(normalizedDistance) * 0.15)
     }
 
     private var depthBlur: CGFloat {
-        min(3.2, normalizedDistance * 0.40 + spinIntensity * 1.2)
+        min(2.2, normalizedDistance * 0.22 + spinIntensity * 1.0)
     }
 
     private var depthRotation: Double {
-        Double(distanceFromCenter) * -6
+        Double(distanceFromCenter) * -4
     }
 
     var body: some View {
         HStack(spacing: 10) {
             TrainingTileMiniPreview(type: game.type, color: game.color)
-                .frame(width: 96, height: 76)
-                .background(game.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .frame(width: 88, height: 68)
+                .background(game.color.opacity(0.26), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(game.color.opacity(0.34), lineWidth: 1)
+                        .stroke(game.color.opacity(0.72), lineWidth: 1.2)
                 )
 
             VStack(alignment: .leading, spacing: 8) {
@@ -840,8 +853,8 @@ private struct FocusUnlockReelTile: View {
                 .overlay(
                     LinearGradient(
                         colors: [
-                            arcadeAccent.opacity(isSelected ? 0.46 : 0.34),
-                            .white.opacity(0.10),
+                            arcadeAccent.opacity(isSelected ? 0.58 : 0.46),
+                            .white.opacity(0.18),
                             .clear,
                         ],
                         startPoint: .topLeading,
@@ -851,21 +864,21 @@ private struct FocusUnlockReelTile: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(isSelected ? AppColors.focusSlotSuccess : arcadeAccent.opacity(0.48), lineWidth: isSelected ? 2.4 : 1.2)
+                .stroke(isSelected ? AppColors.focusSlotSuccess : arcadeAccent.opacity(0.72), lineWidth: isSelected ? 2.6 : 1.4)
         )
         .overlay(alignment: .leading) {
             Capsule()
                 .fill(arcadeAccent)
                 .frame(width: 4)
                 .padding(.vertical, 12)
-                .opacity(isSelected ? 1 : 0.75)
+                .opacity(1)
         }
         .scaleEffect(isSelected ? 1.04 : depthScale)
         .opacity(isSelected ? 1 : depthOpacity)
         .blur(radius: isSelected ? 0 : depthBlur)
         .rotation3DEffect(.degrees(depthRotation), axis: (x: 1, y: 0, z: 0), perspective: 0.64)
-        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.52) : arcadeAccent.opacity(0.24), radius: isSelected ? 20 : 10, y: isSelected ? 8 : 3)
-        .padding(.horizontal, isSelected ? 7 : 14)
+        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.70) : arcadeAccent.opacity(0.42), radius: isSelected ? 22 : 12, y: isSelected ? 8 : 3)
+        .padding(.horizontal, isSelected ? 6 : 12)
         .animation(.spring(response: 0.32, dampingFraction: 0.58), value: isSelected)
     }
 }
