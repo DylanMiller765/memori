@@ -657,6 +657,20 @@ enum Analytics {
         PostHogSDK.shared.capture("focus_mode_disabled")
     }
 
+    static func focusUnlockSlotShown() {
+        PostHogSDK.shared.capture("focus_unlock_slot_shown")
+    }
+
+    static func focusUnlockSpinStarted() {
+        PostHogSDK.shared.capture("focus_unlock_spin_started")
+    }
+
+    static func focusUnlockSpinLanded(gameType: String) {
+        PostHogSDK.shared.capture("focus_unlock_spin_landed", properties: [
+            "game_type": gameType
+        ])
+    }
+
     static func focusUnlockGameStarted(gameType: String) {
         PostHogSDK.shared.capture("focus_unlock_game_started", properties: [
             "game_type": gameType

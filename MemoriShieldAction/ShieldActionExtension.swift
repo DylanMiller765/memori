@@ -41,8 +41,8 @@ class ShieldActionExtension: ShieldActionDelegate {
 
     private func sendUnlockNotification() {
         let content = UNMutableNotificationContent()
-        content.title = "Ready to unlock?"
-        content.body = "Tap to play a quick brain game and earn screen time."
+        content.title = "No feed til you train"
+        content.body = "Tap to spin your brain game."
         content.sound = .default
         content.userInfo = ["deepLink": "memo://focus-unlock"]
 

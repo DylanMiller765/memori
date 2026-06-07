@@ -52,6 +52,8 @@ struct ContentView: View {
     @State private var focusUnlockPending = false
     @State private var focusUnlockExercise: ExerciseType?
     @State private var focusUnlockExerciseAutoStart = false
+    @State private var showingFocusUnlockSlot = false
+    @State private var focusUnlockExpectedExercise: ExerciseType?
     @State private var showFocusUnlockToast = false
 
     // Toast state
@@ -304,6 +306,12 @@ struct ContentView: View {
             }
         }
         #endif
+        .fullScreenCover(isPresented: $showingFocusUnlockSlot) {
+            FocusUnlockSlotView(games: TrainingGameCatalog.focusUnlockGames) { game in
+                launchFocusUnlockGame(game.type)
+            }
+            .interactiveDismissDisabled(true)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .streakMilestoneCelebration)) { notification in
             if let streak = notification.userInfo?["streak"] as? Int {
                 celebrationStreak = streak
@@ -342,28 +350,30 @@ struct ContentView: View {
                 selectedTab = .profile
                 deepLinkRouter.pendingDestination = nil
             case .focusUnlock:
-                // Navigate to Train tab with a random game for focus unlock
                 focusUnlockPending = true
+                focusUnlockExpectedExercise = nil
                 selectedTab = .train
-                let activeGames: [ExerciseType] = [
-                    .reactionTime, .colorMatch, .speedMatch, .visualMemory,
-                    .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
-                    .chimpTest, .verbalMemory
-                ]
-                let randomGame = activeGames.randomElement()!
-                Analytics.focusUnlockGameStarted(gameType: randomGame.rawValue)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    focusUnlockExerciseAutoStart = true
-                    focusUnlockExercise = randomGame
-                }
+                Analytics.focusUnlockSlotShown()
+                showingFocusUnlockSlot = true
                 deepLinkRouter.pendingDestination = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
             if focusUnlockPending {
+                let completedGame = notification.userInfo?["exerciseType"] as? String
+                guard FocusUnlockCompletionGate.shouldGrant(
+                    completedGameRawValue: completedGame,
+                    expectedGame: focusUnlockExpectedExercise
+                ) else {
+                    focusUnlockPending = false
+                    focusUnlockExpectedExercise = nil
+                    return
+                }
+
                 focusUnlockPending = false
+                focusUnlockExpectedExercise = nil
                 focusModeService.temporaryUnlock()
-                if let gameType = notification.userInfo?["exerciseType"] as? String,
+                if let gameType = completedGame,
                    let score = notification.userInfo?["score"] as? Double {
                     Analytics.focusUnlockGameCompleted(gameType: gameType, score: Int(score * 100))
                 }
@@ -381,6 +391,7 @@ struct ContentView: View {
         .onChange(of: selectedTab) { _, newTab in
             if newTab != .train && focusUnlockPending {
                 focusUnlockPending = false
+                focusUnlockExpectedExercise = nil
             }
         }
         .overlay(alignment: .top) {
@@ -408,6 +419,17 @@ struct ContentView: View {
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showFocusUnlockToast)
             }
+        }
+    }
+
+    private func launchFocusUnlockGame(_ type: ExerciseType) {
+        focusUnlockExpectedExercise = type
+        Analytics.focusUnlockGameStarted(gameType: type.rawValue)
+        focusUnlockExerciseAutoStart = true
+        focusUnlockExercise = type
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            showingFocusUnlockSlot = false
         }
     }
 
@@ -830,7 +852,7 @@ struct TrainingView: View {
         let icon: String
         let color: Color
         let subtitle: String
-        let games: [(type: ExerciseType, title: String, icon: String, color: Color)]
+        let games: [TrainingGame]
     }
 
     private static let gameCategories: [GameCategory] = [
@@ -839,34 +861,21 @@ struct TrainingView: View {
             icon: "brain.head.profile",
             color: AppColors.violet,
             subtitle: "Train your recall",
-            games: [
-                (.sequentialMemory, "Number Memory", "number.circle.fill", AppColors.teal),
-                (.visualMemory, "Visual Memory", "square.grid.3x3.fill", AppColors.indigo),
-                (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose),
-                (.verbalMemory, "Verbal Memory", "text.book.closed.fill", AppColors.violet),
-            ]
+            games: TrainingGameCatalog.memoryGames
         ),
         GameCategory(
             name: "Speed",
             icon: "bolt.fill",
             color: AppColors.coral,
             subtitle: "Sharpen your reflexes",
-            games: [
-                (.reactionTime, "Reaction Time", "bolt.fill", AppColors.coral),
-                (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber),
-                (.speedMatch, "Speed Match", "bolt.square.fill", AppColors.sky),
-                (.colorMatch, "Color Match", "paintpalette.fill", AppColors.violet),
-            ]
+            games: TrainingGameCatalog.speedGames
         ),
         GameCategory(
             name: "Focus",
             icon: "eye.fill",
             color: AppColors.sky,
             subtitle: "Build concentration",
-            games: [
-                (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky),
-                (.chimpTest, "Chimp Test", "pawprint.fill", AppColors.amber),
-            ]
+            games: TrainingGameCatalog.focusGames
         ),
     ]
 

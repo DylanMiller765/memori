@@ -307,3 +307,73 @@ private extension Array where Element == OnboardingLifeReceiptSquareRole {
         return matchingIndices == Swift.Array(first...last)
     }
 }
+
+final class FocusUnlockSlotTests: XCTestCase {
+    func testFocusUnlockSlotCopyStaysShortAndNative() {
+        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "APP BLOCKED")
+        XCTAssertEqual(FocusUnlockSlotCopy.headline, "SPIN TO TRAIN")
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "beat the pick. unlock the app.")
+        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap spin")
+        XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "rolling")
+        XCTAssertEqual(FocusUnlockSlotCopy.footer, "one spin. one game. back in.")
+    }
+
+    func testFocusUnlockCatalogMatchesVisibleTrainGames() {
+        let games = TrainingGameCatalog.focusUnlockGames
+
+        XCTAssertEqual(games.map(\.type), [
+            .sequentialMemory,
+            .visualMemory,
+            .chunkingTraining,
+            .verbalMemory,
+            .reactionTime,
+            .mathSpeed,
+            .speedMatch,
+            .colorMatch,
+            .dualNBack,
+            .chimpTest,
+        ])
+        XCTAssertEqual(games.map(\.title), [
+            "Number Memory",
+            "Visual Memory",
+            "Chunking",
+            "Verbal Memory",
+            "Reaction Time",
+            "Math Speed",
+            "Speed Match",
+            "Color Match",
+            "Dual N-Back",
+            "Chimp Test",
+        ])
+    }
+
+    func testFocusUnlockCompletionGateOnlyGrantsForSelectedGame() {
+        XCTAssertTrue(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.colorMatch.rawValue,
+                expectedGame: .colorMatch
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.reactionTime.rawValue,
+                expectedGame: .colorMatch
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.colorMatch.rawValue,
+                expectedGame: nil
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: "not-a-game",
+                expectedGame: .colorMatch
+            )
+        )
+    }
+}

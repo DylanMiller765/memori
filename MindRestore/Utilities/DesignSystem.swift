@@ -74,6 +74,13 @@ enum AppColors {
     static let periwinkle = Color(red: 0.49, green: 0.55, blue: 1.00)       // Memo chart periwinkle
     static let electricViolet = Color(red: 0.65, green: 0.42, blue: 1.00)   // Memo chart violet
 
+    // Focus unlock slot picker
+    static let focusSlotBackground = Color(red: 0.031, green: 0.031, blue: 0.047) // #08080C
+    static let focusSlotSurface = Color(red: 0.078, green: 0.078, blue: 0.102)    // #14141A
+    static let focusSlotReelSurface = Color(red: 0.063, green: 0.063, blue: 0.086) // #101016
+    static let focusSlotTileSurface = Color(red: 0.118, green: 0.118, blue: 0.165) // #1E1E2A
+    static let focusSlotSuccess = mint                                       // #40AD8C
+
     // Reaction time phase colors
     static let reactionWait = Color(red: 0.8, green: 0.15, blue: 0.15)
     static let reactionGo = Color(red: 0.15, green: 0.75, blue: 0.3)
