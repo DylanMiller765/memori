@@ -74,8 +74,8 @@ struct FocusUnlockSlotView: View {
     @State private var reelKick: CGFloat = 0
     @State private var launchTask: Task<Void, Never>?
 
-    private let reelHeight: CGFloat = 352
-    private let tileHeight: CGFloat = 102
+    private let reelHeight: CGFloat = 292
+    private let tileHeight: CGFloat = 88
     private let tileSpacing: CGFloat = 8
 
     private enum SlotPhase {
@@ -100,10 +100,10 @@ struct FocusUnlockSlotView: View {
             slotBackdrop
 
             GeometryReader { geometry in
-                let contentWidth = min(max(geometry.size.width - 56, 292), 348)
+                let contentWidth = min(max(geometry.size.width - 64, 286), 336)
 
-                VStack(spacing: 12) {
-                    Spacer(minLength: 32)
+                VStack(spacing: 16) {
+                    Spacer(minLength: 50)
 
                     header
 
@@ -166,44 +166,166 @@ struct FocusUnlockSlotView: View {
     }
 
     private var machine: some View {
-        VStack(spacing: 10) {
-            machineTopLights
-            reelWindow
-            controlDeck
-            spinButton
+        ZStack {
+            spinBoxShadow
+
+            VStack(spacing: 0) {
+                spinBoxTopFace
+
+                VStack(spacing: 10) {
+                    machineTopLights
+                    reelWindow
+                    controlDeck
+                    spinButton
+                }
+                .padding(.horizontal, 9)
+                .padding(.top, 9)
+                .padding(.bottom, 10)
+                .background(spinBoxFrontFace)
+                .overlay(spinBoxSideFaces)
+            }
         }
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            AppColors.accent.opacity(0.24),
-                            AppColors.focusSlotTileSurface.opacity(1.0),
-                            AppColors.rose.opacity(0.18),
-                            AppColors.focusSlotReelSurface,
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 34, style: .continuous)
-                        .stroke(.white.opacity(0.34), lineWidth: 1.3)
-                )
-                .overlay(machineCabinetHighlights)
-                .overlay(machineNeonStroke)
-        )
-        .background(machineGlow)
+        .rotation3DEffect(.degrees(-6.5), axis: (x: 1, y: 0, z: 0), perspective: 0.68)
         .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: idlePulse)
     }
 
+    private var spinBoxTopFace: some View {
+        ZStack {
+            UnevenRoundedRectangle(
+                topLeadingRadius: 30,
+                bottomLeadingRadius: 10,
+                bottomTrailingRadius: 10,
+                topTrailingRadius: 30,
+                style: .continuous
+            )
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .white.opacity(0.16),
+                        AppColors.accent.opacity(0.36),
+                        AppColors.focusSlotSurface,
+                        AppColors.rose.opacity(0.20),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 30,
+                    bottomLeadingRadius: 10,
+                    bottomTrailingRadius: 10,
+                    topTrailingRadius: 30,
+                    style: .continuous
+                )
+                .stroke(.white.opacity(0.46), lineWidth: 1.2)
+            )
+            .overlay(alignment: .bottom) {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                AppColors.rose,
+                                AppColors.accent,
+                                AppColors.focusSlotSuccess,
+                                AppColors.amber,
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 7)
+                    .padding(.horizontal, 34)
+                    .shadow(color: AppColors.accent.opacity(0.95), radius: 18)
+                    .offset(y: 3)
+            }
+        }
+        .frame(height: 42)
+        .offset(y: 10)
+        .zIndex(2)
+    }
+
+    private var spinBoxFrontFace: some View {
+        RoundedRectangle(cornerRadius: 30, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        AppColors.focusSlotSurface,
+                        AppColors.focusSlotTileSurface.opacity(0.98),
+                        AppColors.focusSlotReelSurface,
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.58),
+                                AppColors.accent,
+                                AppColors.rose,
+                                AppColors.focusSlotSuccess,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: phase == .spinning ? 5.8 : 4.8
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .stroke(.black.opacity(0.52), lineWidth: 5)
+                    .padding(5)
+            )
+    }
+
+    private var spinBoxSideFaces: some View {
+        HStack {
+            spinBoxSideRail(color: AppColors.accent)
+            Spacer()
+            spinBoxSideRail(color: AppColors.rose)
+        }
+        .padding(.horizontal, -2)
+        .padding(.vertical, 42)
+        .allowsHitTesting(false)
+    }
+
+    private func spinBoxSideRail(color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .white.opacity(0.76),
+                        color,
+                        color.opacity(0.38),
+                        .black.opacity(0.62),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 15)
+            .shadow(color: color.opacity(0.96), radius: phase == .spinning ? 24 : 17)
+    }
+
+    private var spinBoxShadow: some View {
+        RoundedRectangle(cornerRadius: 34, style: .continuous)
+            .fill(AppColors.accent.opacity(phase == .spinning ? 0.62 : 0.45))
+            .frame(height: 360)
+            .blur(radius: phase == .spinning ? 36 : 28)
+            .offset(y: 34)
+            .scaleEffect(x: 0.92, y: 0.70)
+            .allowsHitTesting(false)
+    }
+
     private var machineTopLights: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<11, id: \.self) { index in
+        HStack(spacing: 7) {
+            ForEach(0..<9, id: \.self) { index in
                 Capsule()
                     .fill(topLightColor(index: index).opacity(topLightOpacity(index: index)))
-                    .frame(width: index == 5 ? 48 : 18, height: index == 5 ? 9 : 7)
+                    .frame(width: index == 4 ? 46 : 18, height: index == 4 ? 8 : 6)
                     .shadow(color: topLightColor(index: index).opacity(1.0), radius: phase == .spinning ? 17 : 11)
             }
         }
@@ -365,43 +487,45 @@ struct FocusUnlockSlotView: View {
             return index.isMultiple(of: 2) ? 1.0 : 0.46
         }
 
-        return index == 5 ? 1.0 : 0.78
+        return index == 4 ? 1.0 : 0.78
     }
 
     private var reelWindow: some View {
         ZStack {
             UnevenRoundedRectangle(
-                topLeadingRadius: 28,
-                bottomLeadingRadius: 28,
-                bottomTrailingRadius: 28,
-                topTrailingRadius: 28,
+                topLeadingRadius: 24,
+                bottomLeadingRadius: 24,
+                bottomTrailingRadius: 24,
+                topTrailingRadius: 24,
                 style: .continuous
             )
                 .fill(
                     LinearGradient(
                         colors: [
-                            AppColors.focusSlotTileSurface.opacity(0.94),
+                            .black.opacity(0.96),
                             AppColors.focusSlotReelSurface,
-                            AppColors.focusSlotTileSurface.opacity(0.76),
+                            .black.opacity(0.92),
                         ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
                 .overlay(
                     UnevenRoundedRectangle(
-                        topLeadingRadius: 28,
-                        bottomLeadingRadius: 28,
-                        bottomTrailingRadius: 28,
-                        topTrailingRadius: 28,
+                        topLeadingRadius: 24,
+                        bottomLeadingRadius: 24,
+                        bottomTrailingRadius: 24,
+                        topTrailingRadius: 24,
                         style: .continuous
                     )
-                        .stroke(.white.opacity(0.20), lineWidth: 1)
+                        .stroke(.black.opacity(0.86), lineWidth: 12)
                 )
                 .overlay(reelNeonStroke)
+                .overlay(reelCylinderShading)
                 .overlay(reelGlass)
-                .shadow(color: AppColors.accent.opacity(0.74), radius: 30)
-                .shadow(color: AppColors.rose.opacity(0.54), radius: 24)
+                .shadow(color: .black.opacity(0.90), radius: 18, y: 12)
+                .shadow(color: AppColors.accent.opacity(0.74), radius: 24)
+                .shadow(color: AppColors.rose.opacity(0.54), radius: 18)
 
             arcadeRails
 
@@ -420,6 +544,7 @@ struct FocusUnlockSlotView: View {
                                 spinIntensity: spinIntensity
                             )
                             .frame(height: tileHeight)
+                            .padding(.horizontal, 18)
                             .zIndex(Double(100 - abs(distance)))
                         }
                     }
@@ -436,10 +561,10 @@ struct FocusUnlockSlotView: View {
         .frame(height: reelHeight)
         .clipShape(
             UnevenRoundedRectangle(
-                topLeadingRadius: 28,
-                bottomLeadingRadius: 28,
-                bottomTrailingRadius: 28,
-                topTrailingRadius: 28,
+                topLeadingRadius: 24,
+                bottomLeadingRadius: 24,
+                bottomTrailingRadius: 24,
+                topTrailingRadius: 24,
                 style: .continuous
             )
         )
@@ -451,13 +576,14 @@ struct FocusUnlockSlotView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    .white.opacity(0.34),
-                    .white.opacity(0.12),
+                    .white.opacity(0.28),
                     .clear,
-                    .black.opacity(0.10),
+                    .black.opacity(0.28),
+                    .clear,
+                    .white.opacity(0.12),
                 ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                startPoint: .top,
+                endPoint: .bottom
             )
 
             HStack {
@@ -476,6 +602,62 @@ struct FocusUnlockSlotView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 14)
         }
+    }
+
+    private var reelCylinderShading: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.82),
+                    .black.opacity(0.18),
+                    .clear,
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 92)
+
+            Spacer(minLength: 0)
+
+            LinearGradient(
+                colors: [
+                    .clear,
+                    .black.opacity(0.22),
+                    .black.opacity(0.88),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 104)
+        }
+        .overlay {
+            HStack {
+                LinearGradient(
+                    colors: [
+                        .white.opacity(0.20),
+                        AppColors.accent.opacity(0.18),
+                        .clear,
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 66)
+
+                Spacer()
+
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        AppColors.rose.opacity(0.18),
+                        .white.opacity(0.18),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 66)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private var arcadeRails: some View {
@@ -805,28 +987,37 @@ private struct FocusUnlockReelTile: View {
     }
 
     private var depthScale: CGFloat {
-        max(0.82, 1 - normalizedDistance * 0.075)
+        max(0.64, 1 - normalizedDistance * 0.18)
     }
 
     private var depthOpacity: Double {
-        max(0.58, 1 - Double(normalizedDistance) * 0.15)
+        max(0.34, 1 - Double(normalizedDistance) * 0.26)
     }
 
     private var depthBlur: CGFloat {
-        min(2.2, normalizedDistance * 0.22 + spinIntensity * 1.0)
+        min(4.0, normalizedDistance * 0.55 + spinIntensity * 1.4)
     }
 
     private var depthRotation: Double {
-        Double(distanceFromCenter) * -4
+        Double(distanceFromCenter) * -18
+    }
+
+    private var cylinderYOffset: CGFloat {
+        let clamped = max(-2.2, min(2.2, distanceFromCenter))
+        return CGFloat(sin(Double(clamped) * 0.62)) * 10
+    }
+
+    private var cylinderBrightness: Double {
+        isSelected ? 0.12 : max(-0.24, 0.08 - Double(normalizedDistance) * 0.14)
     }
 
     var body: some View {
         HStack(spacing: 10) {
             TrainingTileMiniPreview(type: game.type, color: game.color)
-                .frame(width: 88, height: 68)
-                .background(game.color.opacity(0.26), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .frame(width: 78, height: 60)
+                .background(game.color.opacity(0.32), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(game.color.opacity(0.72), lineWidth: 1.2)
                 )
 
@@ -848,13 +1039,23 @@ private struct FocusUnlockReelTile: View {
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppColors.focusSlotTileSurface.opacity(isSelected ? 1.0 : 0.98))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(isSelected ? 0.16 : 0.10),
+                            AppColors.focusSlotTileSurface.opacity(isSelected ? 1.0 : 0.96),
+                            .black.opacity(0.24),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .overlay(
                     LinearGradient(
                         colors: [
-                            arcadeAccent.opacity(isSelected ? 0.58 : 0.46),
-                            .white.opacity(0.18),
+                            arcadeAccent.opacity(isSelected ? 0.66 : 0.42),
+                            .white.opacity(0.10),
                             .clear,
                         ],
                         startPoint: .topLeading,
@@ -863,9 +1064,16 @@ private struct FocusUnlockReelTile: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(isSelected ? AppColors.focusSlotSuccess : arcadeAccent.opacity(0.72), lineWidth: isSelected ? 2.6 : 1.4)
         )
+        .overlay(alignment: .top) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white.opacity(isSelected ? 0.14 : 0.08))
+                .frame(height: 16)
+                .padding(.horizontal, 6)
+                .padding(.top, 4)
+        }
         .overlay(alignment: .leading) {
             Capsule()
                 .fill(arcadeAccent)
@@ -875,10 +1083,12 @@ private struct FocusUnlockReelTile: View {
         }
         .scaleEffect(isSelected ? 1.04 : depthScale)
         .opacity(isSelected ? 1 : depthOpacity)
+        .brightness(cylinderBrightness)
         .blur(radius: isSelected ? 0 : depthBlur)
-        .rotation3DEffect(.degrees(depthRotation), axis: (x: 1, y: 0, z: 0), perspective: 0.64)
+        .offset(y: cylinderYOffset)
+        .rotation3DEffect(.degrees(depthRotation), axis: (x: 1, y: 0, z: 0), perspective: 0.82)
         .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.70) : arcadeAccent.opacity(0.42), radius: isSelected ? 22 : 12, y: isSelected ? 8 : 3)
-        .padding(.horizontal, isSelected ? 6 : 12)
+        .padding(.horizontal, isSelected ? 2 : 8)
         .animation(.spring(response: 0.32, dampingFraction: 0.58), value: isSelected)
     }
 }
