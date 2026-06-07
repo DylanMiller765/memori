@@ -263,6 +263,7 @@ struct FocusUnlockSlotView: View {
                             FocusUnlockReelTile(
                                 game: game,
                                 isSelected: selectedGame?.type == game.type && phase == .landed,
+                                isLanded: phase == .landed,
                                 isSpinning: phase == .spinning,
                                 distanceFromCenter: distance,
                                 spinIntensity: spinIntensity
@@ -414,7 +415,7 @@ struct FocusUnlockSlotView: View {
     private var centerScanner: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppColors.accent.opacity(phase == .landed ? 0.22 : phase == .spinning ? 0.12 : 0.09))
+                .fill(scannerColor.opacity(phase == .landed ? 0.24 : phase == .spinning ? 0.12 : 0.09))
                 .frame(height: tileHeight + 18)
                 .padding(.horizontal, 8)
 
@@ -423,17 +424,21 @@ struct FocusUnlockSlotView: View {
                     LinearGradient(
                         colors: [
                             .clear,
-                            AppColors.accent.opacity(phase == .landed ? 0.96 : phase == .spinning ? 0.82 : 0.58),
+                            scannerColor.opacity(phase == .landed ? 1.0 : phase == .spinning ? 0.82 : 0.58),
                             .clear,
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: phase == .spinning ? 4 : 3)
-                .shadow(color: AppColors.accent.opacity(phase == .landed ? 0.82 : 0.56), radius: phase == .spinning ? 24 : 16)
+                .frame(height: phase == .landed ? 5 : phase == .spinning ? 4 : 3)
+                .shadow(color: scannerColor.opacity(phase == .landed ? 0.96 : 0.56), radius: phase == .landed ? 28 : phase == .spinning ? 24 : 16)
         }
         .frame(height: tileHeight + 18)
+    }
+
+    private var scannerColor: Color {
+        phase == .landed ? AppColors.focusSlotSuccess : AppColors.accent
     }
 
     private var statusLine: some View {
@@ -628,6 +633,7 @@ struct FocusUnlockSlotView: View {
 private struct FocusUnlockReelTile: View {
     let game: TrainingGame
     let isSelected: Bool
+    let isLanded: Bool
     let isSpinning: Bool
     let distanceFromCenter: CGFloat
     let spinIntensity: CGFloat
@@ -641,15 +647,27 @@ private struct FocusUnlockReelTile: View {
     }
 
     private var depthScale: CGFloat {
-        max(0.78, 1 - normalizedDistance * 0.11)
+        if isLanded && !isSelected {
+            return max(0.70, 1 - normalizedDistance * 0.15)
+        }
+
+        return max(0.78, 1 - normalizedDistance * 0.11)
     }
 
     private var depthOpacity: Double {
-        max(0.48, 1 - Double(normalizedDistance) * 0.20)
+        if isLanded && !isSelected {
+            return max(0.30, 0.62 - Double(normalizedDistance) * 0.18)
+        }
+
+        return max(0.48, 1 - Double(normalizedDistance) * 0.20)
     }
 
     private var depthBlur: CGFloat {
-        min(3.0, normalizedDistance * 0.34 + spinIntensity * 1.15)
+        if isLanded && !isSelected {
+            return min(4.8, normalizedDistance * 0.62 + 1.45)
+        }
+
+        return min(3.0, normalizedDistance * 0.34 + spinIntensity * 1.15)
     }
 
     private var depthRotation: Double {
@@ -662,7 +680,15 @@ private struct FocusUnlockReelTile: View {
     }
 
     private var cylinderBrightness: Double {
-        isSelected ? 0.12 : max(-0.24, 0.08 - Double(normalizedDistance) * 0.14)
+        if isSelected {
+            return 0.18
+        }
+
+        if isLanded {
+            return max(-0.34, -0.08 - Double(normalizedDistance) * 0.12)
+        }
+
+        return max(-0.24, 0.08 - Double(normalizedDistance) * 0.14)
     }
 
     var body: some View {
@@ -723,6 +749,47 @@ private struct FocusUnlockReelTile: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(isSelected ? AppColors.focusSlotSuccess : tileAccent.opacity(0.86), lineWidth: isSelected ? 2.9 : 1.6)
         )
+        .overlay {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.74),
+                                AppColors.focusSlotSuccess,
+                                tileAccent.opacity(0.92),
+                                .white.opacity(0.34),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 3.4
+                    )
+                    .blur(radius: 0.15)
+                    .shadow(color: AppColors.focusSlotSuccess.opacity(0.96), radius: 18)
+                    .shadow(color: tileAccent.opacity(0.72), radius: 22)
+            }
+        }
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                AppColors.focusSlotSuccess.opacity(0.36),
+                                tileAccent.opacity(0.28),
+                                .clear,
+                            ],
+                            center: .center,
+                            startRadius: 12,
+                            endRadius: 220
+                        )
+                    )
+                    .padding(-18)
+                    .scaleEffect(isSelected ? 1.08 : 0.92)
+                    .opacity(isSelected ? 1 : 0)
+            }
+        }
         .overlay(alignment: .top) {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.white.opacity(isSelected ? 0.20 : 0.12))
@@ -738,16 +805,18 @@ private struct FocusUnlockReelTile: View {
                 .opacity(1)
                 .shadow(color: tileAccent.opacity(0.74), radius: 8)
         }
-        .scaleEffect(isSelected ? 1.03 : depthScale)
+        .scaleEffect(isSelected ? 1.065 : depthScale)
         .opacity(isSelected ? 1 : depthOpacity)
         .brightness(cylinderBrightness)
         .blur(radius: isSelected ? 0 : depthBlur)
-        .offset(y: cylinderYOffset)
+        .offset(y: isSelected ? cylinderYOffset - 2 : cylinderYOffset)
         .rotation3DEffect(.degrees(depthRotation), axis: (x: 1, y: 0, z: 0), perspective: 0.82)
-        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.80) : tileAccent.opacity(0.52), radius: isSelected ? 28 : 14, y: isSelected ? 9 : 3)
-        .shadow(color: tileAccent.opacity(isSelected ? 0.42 : 0.22), radius: isSelected ? 12 : 8)
+        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.96) : tileAccent.opacity(isLanded ? 0.24 : 0.52), radius: isSelected ? 34 : 14, y: isSelected ? 10 : 3)
+        .shadow(color: tileAccent.opacity(isSelected ? 0.68 : isLanded ? 0.12 : 0.22), radius: isSelected ? 18 : 8)
         .padding(.horizontal, isSelected ? 0 : 3)
+        .saturation(isLanded && !isSelected ? 0.72 : 1.0)
         .animation(.spring(response: 0.32, dampingFraction: 0.58), value: isSelected)
+        .animation(.easeInOut(duration: 0.18), value: isLanded)
     }
 }
 
