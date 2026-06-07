@@ -48,15 +48,19 @@ enum FocusUnlockCompletionGate {
 }
 
 enum FocusUnlockSlotCopy {
-    static let eyebrow = "APP BLOCKED"
-    static let headline = "SPIN TO TRAIN"
-    static let subhead = "beat the pick. unlock the app."
-    static let idleStatus = "tap spin"
-    static let spinningStatus = "rolling"
+    static let eyebrow = "BLOCKED APP TRIED IT"
+    static let headline = "NO FEED TIL YOU TRAIN"
+    static let subhead = "spin for your brain game."
+    static let idleStatus = "tap when you're ready"
+    static let spinningStatus = "MEMO'S PICKING"
     static let footer = "one spin. one game. back in."
 
     static func landedStatus(for game: TrainingGame?) -> String {
-        game?.title ?? "Locked in"
+        guard let title = game?.title.uppercased() else {
+            return "LOCKED IN"
+        }
+
+        return "\(title). YOU'RE COOKED."
     }
 }
 
@@ -151,14 +155,15 @@ struct FocusUnlockSlotView: View {
                 .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.92))
 
             Text(FocusUnlockSlotCopy.headline)
-                .font(.system(size: 34, weight: .black))
+                .font(.system(size: 31, weight: .black))
                 .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
                 .accessibilityAddTraits(.isHeader)
 
             Text(FocusUnlockSlotCopy.subhead)
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.white.opacity(0.56))
                 .lineLimit(1)
         }

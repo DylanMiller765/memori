@@ -310,12 +310,13 @@ private extension Array where Element == OnboardingLifeReceiptSquareRole {
 
 final class FocusUnlockSlotTests: XCTestCase {
     func testFocusUnlockSlotCopyStaysShortAndNative() {
-        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "APP BLOCKED")
-        XCTAssertEqual(FocusUnlockSlotCopy.headline, "SPIN TO TRAIN")
-        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "beat the pick. unlock the app.")
-        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap spin")
-        XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "rolling")
+        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "BLOCKED APP TRIED IT")
+        XCTAssertEqual(FocusUnlockSlotCopy.headline, "NO FEED TIL YOU TRAIN")
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "spin for your brain game.")
+        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap when you're ready")
+        XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "MEMO'S PICKING")
         XCTAssertEqual(FocusUnlockSlotCopy.footer, "one spin. one game. back in.")
+        XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: TrainingGameCatalog.focusUnlockGames.first), "NUMBER MEMORY. YOU'RE COOKED.")
     }
 
     func testFocusUnlockCatalogMatchesVisibleTrainGames() {
