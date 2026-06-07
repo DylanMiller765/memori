@@ -75,7 +75,7 @@ enum AppColors {
     static let electricViolet = Color(red: 0.65, green: 0.42, blue: 1.00)   // Memo chart violet
 
     // Focus unlock slot picker
-    static let focusSlotBackground = Color(red: 0.031, green: 0.031, blue: 0.047) // #08080C
+    static let focusSlotBackground = Color(red: 0.0, green: 0.0, blue: 0.0)       // #000000
     static let focusSlotSurface = Color(red: 0.078, green: 0.078, blue: 0.102)    // #14141A
     static let focusSlotReelSurface = Color(red: 0.063, green: 0.063, blue: 0.086) // #101016
     static let focusSlotTileSurface = Color(red: 0.118, green: 0.118, blue: 0.165) // #1E1E2A
