@@ -74,9 +74,9 @@ struct FocusUnlockSlotView: View {
     @State private var reelKick: CGFloat = 0
     @State private var launchTask: Task<Void, Never>?
 
-    private let reelHeight: CGFloat = 292
-    private let tileHeight: CGFloat = 88
-    private let tileSpacing: CGFloat = 8
+    private let reelHeight: CGFloat = 328
+    private let tileHeight: CGFloat = 112
+    private let tileSpacing: CGFloat = -4
 
     private enum SlotPhase {
         case idle
@@ -102,8 +102,8 @@ struct FocusUnlockSlotView: View {
             GeometryReader { geometry in
                 let contentWidth = min(max(geometry.size.width - 64, 286), 336)
 
-                VStack(spacing: 16) {
-                    Spacer(minLength: 50)
+                VStack(spacing: 18) {
+                    Spacer(minLength: 44)
 
                     header
 
@@ -144,34 +144,36 @@ struct FocusUnlockSlotView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .center, spacing: 8) {
             Text(FocusUnlockSlotCopy.eyebrow)
-                .font(.system(size: 11, weight: .heavy))
-                .tracking(1.4)
-                .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.82))
+                .font(.system(size: 10, weight: .heavy))
+                .tracking(1.8)
+                .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.92))
 
             Text(FocusUnlockSlotCopy.headline)
-                .font(.system(size: 29, weight: .black))
+                .font(.system(size: 34, weight: .black))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
                 .accessibilityAddTraits(.isHeader)
 
             Text(FocusUnlockSlotCopy.subhead)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.64))
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white.opacity(0.56))
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var machine: some View {
         VStack(spacing: 18) {
             reelWindow
                 .overlay(alignment: .bottomLeading) {
-                    statusLine
-                        .padding(.leading, 22)
-                        .padding(.bottom, 14)
+                    if phase != .idle {
+                        statusLine
+                            .padding(.leading, 18)
+                            .padding(.bottom, 14)
+                    }
                 }
                 .overlay(alignment: .bottomTrailing) {
                     reelPulseDot
@@ -261,7 +263,7 @@ struct FocusUnlockSlotView: View {
                                 spinIntensity: spinIntensity
                             )
                             .frame(height: tileHeight)
-                            .padding(.horizontal, 18)
+                            .padding(.horizontal, 7)
                             .zIndex(Double(100 - abs(distance)))
                         }
                     }
@@ -608,24 +610,24 @@ private struct FocusUnlockReelTile: View {
     }
 
     private var depthScale: CGFloat {
-        max(0.64, 1 - normalizedDistance * 0.18)
+        max(0.78, 1 - normalizedDistance * 0.11)
     }
 
     private var depthOpacity: Double {
-        max(0.34, 1 - Double(normalizedDistance) * 0.26)
+        max(0.48, 1 - Double(normalizedDistance) * 0.20)
     }
 
     private var depthBlur: CGFloat {
-        min(4.0, normalizedDistance * 0.55 + spinIntensity * 1.4)
+        min(3.0, normalizedDistance * 0.34 + spinIntensity * 1.15)
     }
 
     private var depthRotation: Double {
-        Double(distanceFromCenter) * -18
+        Double(distanceFromCenter) * -14
     }
 
     private var cylinderYOffset: CGFloat {
         let clamped = max(-2.2, min(2.2, distanceFromCenter))
-        return CGFloat(sin(Double(clamped) * 0.62)) * 10
+        return CGFloat(sin(Double(clamped) * 0.62)) * 5
     }
 
     private var cylinderBrightness: Double {
@@ -633,40 +635,40 @@ private struct FocusUnlockReelTile: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 13) {
             TrainingTileMiniPreview(type: game.type, color: game.color)
-                .frame(width: 78, height: 60)
-                .background(game.color.opacity(0.32), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(width: 104, height: 86)
+                .background(game.color.opacity(0.34), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .stroke(game.color.opacity(0.72), lineWidth: 1.2)
                 )
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(game.title)
-                    .font(.system(size: 19, weight: .black))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.62)
+                    .minimumScaleFactor(0.54)
 
                 Image(systemName: game.icon)
-                    .font(.system(size: 12, weight: .black))
+                    .font(.system(size: 13, weight: .black))
                     .foregroundStyle(tileAccent)
                     .frame(width: 22, height: 18, alignment: .leading)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            .white.opacity(isSelected ? 0.16 : 0.10),
+                            .white.opacity(isSelected ? 0.18 : 0.11),
                             AppColors.focusSlotTileSurface.opacity(isSelected ? 1.0 : 0.96),
-                            .black.opacity(0.24),
+                            .black.opacity(0.18),
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -685,14 +687,14 @@ private struct FocusUnlockReelTile: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(isSelected ? AppColors.focusSlotSuccess : tileAccent.opacity(0.72), lineWidth: isSelected ? 2.6 : 1.4)
         )
         .overlay(alignment: .top) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.white.opacity(isSelected ? 0.14 : 0.08))
-                .frame(height: 16)
-                .padding(.horizontal, 6)
+                .frame(height: 18)
+                .padding(.horizontal, 7)
                 .padding(.top, 4)
         }
         .overlay(alignment: .leading) {
@@ -702,14 +704,14 @@ private struct FocusUnlockReelTile: View {
                 .padding(.vertical, 12)
                 .opacity(1)
         }
-        .scaleEffect(isSelected ? 1.04 : depthScale)
+        .scaleEffect(isSelected ? 1.03 : depthScale)
         .opacity(isSelected ? 1 : depthOpacity)
         .brightness(cylinderBrightness)
         .blur(radius: isSelected ? 0 : depthBlur)
         .offset(y: cylinderYOffset)
         .rotation3DEffect(.degrees(depthRotation), axis: (x: 1, y: 0, z: 0), perspective: 0.82)
-        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.70) : tileAccent.opacity(0.42), radius: isSelected ? 22 : 12, y: isSelected ? 8 : 3)
-        .padding(.horizontal, isSelected ? 2 : 8)
+        .shadow(color: isSelected ? AppColors.focusSlotSuccess.opacity(0.70) : tileAccent.opacity(0.36), radius: isSelected ? 22 : 10, y: isSelected ? 8 : 2)
+        .padding(.horizontal, isSelected ? 0 : 3)
         .animation(.spring(response: 0.32, dampingFraction: 0.58), value: isSelected)
     }
 }
