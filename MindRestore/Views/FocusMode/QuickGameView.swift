@@ -148,23 +148,23 @@ struct FocusUnlockSlotView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .center, spacing: 9) {
             Text(FocusUnlockSlotCopy.eyebrow)
-                .font(.system(size: 10, weight: .heavy))
-                .tracking(1.8)
-                .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.92))
+                .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                .tracking(1.6)
+                .foregroundStyle(AppColors.focusSlotSuccess.opacity(0.88))
 
             Text(FocusUnlockSlotCopy.headline)
-                .font(.system(size: 31, weight: .black))
+                .font(.custom("AvenirNextCondensed-Heavy", size: 34))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(0.78)
                 .accessibilityAddTraits(.isHeader)
 
             Text(FocusUnlockSlotCopy.subhead)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white.opacity(0.56))
+                .font(.custom("AvenirNext-Medium", size: 13))
+                .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -422,7 +422,8 @@ struct FocusUnlockSlotView: View {
 
     private var statusLine: some View {
         Text(statusText)
-            .font(.system(size: phase == .landed ? 13 : 11, weight: .bold))
+            .font(.system(size: phase == .landed ? 12.5 : 10.5, weight: .semibold, design: .monospaced))
+            .tracking(phase == .landed ? 0.2 : 0.9)
             .foregroundStyle(phase == .landed ? AppColors.focusSlotSuccess : .white.opacity(0.58))
             .lineLimit(1)
             .minimumScaleFactor(0.72)
@@ -452,9 +453,10 @@ struct FocusUnlockSlotView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 19, weight: .black))
+                    .font(.system(size: 19, weight: .heavy))
                 Text(phase == .spinning ? "SPINNING" : "SPIN")
-                    .font(.system(size: 22, weight: .black))
+                    .font(.custom("AvenirNext-Heavy", size: 21))
+                    .tracking(0.4)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
@@ -651,13 +653,13 @@ private struct FocusUnlockReelTile: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(game.title)
-                    .font(.system(size: 22, weight: .black))
+                    .font(.custom("AvenirNext-DemiBold", size: 22))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.54)
+                    .minimumScaleFactor(0.60)
 
                 Image(systemName: game.icon)
-                    .font(.system(size: 13, weight: .black))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(tileAccent)
                     .frame(width: 22, height: 18, alignment: .leading)
             }
