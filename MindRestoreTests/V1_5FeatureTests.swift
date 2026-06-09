@@ -191,6 +191,26 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
         XCTAssertFalse(cta.isDisabled)
     }
 
+    func testAuthorizedFallbackStillPollsForMeasuredScreenTime() {
+        let state = OnboardingScreenTimeMeasurementState(
+            isAuthorized: true,
+            useEstimate: false,
+            hasMeasuredHours: false
+        )
+
+        XCTAssertTrue(state.shouldContinuePollingForMeasuredHours)
+    }
+
+    func testManualEstimateDoesNotPollForMeasuredScreenTime() {
+        let state = OnboardingScreenTimeMeasurementState(
+            isAuthorized: true,
+            useEstimate: true,
+            hasMeasuredHours: false
+        )
+
+        XCTAssertFalse(state.shouldContinuePollingForMeasuredHours)
+    }
+
     func testScreenTimeSnapshotUsesWeeklyAverageBeforeDailyCacheForLifetimeReceipt() {
         let daily = OnboardingScreenTimeSnapshot(dailyHours: 6.25, weeklyHours: 50.2)
         XCTAssertEqual(daily.effectiveDailyHours(fallbackEstimate: 4), 50.2 / 7.0, accuracy: 0.0001)

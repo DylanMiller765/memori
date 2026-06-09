@@ -205,6 +205,16 @@ struct OnboardingScreenTimeProjectionState: Equatable {
     }
 }
 
+struct OnboardingScreenTimeMeasurementState: Equatable {
+    let isAuthorized: Bool
+    let useEstimate: Bool
+    let hasMeasuredHours: Bool
+
+    var shouldContinuePollingForMeasuredHours: Bool {
+        isAuthorized && !useEstimate && !hasMeasuredHours
+    }
+}
+
 struct OnboardingScreenTimeAccessButtonState: Equatable {
     let isRequestingAccess: Bool
     let isPreparingProjection: Bool
@@ -849,6 +859,18 @@ struct OnboardingView: View {
         )
     }
 
+    private var screenTimeMeasurementState: OnboardingScreenTimeMeasurementState {
+        OnboardingScreenTimeMeasurementState(
+            isAuthorized: screenTimeAuthorized,
+            useEstimate: useScreenTimeEstimate,
+            hasMeasuredHours: hasMeasuredScreenTimeHours
+        )
+    }
+
+    private var shouldContinuePollingForMeasuredScreenTime: Bool {
+        screenTimeMeasurementState.shouldContinuePollingForMeasuredHours
+    }
+
     private var isAwaitingUsableScreenTime: Bool {
         screenTimeAuthorized && !hasMeasuredScreenTimeHours && !screenTimeEstimateFallbackAllowed
     }
@@ -937,10 +959,23 @@ struct OnboardingView: View {
         guard snapshot.hasMeasuredHours else { return }
         measuredScreenTimeHours = snapshot.dailyHours
         measuredWeeklyScreenTimeHours = snapshot.weeklyHours
-        if screenTimeAuthorized {
+        if screenTimeAuthorized && !useScreenTimeEstimate {
             useScreenTimeEstimate = false
             screenTimeEstimateFallbackAllowed = false
         }
+    }
+
+    private func startMeasuredScreenTimePollingIfNeeded(
+        maxAttempts: Int = 120,
+        intervalMilliseconds: Int = 500
+    ) {
+        refreshCachedScreenTimeHours()
+        guard shouldContinuePollingForMeasuredScreenTime else { return }
+        startScreenTimeCacheRefreshLoop(
+            maxAttempts: maxAttempts,
+            intervalMilliseconds: intervalMilliseconds,
+            allowEstimateFallbackAfterTimeout: false
+        )
     }
 
     private func startScreenTimeCacheRefreshLoop(
@@ -1525,14 +1560,7 @@ struct OnboardingView: View {
             }
         )
         .onAppear {
-            refreshCachedScreenTimeHours()
-            if screenTimeProjectionState.isWaitingForScreenTime {
-                startScreenTimeCacheRefreshLoop(
-                    maxAttempts: 120,
-                    intervalMilliseconds: 500,
-                    allowEstimateFallbackAfterTimeout: false
-                )
-            }
+            startMeasuredScreenTimePollingIfNeeded()
         }
         .onDisappear {
             if currentPage != OnboardingPage.lifeSquaresReceipt.rawValue {
@@ -1566,14 +1594,7 @@ struct OnboardingView: View {
             }
         )
         .onAppear {
-            refreshCachedScreenTimeHours()
-            if screenTimeProjectionState.isWaitingForScreenTime {
-                startScreenTimeCacheRefreshLoop(
-                    maxAttempts: 120,
-                    intervalMilliseconds: 500,
-                    allowEstimateFallbackAfterTimeout: false
-                )
-            }
+            startMeasuredScreenTimePollingIfNeeded()
         }
         .onDisappear {
             screenTimeCacheRefreshTask?.cancel()
@@ -1660,6 +1681,7 @@ struct OnboardingView: View {
             protectTarget: selectedProtectTarget,
             feedWinMoment: selectedFeedWinMoment,
             onComplete: {
+                refreshCachedScreenTimeHours()
                 trackOnboardingStepCompleted("planBeatFinal", extraProperties: [
                     "personalization_progress_completed": 100,
                     "next_step": "paywall"
@@ -1667,6 +1689,9 @@ struct OnboardingView: View {
                 presentedCover = .paywall
             }
         )
+        .onAppear {
+            startMeasuredScreenTimePollingIfNeeded()
+        }
     }
 
     private var trialTrustBridgePage: some View {
@@ -2145,9 +2170,9 @@ struct OnboardingView: View {
                 useScreenTimeEstimate = false
                 screenTimeEstimateFallbackAllowed = true
                 startScreenTimeCacheRefreshLoop(
-                    maxAttempts: 6,
-                    intervalMilliseconds: 200,
-                    allowEstimateFallbackAfterTimeout: true
+                    maxAttempts: 120,
+                    intervalMilliseconds: 500,
+                    allowEstimateFallbackAfterTimeout: false
                 )
             }
 
