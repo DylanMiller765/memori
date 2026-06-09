@@ -58,7 +58,7 @@ struct PaywallPlanCardLayout: Equatable {
         cardWidth = max(0, min((usableWidth - spacing) / 2, maxCardWidth))
         groupWidth = (cardWidth * 2) + spacing
         sideInset = max(0, (containerWidth - groupWidth) / 2)
-        groupOffsetX = -16
+        groupOffsetX = 0
     }
 }
 
@@ -298,7 +298,9 @@ struct PaywallView: View {
         safeBottom: CGFloat,
         compact: Bool
     ) -> some View {
-        VStack(spacing: 0) {
+        let visualCenterCorrectionX: CGFloat = -15
+
+        return VStack(spacing: 0) {
             Color.clear.frame(height: max(14, safeTop + (compact ? 8 : 16)))
 
             readySeal(compact: compact)
@@ -331,6 +333,7 @@ struct PaywallView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.horizontal, 22)
+        .offset(x: visualCenterCorrectionX)
     }
 
     private var screenTimeReceiptValue: String {
@@ -1713,6 +1716,7 @@ struct ExitOfferSheet: View {
 @MainActor
 struct MemoCutePaywallPreviewView: View {
     @State private var selectedPlan: PaywallPlan = .annual
+    private let screenTimeReceiptValue = "4h 43m"
 
     var body: some View {
         GeometryReader { proxy in
