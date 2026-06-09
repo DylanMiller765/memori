@@ -155,17 +155,17 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
         XCTAssertTrue(measured.canContinueFromScreenTime)
         XCTAssertEqual(measured.receiptSourceLine, "Using your Screen Time")
 
-        let fallback = OnboardingScreenTimeProjectionState(
+        let authorizedTimeout = OnboardingScreenTimeProjectionState(
             isAuthorized: true,
             useEstimate: false,
             hasMeasuredHours: false,
             estimateFallbackAllowed: true
         )
 
-        XCTAssertFalse(fallback.isWaitingForScreenTime)
-        XCTAssertTrue(fallback.isEstimate)
-        XCTAssertTrue(fallback.canContinueFromScreenTime)
-        XCTAssertEqual(fallback.receiptSourceLine, "Using your estimate")
+        XCTAssertTrue(authorizedTimeout.isWaitingForScreenTime)
+        XCTAssertFalse(authorizedTimeout.isEstimate)
+        XCTAssertFalse(authorizedTimeout.canContinueFromScreenTime)
+        XCTAssertEqual(authorizedTimeout.receiptSourceLine, "Reading your Screen Time")
 
         let confirmedEstimate = OnboardingScreenTimeProjectionState(
             isAuthorized: true,
@@ -184,11 +184,24 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
         let cta = OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: false,
             isPreparingProjection: false,
-            isAuthorized: true
+            isAuthorized: true,
+            isWaitingForMeasuredHours: false
         )
 
         XCTAssertEqual(cta.title, "Show my lifetime cost")
         XCTAssertFalse(cta.isDisabled)
+    }
+
+    func testScreenTimeAccessCTABlocksAuthorizedUsersUntilMeasuredHoursArrive() {
+        let cta = OnboardingScreenTimeAccessButtonState(
+            isRequestingAccess: false,
+            isPreparingProjection: false,
+            isAuthorized: true,
+            isWaitingForMeasuredHours: true
+        )
+
+        XCTAssertEqual(cta.title, "Checking Screen Time...")
+        XCTAssertTrue(cta.isDisabled)
     }
 
     func testAuthorizedFallbackStillPollsForMeasuredScreenTime() {

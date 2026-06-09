@@ -185,7 +185,7 @@ struct OnboardingScreenTimeProjectionState: Equatable {
     let estimateFallbackAllowed: Bool
 
     var isWaitingForScreenTime: Bool {
-        isAuthorized && !useEstimate && !hasMeasuredHours && !estimateFallbackAllowed
+        isAuthorized && !useEstimate && !hasMeasuredHours
     }
 
     var isEstimate: Bool {
@@ -201,7 +201,7 @@ struct OnboardingScreenTimeProjectionState: Equatable {
     }
 
     var canContinueFromScreenTime: Bool {
-        useEstimate || hasMeasuredHours || estimateFallbackAllowed
+        useEstimate || hasMeasuredHours
     }
 }
 
@@ -219,16 +219,17 @@ struct OnboardingScreenTimeAccessButtonState: Equatable {
     let isRequestingAccess: Bool
     let isPreparingProjection: Bool
     let isAuthorized: Bool
+    let isWaitingForMeasuredHours: Bool
 
     var title: String {
-        if isRequestingAccess || isPreparingProjection {
+        if isRequestingAccess || isPreparingProjection || isWaitingForMeasuredHours {
             return "Checking Screen Time..."
         }
         return isAuthorized ? "Show my lifetime cost" : "Allow Screen Time"
     }
 
     var isDisabled: Bool {
-        isRequestingAccess || isPreparingProjection
+        isRequestingAccess || isPreparingProjection || isWaitingForMeasuredHours
     }
 }
 
@@ -879,7 +880,8 @@ struct OnboardingView: View {
         OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: isRequestingScreenTimeAccess,
             isPreparingProjection: isPreparingScreenTimeProjection,
-            isAuthorized: screenTimeAuthorized
+            isAuthorized: screenTimeAuthorized,
+            isWaitingForMeasuredHours: isAwaitingUsableScreenTime
         )
     }
 
@@ -2168,12 +2170,14 @@ struct OnboardingView: View {
                 screenTimeEstimateFallbackAllowed = false
             } else {
                 useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = true
+                screenTimeEstimateFallbackAllowed = false
                 startScreenTimeCacheRefreshLoop(
                     maxAttempts: 120,
                     intervalMilliseconds: 500,
                     allowEstimateFallbackAfterTimeout: false
                 )
+                isPreparingScreenTimeProjection = false
+                return
             }
 
             isPreparingScreenTimeProjection = false
