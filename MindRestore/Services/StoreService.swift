@@ -59,20 +59,41 @@ final class StoreService {
 
     func loadProducts() async {
         isLoading = true
-        do {
-            products = try await Product.products(for: [
-                Self.weeklyProductID,
-                Self.annualProductID,
-                Self.weeklyUltraProductID,
-                Self.monthlyUltraProductID,
-                Self.annualUltraProductID,
-                Self.annualUltraExitOfferProductID
-            ])
-            products.sort { $0.price < $1.price }
-        } catch {
-            purchaseError = "Failed to load products: \(error.localizedDescription)"
+        defer { isLoading = false }
+
+        // One flaky request at launch used to leave the paywall permanently
+        // dead ("offer is not ready yet" on every plan). Retry with backoff;
+        // only surface an error if all attempts come back empty.
+        let requestIDs: Set<String> = [
+            Self.weeklyProductID,
+            Self.annualProductID,
+            Self.weeklyUltraProductID,
+            Self.monthlyUltraProductID,
+            Self.annualUltraProductID,
+            Self.annualUltraExitOfferProductID
+        ]
+
+        var lastError: Error?
+        for attempt in 0..<3 {
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(attempt) * 1_200_000_000)
+            }
+            do {
+                let loaded = try await Product.products(for: requestIDs)
+                if !loaded.isEmpty {
+                    products = loaded.sorted { $0.price < $1.price }
+                    return
+                }
+            } catch {
+                lastError = error
+            }
         }
-        isLoading = false
+
+        if products.isEmpty {
+            purchaseError = lastError != nil
+                ? "Can't reach the App Store. Check your connection and try again."
+                : "Plans are still loading. Try again in a moment."
+        }
     }
 
     @discardableResult

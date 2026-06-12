@@ -206,6 +206,12 @@ struct PaywallView: View {
             Text(storeService.purchaseError ?? "")
         }
         .onAppear {
+            // Recover from a failed launch-time product load: clear any stale
+            // error and re-request so the paywall is never dead on arrival.
+            if storeService.products.isEmpty {
+                storeService.purchaseError = nil
+                Task { await storeService.loadProducts() }
+            }
             Analytics.paywallShown(
                 trigger: triggerSource,
                 isHighIntent: isHighIntent,
