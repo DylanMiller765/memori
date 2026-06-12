@@ -130,119 +130,66 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
         )
     }
 
-    func testScreenTimeProjectionWaitsForAuthorizedDataBeforeUsingEstimateLabel() {
-        let pending = OnboardingScreenTimeProjectionState(
+    func testScreenTimeProjectionTreatsUserReportedWeeklyHoursAsRealData() {
+        let userReported = OnboardingScreenTimeProjectionState(
             isAuthorized: true,
-            useEstimate: false,
-            hasMeasuredHours: false,
-            estimateFallbackAllowed: false
+            useEstimate: false
         )
 
-        XCTAssertTrue(pending.isWaitingForScreenTime)
-        XCTAssertFalse(pending.isEstimate)
-        XCTAssertFalse(pending.canContinueFromScreenTime)
-        XCTAssertEqual(pending.receiptSourceLine, "Reading your Screen Time")
-
-        let measured = OnboardingScreenTimeProjectionState(
-            isAuthorized: true,
-            useEstimate: false,
-            hasMeasuredHours: true,
-            estimateFallbackAllowed: false
-        )
-
-        XCTAssertFalse(measured.isWaitingForScreenTime)
-        XCTAssertFalse(measured.isEstimate)
-        XCTAssertTrue(measured.canContinueFromScreenTime)
-        XCTAssertEqual(measured.receiptSourceLine, "Using your Screen Time")
-
-        let authorizedTimeout = OnboardingScreenTimeProjectionState(
-            isAuthorized: true,
-            useEstimate: false,
-            hasMeasuredHours: false,
-            estimateFallbackAllowed: true
-        )
-
-        XCTAssertTrue(authorizedTimeout.isWaitingForScreenTime)
-        XCTAssertFalse(authorizedTimeout.isEstimate)
-        XCTAssertFalse(authorizedTimeout.canContinueFromScreenTime)
-        XCTAssertEqual(authorizedTimeout.receiptSourceLine, "Reading your Screen Time")
+        XCTAssertFalse(userReported.isEstimate)
+        XCTAssertTrue(userReported.canContinueFromScreenTime)
+        XCTAssertEqual(userReported.receiptSourceLine, "Using your Screen Time")
 
         let confirmedEstimate = OnboardingScreenTimeProjectionState(
             isAuthorized: true,
-            useEstimate: true,
-            hasMeasuredHours: false,
-            estimateFallbackAllowed: true
+            useEstimate: true
         )
 
-        XCTAssertFalse(confirmedEstimate.isWaitingForScreenTime)
         XCTAssertTrue(confirmedEstimate.isEstimate)
         XCTAssertTrue(confirmedEstimate.canContinueFromScreenTime)
         XCTAssertEqual(confirmedEstimate.receiptSourceLine, "Using your estimate")
+
+        let unauthorized = OnboardingScreenTimeProjectionState(
+            isAuthorized: false,
+            useEstimate: false
+        )
+
+        XCTAssertFalse(unauthorized.canContinueFromScreenTime)
     }
 
-    func testScreenTimeAccessCTAAllowsAuthorizedUsersToContinueWhileCacheCatchesUp() {
+    func testScreenTimeAccessCTAEnablesImmediatelyOnceAuthorized() {
         let cta = OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: false,
-            isPreparingProjection: false,
-            isAuthorized: true,
-            isWaitingForMeasuredHours: false
+            isAuthorized: true
         )
 
         XCTAssertEqual(cta.title, "Show my lifetime cost")
         XCTAssertFalse(cta.isDisabled)
     }
 
-    func testScreenTimeAccessCTABlocksAuthorizedUsersUntilMeasuredHoursArrive() {
-        let cta = OnboardingScreenTimeAccessButtonState(
+    func testScreenTimeAccessCTADisabledOnlyWhileSystemPromptIsPending() {
+        let requesting = OnboardingScreenTimeAccessButtonState(
+            isRequestingAccess: true,
+            isAuthorized: false
+        )
+
+        XCTAssertEqual(requesting.title, "Checking Screen Time...")
+        XCTAssertTrue(requesting.isDisabled)
+
+        let unauthorized = OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: false,
-            isPreparingProjection: false,
-            isAuthorized: true,
-            isWaitingForMeasuredHours: true
+            isAuthorized: false
         )
 
-        XCTAssertEqual(cta.title, "Checking Screen Time...")
-        XCTAssertTrue(cta.isDisabled)
+        XCTAssertEqual(unauthorized.title, "Allow Screen Time")
+        XCTAssertFalse(unauthorized.isDisabled)
     }
 
-    func testAuthorizedFallbackStillPollsForMeasuredScreenTime() {
-        let state = OnboardingScreenTimeMeasurementState(
-            isAuthorized: true,
-            useEstimate: false,
-            hasMeasuredHours: false
-        )
+    func testUserReportedWeeklyHoursConvertToDailyAverageForLifetimeReceipt() {
+        let reportedWeeklyHours = 52.0
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: reportedWeeklyHours / 7.0)
 
-        XCTAssertTrue(state.shouldContinuePollingForMeasuredHours)
-    }
-
-    func testManualEstimateDoesNotPollForMeasuredScreenTime() {
-        let state = OnboardingScreenTimeMeasurementState(
-            isAuthorized: true,
-            useEstimate: true,
-            hasMeasuredHours: false
-        )
-
-        XCTAssertFalse(state.shouldContinuePollingForMeasuredHours)
-    }
-
-    func testScreenTimeSnapshotUsesWeeklyAverageBeforeDailyCacheForLifetimeReceipt() {
-        let daily = OnboardingScreenTimeSnapshot(dailyHours: 6.25, weeklyHours: 50.2)
-        XCTAssertEqual(daily.effectiveDailyHours(fallbackEstimate: 4), 50.2 / 7.0, accuracy: 0.0001)
-        XCTAssertFalse(daily.isEstimate)
-        XCTAssertEqual(daily.source, .weekly)
-
-        let weeklyOnly = OnboardingScreenTimeSnapshot(dailyHours: nil, weeklyHours: 50.2)
-        XCTAssertEqual(weeklyOnly.effectiveDailyHours(fallbackEstimate: 4), 50.2 / 7.0, accuracy: 0.0001)
-        XCTAssertFalse(weeklyOnly.isEstimate)
-        XCTAssertEqual(weeklyOnly.source, .weekly)
-
-        let staleLatestDayCache = OnboardingScreenTimeSnapshot(dailyHours: 1.2, weeklyHours: 50.2)
-        XCTAssertEqual(staleLatestDayCache.effectiveDailyHours(fallbackEstimate: 4), 50.2 / 7.0, accuracy: 0.0001)
-        XCTAssertEqual(staleLatestDayCache.source, .weekly)
-
-        let empty = OnboardingScreenTimeSnapshot(dailyHours: nil, weeklyHours: nil)
-        XCTAssertEqual(empty.effectiveDailyHours(fallbackEstimate: 4), 4)
-        XCTAssertTrue(empty.isEstimate)
-        XCTAssertEqual(empty.source, .estimate)
+        XCTAssertEqual(projection.phoneYearsText, "17.0 years")
     }
 
     func testMeasuredWeeklyScreenTimeFormatsDailyAverageInHoursAndMinutes() {
@@ -312,7 +259,7 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
     }
 
     func testOnboardingMonetizationFlowPlacesTrialBridgeBeforeFinalPlanAndPaywall() {
-        XCTAssertEqual(OnboardingFlowOrder.monetizationPages, [.trialTrustBridge, .trialReminderBridge, .planPersonalizing])
+        XCTAssertEqual(OnboardingFlowOrder.monetizationPages, [.trialTrustBridge, .planPersonalizing])
         XCTAssertEqual(OnboardingFlowOrder.page(afterScreenTimeAccess: true), .lifetimeShock)
         XCTAssertEqual(OnboardingFlowOrder.page(afterLifetimeShock: true), .lifeSquaresReceipt)
         XCTAssertEqual(OnboardingFlowOrder.page(afterLifeSquaresReceipt: true), .protectTarget)
@@ -320,8 +267,7 @@ final class OnboardingLifetimeProjectionTests: XCTestCase {
         XCTAssertEqual(OnboardingFlowOrder.page(afterFeedWinMoment: true), .personalizationBeat)
         XCTAssertEqual(OnboardingFlowOrder.page(afterPersonalizationBeat: true), .memoPlan)
         XCTAssertEqual(OnboardingFlowOrder.page(afterMemoPlan: true), .trialTrustBridge)
-        XCTAssertEqual(OnboardingFlowOrder.page(afterTrialTrustBridge: true), .trialReminderBridge)
-        XCTAssertEqual(OnboardingFlowOrder.page(afterTrialReminderBridge: true), .planPersonalizing)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterTrialTrustBridge: true), .planPersonalizing)
         XCTAssertEqual(OnboardingFlowOrder.page(afterPaywallConverted: true), .focusMode)
         XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.protectTarget.rawValue), "protectTarget")
         XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.feedWinMoment.rawValue), "feedWinMoment")
@@ -343,13 +289,17 @@ private extension Array where Element == OnboardingLifeReceiptSquareRole {
 
 final class FocusUnlockSlotTests: XCTestCase {
     func testFocusUnlockSlotCopyStaysShortAndNative() {
-        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "BLOCKED APP TRIED IT")
+        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "MEMO'S BOOTH")
         XCTAssertEqual(FocusUnlockSlotCopy.headline, "NO FEED TIL YOU TRAIN")
-        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "spin for your brain game.")
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "win the rep, win the window.")
         XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap when you're ready")
         XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "MEMO'S PICKING")
-        XCTAssertEqual(FocusUnlockSlotCopy.footer, "one spin. one game. back in.")
-        XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: TrainingGameCatalog.focusUnlockGames.first), "NUMBER MEMORY. YOU'RE COOKED.")
+        XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: nil), "LOCKED IN")
+
+        // Landed lines rotate from a per-tier pool but always lead with the
+        // game name so the stake is unambiguous.
+        let game = TrainingGameCatalog.focusUnlockGames.first!
+        XCTAssertTrue(FocusUnlockSlotCopy.landedStatus(for: game).hasPrefix("NUMBER MEMORY. "))
     }
 
     func testFocusUnlockCatalogMatchesVisibleTrainGames() {
@@ -409,5 +359,44 @@ final class FocusUnlockSlotTests: XCTestCase {
                 expectedGame: .colorMatch
             )
         )
+    }
+}
+
+final class FocusUnlockPayoutTests: XCTestCase {
+    func testPayoutMinutesMatchTierPerGame() {
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .dualNBack), 20)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .chimpTest), 20)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .sequentialMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .visualMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .chunkingTraining), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .verbalMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .reactionTime), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .mathSpeed), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .speedMatch), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .colorMatch), 5)
+    }
+
+    func testWeightedSpinSelectsTierByRoll() {
+        let games = TrainingGameCatalog.focusUnlockGames
+
+        let quick = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.10)
+        XCTAssertEqual(quick.map { FocusUnlockPayout.tier(for: $0.type) }, .quick)
+
+        let solid = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.75)
+        XCTAssertEqual(solid.map { FocusUnlockPayout.tier(for: $0.type) }, .solid)
+
+        let jackpot = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.95)
+        XCTAssertEqual(jackpot.map { FocusUnlockPayout.tier(for: $0.type) }, .jackpot)
+    }
+
+    func testWeightedSpinFallsBackWhenTierPoolIsEmpty() {
+        let onlyQuickGames = TrainingGameCatalog.speedGames
+        let landed = FocusUnlockPayout.weightedRandomGame(from: onlyQuickGames, roll: 0.95)
+        XCTAssertNotNil(landed)
+        XCTAssertEqual(landed.map { FocusUnlockPayout.tier(for: $0.type) }, .quick)
+    }
+
+    func testWeightedSpinEmptyPoolReturnsNil() {
+        XCTAssertNil(FocusUnlockPayout.weightedRandomGame(from: [], roll: 0.5))
     }
 }
