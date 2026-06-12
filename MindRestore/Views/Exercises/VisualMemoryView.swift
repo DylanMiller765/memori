@@ -114,14 +114,14 @@ final class VisualMemoryViewModel {
             // signal, and the haptic + sound register the win without burning
             // a second on a green-checkmark screen.
             levelsCompleted = level
-            SoundService.shared.playCorrect()
             HapticService.correct()
             HapticService.levelUp()
             level += 1
             startLevel()
         } else {
-            // Wrong — show correct answer, then game over
-            SoundService.shared.playWrong()
+            // Wrong — show correct answer, then game over. Haptic only: the
+            // system "horn" buzzer reads as cheap, the wrong-answer haptic
+            // already carries the moment.
             HapticService.wrong()
             phase = .wrongReveal
             showTimer?.invalidate()

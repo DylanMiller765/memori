@@ -665,9 +665,10 @@ enum Analytics {
         PostHogSDK.shared.capture("focus_unlock_spin_started")
     }
 
-    static func focusUnlockSpinLanded(gameType: String) {
+    static func focusUnlockSpinLanded(gameType: String, payoutMinutes: Int) {
         PostHogSDK.shared.capture("focus_unlock_spin_landed", properties: [
-            "game_type": gameType
+            "game_type": gameType,
+            "payout_minutes": payoutMinutes
         ])
     }
 

@@ -148,6 +148,7 @@
 		PBCT0001000000000000PB01 /* PlanBuildBeatContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBCT0002000000000000PB01 /* PlanBuildBeatContentTests.swift */; };
 		MEMB0001000000000000MV01 /* memo-building.mov in Resources */ = {isa = PBXBuildFile; fileRef = MEMB0002000000000000MV01 /* memo-building.mov */; };
 		MEMP0001000000000000MV01 /* memo-presenting.mov in Resources */ = {isa = PBXBuildFile; fileRef = MEMP0002000000000000MV01 /* memo-presenting.mov */; };
+		MEMD0001000000000000MP01 /* mascot-dealer.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = MEMD0002000000000000MP01 /* mascot-dealer.mp4 */; };
 		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
 		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		RFRRL0000000000000001 /* ReferralService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000002 /* ReferralService.swift */; };
@@ -385,6 +386,7 @@
 		PBCT0002000000000000PB01 /* PlanBuildBeatContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanBuildBeatContentTests.swift; sourceTree = "<group>"; };
 		MEMB0002000000000000MV01 /* memo-building.mov */ = {isa = PBXFileReference; lastKnownFileType = file; name = "memo-building.mov"; path = "Resources/memo-building.mov"; sourceTree = "<group>"; };
 		MEMP0002000000000000MV01 /* memo-presenting.mov */ = {isa = PBXFileReference; lastKnownFileType = file; name = "memo-presenting.mov"; path = "Resources/memo-presenting.mov"; sourceTree = "<group>"; };
+		MEMD0002000000000000MP01 /* mascot-dealer.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "mascot-dealer.mp4"; path = "Resources/mascot-dealer.mp4"; sourceTree = "<group>"; };
 		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000002 /* ReferralService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralService.swift; sourceTree = "<group>"; };
@@ -544,6 +546,7 @@
 				D300010000000000D3000001 /* onboarding_demo.mp4 */,
 				MEMB0002000000000000MV01 /* memo-building.mov */,
 				MEMP0002000000000000MV01 /* memo-presenting.mov */,
+				MEMD0002000000000000MP01 /* mascot-dealer.mp4 */,
 					D300030000000000D3000001 /* iphone17pro.png */,
 					0C755FB45F2C7F2138DB6779 /* Assets.xcassets */,
 					D8DB75C7343DFB9C66001701 /* Configuration.storekit */,
@@ -1172,6 +1175,7 @@
 					D300020000000000D3000001 /* onboarding_demo.mp4 in Resources */,
 					MEMB0001000000000000MV01 /* memo-building.mov in Resources */,
 					MEMP0001000000000000MV01 /* memo-presenting.mov in Resources */,
+					MEMD0001000000000000MP01 /* mascot-dealer.mp4 in Resources */,
 					D300040000000000D3000001 /* iphone17pro.png in Resources */,
 					098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */,
 					720000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,

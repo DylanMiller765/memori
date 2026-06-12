@@ -55,6 +55,8 @@ struct ContentView: View {
     @State private var showingFocusUnlockSlot = false
     @State private var focusUnlockExpectedExercise: ExerciseType?
     @State private var showFocusUnlockToast = false
+    /// Minutes granted by the most recent spin payout — feeds the toast.
+    @State private var lastUnlockMinutes = 5
 
     // Toast state
     @State private var showingXPToast = false
@@ -372,7 +374,12 @@ struct ContentView: View {
 
                 focusUnlockPending = false
                 focusUnlockExpectedExercise = nil
-                focusModeService.temporaryUnlock()
+                // Payout is derived from the game that was actually completed —
+                // the spin's stake cashes out here.
+                let payoutMinutes = ExerciseType(rawValue: completedGame ?? "")
+                    .map(FocusUnlockPayout.minutes(for:)) ?? focusModeService.unlockDuration
+                lastUnlockMinutes = payoutMinutes
+                focusModeService.temporaryUnlock(durationMinutes: payoutMinutes)
                 if let gameType = completedGame,
                    let score = notification.userInfo?["score"] as? Double {
                     Analytics.focusUnlockGameCompleted(gameType: gameType, score: Int(score * 100))
@@ -400,7 +407,7 @@ struct ContentView: View {
                     Image(systemName: "lock.open.fill")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(AppColors.mint)
-                    Text("Apps unlocked for \(focusModeService.unlockDuration) min")
+                    Text("Apps unlocked for \(lastUnlockMinutes) min")
                         .font(.system(size: 14, weight: .semibold))
                 }
                 .padding(.horizontal, 20)
@@ -482,8 +489,9 @@ struct ContentView: View {
             return OnboardingPage.memoPlan.rawValue
         case "onboarding-trial-free":
             return OnboardingPage.trialTrustBridge.rawValue
+        // trial-reminder page merged into trial-free; keep the link alive.
         case "onboarding-trial-reminder":
-            return OnboardingPage.trialReminderBridge.rawValue
+            return OnboardingPage.trialTrustBridge.rawValue
         case "onboarding-loader", "onboarding-plan-personalizing":
             return OnboardingPage.planPersonalizing.rawValue
         case "onboarding-focus-mode":
