@@ -137,7 +137,7 @@ struct PlanBuildBeatContent {
         case .doomscrolling: return "sleep protected"
         case .loseFocus: return "focus that holds"
         case .forgetInstantly: return "memory that sticks"
-        case .getSharper: return "sharper scores"
+        case .getSharper: return "a sharper brain"
         case nil: break
         }
         return "hours back"
@@ -150,7 +150,7 @@ struct PlanBuildBeatContent {
         case .doomscrolling: return "sleep back"
         case .loseFocus: return "focus back"
         case .forgetInstantly: return "memory back"
-        case .getSharper: return "score climbing"
+        case .getSharper: return "brain getting sharper"
         case nil: break
         }
         return "time back"

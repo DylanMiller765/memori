@@ -244,6 +244,8 @@ struct WeeklyScreenTimeChartView: View {
 
 struct OnboardingWeeklyScreenTimeView: View {
     let configuration: OnboardingWeeklyScreenTimeConfiguration
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var displayedTotalHours: Double = 0
 
     private let coral = Color(red: 0.98, green: 0.34, blue: 0.29)
     private let accent = Color(red: 0.41, green: 0.56, blue: 1.0)
@@ -251,10 +253,10 @@ struct OnboardingWeeklyScreenTimeView: View {
     private let fg2 = Color.white.opacity(0.70)
 
     private var totalText: String {
-        if configuration.totalHours >= 100 {
-            return "\(Int(configuration.totalHours.rounded()))"
+        if displayedTotalHours >= 100 {
+            return "\(Int(displayedTotalHours.rounded()))"
         }
-        return String(format: "%.1f", configuration.totalHours)
+        return String(format: "%.1f", displayedTotalHours)
     }
 
     var body: some View {
@@ -266,7 +268,6 @@ struct OnboardingWeeklyScreenTimeView: View {
                     .foregroundStyle(coral)
                     .minimumScaleFactor(0.55)
                     .lineLimit(1)
-                    .shadow(color: coral.opacity(0.38), radius: 30, y: 10)
 
                 Text("h")
                     .font(.system(size: 48, weight: .black, design: .rounded))
@@ -281,15 +282,55 @@ struct OnboardingWeeklyScreenTimeView: View {
                 .font(.system(size: 16, weight: .heavy, design: .rounded))
                 .foregroundStyle(accent)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        // The report renders in an opaque out-of-process surface — the app
+        // cannot composite behind it, so this must be pixel-identical to the
+        // onboarding background (OB.bg in the main app) or the surface reads
+        // as a box.
+        .background(Color(red: 0.039, green: 0.039, blue: 0.059).ignoresSafeArea())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(totalText) hours of Screen Time in the last 7 days")
+        .accessibilityLabel("\(String(format: "%.1f", configuration.totalHours)) hours of Screen Time in the last 7 days")
         .onAppear {
-            OnboardingScreenTimeCache.write(
-                dailyAverageHours: configuration.dailyAverageHours,
-                weeklyHours: configuration.totalHours
-            )
+            startCountUp()
         }
+        .onChange(of: configuration.totalHours) { _, _ in
+            startCountUp()
+        }
+    }
+
+    private func startCountUp() {
+        guard configuration.totalHours > 0 else {
+            displayedTotalHours = 0
+            return
+        }
+
+        guard !reduceMotion else {
+            displayedTotalHours = configuration.totalHours
+            impact(style: .medium)
+            return
+        }
+
+        displayedTotalHours = 0
+        Task { @MainActor in
+            let steps = 28
+            for step in 1...steps {
+                guard !Task.isCancelled else { return }
+                let progress = Double(step) / Double(steps)
+                let eased = 1 - pow(1 - progress, 3)
+                displayedTotalHours = configuration.totalHours * eased
+                if step % 4 == 0 || step == steps {
+                    impact(style: step == steps ? .medium : .light)
+                }
+                try? await Task.sleep(for: .milliseconds(28))
+            }
+            displayedTotalHours = configuration.totalHours
+        }
+    }
+
+    private func impact(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
     }
 }
 

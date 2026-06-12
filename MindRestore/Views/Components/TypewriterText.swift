@@ -4,6 +4,8 @@ struct TypewriterText: View {
     let fullText: String
     var speed: Double = 0.08 // seconds per character
     var hapticEnabled: Bool = true
+    /// Increment from the parent to finish the line instantly (tap-to-skip).
+    var skipToken: Int = 0
     var onComplete: (() -> Void)? = nil
 
     @State private var displayedCount: Int = 0
@@ -17,9 +19,22 @@ struct TypewriterText: View {
             .onChange(of: fullText) { _, _ in
                 startTyping()
             }
+            .onChange(of: skipToken) { _, _ in
+                finishInstantly()
+            }
             .onDisappear {
                 timer?.invalidate()
             }
+    }
+
+    private func finishInstantly() {
+        guard displayedCount < fullText.count else { return }
+        timer?.invalidate()
+        displayedCount = fullText.count
+        if hapticEnabled {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.34)
+        }
+        onComplete?()
     }
 
     private func startTyping() {

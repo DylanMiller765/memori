@@ -97,47 +97,6 @@ private struct FocusInsightsOffenderAccumulator {
     var icon: FocusInsightsOffenderIcon
 }
 
-enum OnboardingScreenTimeCache {
-    static let appGroupID = "group.com.memori.shared"
-    static let dailyHoursKey = "onboarding_daily_screen_time_hours"
-    static let weeklyHoursKey = "onboarding_weekly_screen_time_hours"
-    static let updatedAtKey = "onboarding_screen_time_hours_updated_at"
-    static let fileName = "onboarding-screen-time.plist"
-
-    static func write(dailyAverageHours: Double, weeklyHours: Double) {
-        guard dailyAverageHours > 0 else { return }
-
-        let now = Date()
-        let shared = UserDefaults(suiteName: appGroupID)
-        shared?.set(dailyAverageHours, forKey: dailyHoursKey)
-        shared?.set(weeklyHours, forKey: weeklyHoursKey)
-        shared?.set(now, forKey: updatedAtKey)
-        shared?.synchronize()
-
-        guard let url = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)?
-            .appendingPathComponent(fileName) else {
-            return
-        }
-
-        let payload: [String: Any] = [
-            dailyHoursKey: dailyAverageHours,
-            weeklyHoursKey: weeklyHours,
-            updatedAtKey: now.timeIntervalSince1970
-        ]
-
-        guard let data = try? PropertyListSerialization.data(
-            fromPropertyList: payload,
-            format: .binary,
-            options: 0
-        ) else {
-            return
-        }
-
-        try? data.write(to: url, options: [.atomic])
-    }
-}
-
 /// Sums phone pickups across all apps + pickups-without-app-activity.
 struct TotalActivityReport: DeviceActivityReportScene {
     let context: DeviceActivityReport.Context = .unlocks
@@ -225,8 +184,9 @@ struct ScreenTimeWeeklyReport: DeviceActivityReportScene {
     }
 }
 
-/// Visible onboarding Screen Time receipt. Rendering this report is the source
-/// of truth for the app-side cache, avoiding fragile hidden report probes.
+/// Visible onboarding Screen Time receipt. Display-only: the report sandbox
+/// cannot pass usage data back to the app, so the user confirms the total
+/// via the match slider on the onboarding page instead.
 struct OnboardingWeeklyScreenTimeReport: DeviceActivityReportScene {
     let context: DeviceActivityReport.Context = .onboardingScreenTimeWeekTotal
     let content: (OnboardingWeeklyScreenTimeConfiguration) -> OnboardingWeeklyScreenTimeView
@@ -242,11 +202,6 @@ struct OnboardingWeeklyScreenTimeReport: DeviceActivityReportScene {
 
         let totalHours = totalSeconds / 3600.0
         let dailyAverageHours = totalHours / 7.0
-
-        OnboardingScreenTimeCache.write(
-            dailyAverageHours: dailyAverageHours,
-            weeklyHours: totalHours
-        )
 
         return OnboardingWeeklyScreenTimeConfiguration(
             totalHours: totalHours,

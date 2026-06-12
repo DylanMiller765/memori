@@ -10,92 +10,6 @@ private extension DeviceActivityReport.Context {
     static let onboardingScreenTimeWeekTotal = Self("Onboarding Screen Time Week Total")
 }
 
-private enum OnboardingScreenTimeCache {
-    static let appGroupID = "group.com.memori.shared"
-    static let dailyHoursKey = "onboarding_daily_screen_time_hours"
-    static let weeklyHoursKey = "onboarding_weekly_screen_time_hours"
-    static let updatedAtKey = "onboarding_screen_time_hours_updated_at"
-    static let fileName = "onboarding-screen-time.plist"
-}
-
-struct OnboardingScreenTimeSnapshot: Equatable {
-    enum Source: String {
-        case daily
-        case weekly
-        case estimate
-    }
-
-    let dailyHours: Double?
-    let weeklyHours: Double?
-
-    init(dailyHours: Double? = nil, weeklyHours: Double? = nil) {
-        self.dailyHours = Self.validHours(dailyHours)
-        self.weeklyHours = Self.validHours(weeklyHours)
-    }
-
-    var hasMeasuredHours: Bool {
-        dailyHours != nil || weeklyHours != nil
-    }
-
-    var isEstimate: Bool {
-        !hasMeasuredHours
-    }
-
-    var source: Source {
-        if weeklyHours != nil { return .weekly }
-        if dailyHours != nil { return .daily }
-        return .estimate
-    }
-
-    func effectiveDailyHours(fallbackEstimate: Double) -> Double {
-        if let weeklyHours { return weeklyHours / 7.0 }
-        if let dailyHours { return dailyHours }
-        return fallbackEstimate
-    }
-
-    static func readFromSharedStorage() -> Self {
-        let fileSnapshot = readFromFile()
-        let defaultsSnapshot = readFromDefaults()
-        return Self(
-            dailyHours: fileSnapshot.dailyHours ?? defaultsSnapshot.dailyHours,
-            weeklyHours: fileSnapshot.weeklyHours ?? defaultsSnapshot.weeklyHours
-        )
-    }
-
-    private static func readFromDefaults() -> Self {
-        let sharedDefaults = UserDefaults(suiteName: OnboardingScreenTimeCache.appGroupID)
-        sharedDefaults?.synchronize()
-        return Self(
-            dailyHours: sharedDefaults?.double(forKey: OnboardingScreenTimeCache.dailyHoursKey),
-            weeklyHours: sharedDefaults?.double(forKey: OnboardingScreenTimeCache.weeklyHoursKey)
-        )
-    }
-
-    private static func readFromFile() -> Self {
-        guard let url = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: OnboardingScreenTimeCache.appGroupID)?
-            .appendingPathComponent(OnboardingScreenTimeCache.fileName),
-              let data = try? Data(contentsOf: url),
-              let payload = try? PropertyListSerialization.propertyList(
-                from: data,
-                options: [],
-                format: nil
-              ) as? [String: Any] else {
-            return Self()
-        }
-
-        return Self(
-            dailyHours: payload[OnboardingScreenTimeCache.dailyHoursKey] as? Double,
-            weeklyHours: payload[OnboardingScreenTimeCache.weeklyHoursKey] as? Double
-        )
-    }
-
-    private static func validHours(_ value: Double?) -> Double? {
-        guard let value, value.isFinite, value > 0 else { return nil }
-        return value
-    }
-}
-
 enum OnboardingScreenTimeHoursFormatter {
     static func dailyLabel(hours: Double, isEstimate: Bool) -> String {
         guard hours.isFinite, hours > 0 else { return "0h" }
@@ -133,7 +47,6 @@ struct OnboardingFlowOrder {
     static let pageCount = 16
     static let monetizationPages: [OnboardingPage] = [
         .trialTrustBridge,
-        .trialReminderBridge,
         .planPersonalizing
     ]
 
@@ -166,10 +79,6 @@ struct OnboardingFlowOrder {
     }
 
     static func page(afterTrialTrustBridge: Bool) -> OnboardingPage {
-        .trialReminderBridge
-    }
-
-    static func page(afterTrialReminderBridge: Bool) -> OnboardingPage {
         .planPersonalizing
     }
 
@@ -181,55 +90,33 @@ struct OnboardingFlowOrder {
 struct OnboardingScreenTimeProjectionState: Equatable {
     let isAuthorized: Bool
     let useEstimate: Bool
-    let hasMeasuredHours: Bool
-    let estimateFallbackAllowed: Bool
-
-    var isWaitingForScreenTime: Bool {
-        isAuthorized && !useEstimate && !hasMeasuredHours
-    }
 
     var isEstimate: Bool {
-        if useEstimate { return true }
-        if hasMeasuredHours { return false }
-        if isWaitingForScreenTime { return false }
-        return true
+        useEstimate
     }
 
     var receiptSourceLine: String {
-        if isWaitingForScreenTime { return "Reading your Screen Time" }
-        return isEstimate ? "Using your estimate" : "Using your Screen Time"
+        isEstimate ? "Using your estimate" : "Using your Screen Time"
     }
 
     var canContinueFromScreenTime: Bool {
-        useEstimate || hasMeasuredHours
-    }
-}
-
-struct OnboardingScreenTimeMeasurementState: Equatable {
-    let isAuthorized: Bool
-    let useEstimate: Bool
-    let hasMeasuredHours: Bool
-
-    var shouldContinuePollingForMeasuredHours: Bool {
-        isAuthorized && !useEstimate && !hasMeasuredHours
+        isAuthorized || useEstimate
     }
 }
 
 struct OnboardingScreenTimeAccessButtonState: Equatable {
     let isRequestingAccess: Bool
-    let isPreparingProjection: Bool
     let isAuthorized: Bool
-    let isWaitingForMeasuredHours: Bool
 
     var title: String {
-        if isRequestingAccess || isPreparingProjection || isWaitingForMeasuredHours {
+        if isRequestingAccess {
             return "Checking Screen Time..."
         }
         return isAuthorized ? "Show my lifetime cost" : "Allow Screen Time"
     }
 
     var isDisabled: Bool {
-        isRequestingAccess || isPreparingProjection || isWaitingForMeasuredHours
+        isRequestingAccess
     }
 }
 
@@ -288,16 +175,15 @@ struct OnboardingView: View {
     @State private var quickAssessmentIsFullscreen = false
     @State private var screenTimeAuthorized = false
     @State private var isRequestingScreenTimeAccess = false
-    @State private var isPreparingScreenTimeProjection = false
     @State private var screenTimeEstimateHours: Double = 4
-    @State private var measuredScreenTimeHours: Double?
-    @State private var measuredWeeklyScreenTimeHours: Double?
+    /// Weekly hours the user dials in to match the rendered Screen Time report.
+    /// The report extension is sandboxed and can't pass the real number back,
+    /// so the user transcribes it — defaults to 28h (4h/day), below typical
+    /// real totals, so most users drag upward to match.
+    @State private var reportedWeeklyScreenTimeHours: Double = 28
     @State private var useScreenTimeEstimate = false
-    @State private var screenTimeEstimateFallbackAllowed = false
     @State private var screenTimeAccessDenied = false
-    @State private var screenTimePromptAttempted = false
     @State private var showingScreenTimeEstimateSheet = false
-    @State private var screenTimeCacheRefreshTask: Task<Void, Never>?
     @State private var screenTimeReceiptVisible = false
     @State private var screenTimeReportProbeID = UUID()
     @State private var selectedProtectTarget: PlanBuildBeatContent.ProtectTarget?
@@ -308,6 +194,13 @@ struct OnboardingView: View {
     /// stacked .fullScreenCover(isPresented:) modifiers — using item-based with
     /// an enum forces a clean swap and fixes the "paywall doesn't present" bug.
     @State private var presentedCover: OnboardingCover?
+    /// Full-bleed atmosphere behind the memoPlan demo's machine beat — driven
+    /// by the page via binding because the page slot can't reach behind the
+    /// progress bar.
+    @State private var memoPlanAtmosphereVisible = false
+    /// "You're in" beat shown right after paywall conversion — hosts the
+    /// soft rating pre-prompt.
+    @State private var showingPostPurchaseCelebration = false
     /// When non-nil, a building beat overlay is shown over the current page.
     @State private var activeBeat: PlanBuildBeatContent.Beat?
     /// Page to navigate to once the active beat finishes.
@@ -477,6 +370,12 @@ struct OnboardingView: View {
                 .transition(.opacity)
                 .zIndex(1000)
             }
+
+            if showingPostPurchaseCelebration {
+                postPurchaseCelebration
+                    .transition(.opacity)
+                    .zIndex(1001)
+            }
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
@@ -568,6 +467,81 @@ struct OnboardingView: View {
             "next_step": "focus_mode_setup"
         ])
         goToPage(OnboardingFlowOrder.page(afterPaywallConverted: true).rawValue)
+        // Celebration beat over the next page: they just said yes — the
+        // single best moment to ask for a rating (soft pre-prompt; only
+        // positive responders see the system dialog).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
+                showingPostPurchaseCelebration = true
+            }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+
+    private var postPurchaseCelebration: some View {
+        ZStack {
+            OB.bg.opacity(0.97).ignoresSafeArea()
+
+            RadialGradient(
+                colors: [OB.success.opacity(0.20), .clear],
+                center: .center,
+                startRadius: 16,
+                endRadius: 320
+            )
+            .offset(y: -60)
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                Image("mascot-celebrate")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 180, height: 180)
+                    .shadow(color: OB.success.opacity(0.30), radius: 26, y: 12)
+
+                Text("You're in.")
+                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .padding(.top, 18)
+
+                Text("7 days free. Let's get your time back.")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(OB.fg2)
+                    .padding(.top, 6)
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    OBContinueButton(title: "Loving it so far") {
+                        dismissPostPurchaseCelebration(lovedIt: true)
+                    }
+
+                    Button {
+                        dismissPostPurchaseCelebration(lovedIt: false)
+                    } label: {
+                        Text("Not yet — keep going")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(OB.fg3)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 26)
+            }
+        }
+    }
+
+    private func dismissPostPurchaseCelebration(lovedIt: Bool) {
+        trackOnboardingStepCompleted("postPurchaseRatingPrompt", extraProperties: [
+            "loved_it": lovedIt
+        ])
+        if lovedIt {
+            ReviewPromptService.requestForNewSubscriber()
+        }
+        withAnimation(.easeOut(duration: 0.3)) {
+            showingPostPurchaseCelebration = false
+        }
     }
 
     private var onboardingElapsed: TimeInterval {
@@ -603,8 +577,7 @@ struct OnboardingView: View {
     }
 
     private var collectedScreenTimeHoursForAnalytics: Double? {
-        guard !screenTimeProjectionState.isWaitingForScreenTime else { return nil }
-        guard currentPage >= 5 || useScreenTimeEstimate || hasMeasuredScreenTimeHours else { return nil }
+        guard currentPage >= 5 || useScreenTimeEstimate else { return nil }
         return effectiveDailyScreenTimeHours
     }
 
@@ -683,7 +656,9 @@ struct OnboardingView: View {
         case 9: personalizationBeatPage
         case 10: memoPlanPage
         case 11: trialTrustBridgePage
-        case 12: trialReminderBridgePage
+        // 12 (trialReminderBridge) merged into trialTrustBridge — nothing
+        // routes here anymore; fall through to the plan beat as a safety net.
+        case 12: planPersonalizingPage
         case 13: planPersonalizingPage
         case 14: focusModePage
         case 15: notificationPrimingPage
@@ -698,6 +673,15 @@ struct OnboardingView: View {
             welcomeAtmosphere
         case OnboardingPage.trialTrustBridge.rawValue, OnboardingPage.trialReminderBridge.rawValue:
             trialTrustBridgeAtmosphere
+        case OnboardingPage.planPersonalizing.rawValue:
+            // The build-beat gradient must own the whole screen, including
+            // the strip behind the progress bar — a black band up top reads
+            // as a rendering bug.
+            OnboardingPlanBuildBackground()
+        case OnboardingPage.memoPlan.rawValue:
+            FocusSlotAtmosphere()
+                .opacity(memoPlanAtmosphereVisible ? 1 : 0)
+                .animation(.easeInOut(duration: 0.45), value: memoPlanAtmosphereVisible)
         default:
             EmptyView()
         }
@@ -829,7 +813,7 @@ struct OnboardingView: View {
         if isMeasuredLifeReceiptScreenshot { return 50.2 / 7.0 }
         #endif
         if useScreenTimeEstimate { return screenTimeEstimateHours }
-        return currentScreenTimeSnapshot.effectiveDailyHours(fallbackEstimate: screenTimeEstimateHours)
+        return reportedWeeklyScreenTimeHours / 7.0
     }
 
     private var projectionIsEstimate: Bool {
@@ -839,49 +823,17 @@ struct OnboardingView: View {
         return screenTimeProjectionState.isEstimate
     }
 
-    private var hasMeasuredScreenTimeHours: Bool {
-        currentScreenTimeSnapshot.hasMeasuredHours
-    }
-
-    private var currentScreenTimeSnapshot: OnboardingScreenTimeSnapshot {
-        let cached = readCachedScreenTimeSnapshot()
-        return OnboardingScreenTimeSnapshot(
-            dailyHours: measuredScreenTimeHours ?? cached.dailyHours,
-            weeklyHours: measuredWeeklyScreenTimeHours ?? cached.weeklyHours
-        )
-    }
-
     private var screenTimeProjectionState: OnboardingScreenTimeProjectionState {
         OnboardingScreenTimeProjectionState(
             isAuthorized: screenTimeAuthorized,
-            useEstimate: useScreenTimeEstimate,
-            hasMeasuredHours: hasMeasuredScreenTimeHours,
-            estimateFallbackAllowed: screenTimeEstimateFallbackAllowed
+            useEstimate: useScreenTimeEstimate
         )
-    }
-
-    private var screenTimeMeasurementState: OnboardingScreenTimeMeasurementState {
-        OnboardingScreenTimeMeasurementState(
-            isAuthorized: screenTimeAuthorized,
-            useEstimate: useScreenTimeEstimate,
-            hasMeasuredHours: hasMeasuredScreenTimeHours
-        )
-    }
-
-    private var shouldContinuePollingForMeasuredScreenTime: Bool {
-        screenTimeMeasurementState.shouldContinuePollingForMeasuredHours
-    }
-
-    private var isAwaitingUsableScreenTime: Bool {
-        screenTimeAuthorized && !hasMeasuredScreenTimeHours && !screenTimeEstimateFallbackAllowed
     }
 
     private var screenTimeAccessButtonState: OnboardingScreenTimeAccessButtonState {
         OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: isRequestingScreenTimeAccess,
-            isPreparingProjection: isPreparingScreenTimeProjection,
-            isAuthorized: screenTimeAuthorized,
-            isWaitingForMeasuredHours: isAwaitingUsableScreenTime
+            isAuthorized: screenTimeAuthorized
         )
     }
 
@@ -892,31 +844,10 @@ struct OnboardingView: View {
     }
 
     private var screenTimeAccessSubtitle: String {
-        if !screenTimeAuthorized {
-            if screenTimeAccessDenied {
-                return "Screen Time access is required to build your plan. Your data stays on your phone."
-            }
-            return "Memo uses Screen Time to calculate your lifetime cost. Your data stays on your phone."
+        if screenTimeAccessDenied {
+            return "Memo can't do the math without Screen Time. It never leaves your phone."
         }
-        if isAwaitingUsableScreenTime {
-            return "Memo is reading your last 7 days of real Screen Time now."
-        }
-        return "This is how many hours you were on your phone this week."
-    }
-
-    private var screenTimeHeroNumber: String {
-        isAwaitingUsableScreenTime ? "..." : screenTimeHoursNumber
-    }
-
-    private var screenTimeHeroSuffix: String {
-        isAwaitingUsableScreenTime ? "" : "h"
-    }
-
-    private var screenTimeHeroLabel: String {
-        if isAwaitingUsableScreenTime {
-            return "checking last week's Screen Time"
-        }
-        return projectionIsEstimate ? "estimated daily Screen Time" : "daily average from last week"
+        return "Memo needs Screen Time to do the scary math. It never leaves your phone."
     }
 
     private var yearsUntilEighty: Int {
@@ -938,80 +869,8 @@ struct OnboardingView: View {
         )
     }
 
-    private func readCachedScreenTimeSnapshot() -> OnboardingScreenTimeSnapshot {
-        OnboardingScreenTimeSnapshot.readFromSharedStorage()
-    }
-
-    private func clearCachedScreenTimeHours() {
-        let sharedDefaults = UserDefaults(suiteName: OnboardingScreenTimeCache.appGroupID)
-        sharedDefaults?.removeObject(forKey: OnboardingScreenTimeCache.dailyHoursKey)
-        sharedDefaults?.removeObject(forKey: OnboardingScreenTimeCache.weeklyHoursKey)
-        sharedDefaults?.removeObject(forKey: OnboardingScreenTimeCache.updatedAtKey)
-        sharedDefaults?.synchronize()
-
-        if let url = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: OnboardingScreenTimeCache.appGroupID)?
-            .appendingPathComponent(OnboardingScreenTimeCache.fileName) {
-            try? FileManager.default.removeItem(at: url)
-        }
-    }
-
-    private func refreshCachedScreenTimeHours() {
-        let snapshot = readCachedScreenTimeSnapshot()
-        guard snapshot.hasMeasuredHours else { return }
-        measuredScreenTimeHours = snapshot.dailyHours
-        measuredWeeklyScreenTimeHours = snapshot.weeklyHours
-        if screenTimeAuthorized && !useScreenTimeEstimate {
-            useScreenTimeEstimate = false
-            screenTimeEstimateFallbackAllowed = false
-        }
-    }
-
-    private func startMeasuredScreenTimePollingIfNeeded(
-        maxAttempts: Int = 120,
-        intervalMilliseconds: Int = 500
-    ) {
-        refreshCachedScreenTimeHours()
-        guard shouldContinuePollingForMeasuredScreenTime else { return }
-        startScreenTimeCacheRefreshLoop(
-            maxAttempts: maxAttempts,
-            intervalMilliseconds: intervalMilliseconds,
-            allowEstimateFallbackAfterTimeout: false
-        )
-    }
-
-    private func startScreenTimeCacheRefreshLoop(
-        maxAttempts: Int = 120,
-        intervalMilliseconds: Int = 500,
-        allowEstimateFallbackAfterTimeout: Bool = false
-    ) {
-        screenTimeCacheRefreshTask?.cancel()
-        screenTimeCacheRefreshTask = Task { @MainActor in
-            for _ in 0..<maxAttempts {
-                guard !Task.isCancelled else { return }
-                refreshCachedScreenTimeHours()
-                if currentScreenTimeSnapshot.hasMeasuredHours {
-                    screenTimeEstimateFallbackAllowed = false
-                    return
-                }
-                try? await Task.sleep(for: .milliseconds(Int64(intervalMilliseconds)))
-            }
-
-            if allowEstimateFallbackAfterTimeout && screenTimeAuthorized && !hasMeasuredScreenTimeHours {
-                screenTimeEstimateFallbackAllowed = true
-            }
-        }
-    }
-
     private func reloadScreenTimeReportProbe() {
         screenTimeReportProbeID = UUID()
-    }
-
-    private func resetMeasuredScreenTimeForWeeklyRead() {
-        screenTimeCacheRefreshTask?.cancel()
-        measuredScreenTimeHours = nil
-        measuredWeeklyScreenTimeHours = nil
-        clearCachedScreenTimeHours()
     }
 
     private func formatProjectedHours(_ value: Int) -> String {
@@ -1167,8 +1026,11 @@ struct OnboardingView: View {
 
     private func startWelcomeEntrance() {
         let hasDemoAsset = Bundle.main.url(forResource: "onboarding_demo", withExtension: "mp4") != nil
-        let ctaRevealDelay: TimeInterval = hasDemoAsset ? 6.20 : 1.05
-        let ctaTapDelay: TimeInterval = hasDemoAsset ? 6.45 : 1.05
+        // The CTA appears early and is tappable the moment it's visible.
+        // Fast tappers are the highest-intent users — the demo keeps playing
+        // for everyone who wants to watch, but nobody waits on a dead button.
+        let ctaRevealDelay: TimeInterval = hasDemoAsset ? 1.40 : 1.05
+        let ctaTapDelay: TimeInterval = ctaRevealDelay
 
         // Reset state so re-entering the welcome (e.g., from a back swipe) replays.
         welcomeHeadlineVisible = false
@@ -1409,9 +1271,7 @@ struct OnboardingView: View {
                 withAnimation(.easeOut(duration: 0.5)) { nameInputVisible = true }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                #if !DEBUG
                 if currentPage == 1 { nameFieldFocused = true }
-                #endif
             }
         }
         .onDisappear {
@@ -1454,7 +1314,7 @@ struct OnboardingView: View {
                             .minimumScaleFactor(0.82)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("Pick up to 3. Memo tunes your training around this.")
+                        Text("Pick up to 3. Memo builds your block plan around this.")
                             .font(.system(size: isCompact ? 13 : 16, weight: .semibold))
                             .foregroundStyle(AppColors.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1494,7 +1354,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             onboardingBottomBar {
-                continueButton("Build my plan") {
+                continueButton("Lock it in") {
                     trackOnboardingStepCompleted("goals")
                     advance(after: .goals, then: 3) // play beat, then → age
                 }
@@ -1545,7 +1405,7 @@ struct OnboardingView: View {
             age: selectedAge > 0 ? selectedAge : 25,
             dailyScreenTimeHours: effectiveDailyScreenTimeHours,
             isEstimate: projectionIsEstimate,
-            isLoadingScreenTime: screenTimeProjectionState.isWaitingForScreenTime,
+            isLoadingScreenTime: false,
             onContinue: {
                 let projection = OnboardingLifetimeProjection(
                     age: selectedAge > 0 ? selectedAge : 25,
@@ -1554,21 +1414,13 @@ struct OnboardingView: View {
                 trackOnboardingStepCompleted("lifetimeShock", extraProperties: [
                     "daily_screen_time_hours": effectiveDailyScreenTimeHours,
                     "screen_time_is_estimate": projectionIsEstimate,
-                    "screen_time_cache_source": useScreenTimeEstimate ? "estimate" : currentScreenTimeSnapshot.source.rawValue,
+                    "screen_time_source": useScreenTimeEstimate ? "estimate" : "user_reported_weekly",
                     "phone_years": projection.phoneYears,
                     "phone_years_text": projection.phoneYearsText
                 ])
                 goToPage(OnboardingFlowOrder.page(afterLifetimeShock: true).rawValue)
             }
         )
-        .onAppear {
-            startMeasuredScreenTimePollingIfNeeded()
-        }
-        .onDisappear {
-            if currentPage != OnboardingPage.lifeSquaresReceipt.rawValue {
-                screenTimeCacheRefreshTask?.cancel()
-            }
-        }
     }
 
     private var lifeSquaresReceiptPage: some View {
@@ -1576,7 +1428,7 @@ struct OnboardingView: View {
             age: selectedAge > 0 ? selectedAge : 25,
             dailyScreenTimeHours: effectiveDailyScreenTimeHours,
             isEstimate: projectionIsEstimate,
-            isLoadingScreenTime: screenTimeProjectionState.isWaitingForScreenTime,
+            isLoadingScreenTime: false,
             sourceLine: screenTimeProjectionState.receiptSourceLine,
             previewBeat: {
                 #if DEBUG
@@ -1589,18 +1441,12 @@ struct OnboardingView: View {
                 trackOnboardingStepCompleted("lifeSquaresReceipt", extraProperties: [
                     "daily_screen_time_hours": effectiveDailyScreenTimeHours,
                     "screen_time_is_estimate": projectionIsEstimate,
-                    "screen_time_cache_source": useScreenTimeEstimate ? "estimate" : currentScreenTimeSnapshot.source.rawValue,
+                    "screen_time_source": useScreenTimeEstimate ? "estimate" : "user_reported_weekly",
                     "projected_screen_time_hours": projectedScreenTimeHours
                 ])
                 goToPage(OnboardingFlowOrder.page(afterLifeSquaresReceipt: true).rawValue)
             }
         )
-        .onAppear {
-            startMeasuredScreenTimePollingIfNeeded()
-        }
-        .onDisappear {
-            screenTimeCacheRefreshTask?.cancel()
-        }
     }
 
     private var protectTargetPage: some View {
@@ -1666,6 +1512,7 @@ struct OnboardingView: View {
         OnboardingMemoPlanView(
             selectedGoals: selectedGoals,
             selectedGoalOrder: selectedGoalsInChoiceOrder,
+            atmosphereVisible: $memoPlanAtmosphereVisible,
             onContinue: {
                 trackOnboardingStepCompleted("memoPlan")
                 goToPage(OnboardingFlowOrder.page(afterMemoPlan: true).rawValue)
@@ -1683,7 +1530,6 @@ struct OnboardingView: View {
             protectTarget: selectedProtectTarget,
             feedWinMoment: selectedFeedWinMoment,
             onComplete: {
-                refreshCachedScreenTimeHours()
                 trackOnboardingStepCompleted("planBeatFinal", extraProperties: [
                     "personalization_progress_completed": 100,
                     "next_step": "paywall"
@@ -1691,45 +1537,28 @@ struct OnboardingView: View {
                 presentedCover = .paywall
             }
         )
-        .onAppear {
-            startMeasuredScreenTimePollingIfNeeded()
-        }
     }
 
+    /// Single trial-reassurance page: $0.00 trust + billing-reminder proof
+    /// merged into one card. Two consecutive same-shape pages right before
+    /// the paywall read as padding at the moment attention is most precious.
     private var trialTrustBridgePage: some View {
         OnboardingTrialPrimerView(
             headline: "We want you to try Memo for $0.00.",
             subhead: "Start with 7 days on us.",
             proofTitle: "No payment due now",
             proofDetail: "Decide after you try it.",
-            footnote: "We can remind you before billing if notifications are on.",
+            secondProofTitle: "We'll remind you before billing",
+            secondProofDetail: "Turn on notifications and Memo nudges you before the trial ends.",
+            footnote: "Cancel anytime in Settings.",
             mascotName: "mascot-unlocked",
             tint: OB.success,
-            ctaTitle: "See my trial",
+            ctaTitle: "Claim my free week",
             onContinue: {
                 trackOnboardingStepCompleted("trialTrustBridge", extraProperties: [
-                    "next_step": "trial_reminder_bridge"
-                ])
-                goToPage(OnboardingFlowOrder.page(afterTrialTrustBridge: true).rawValue)
-            }
-        )
-    }
-
-    private var trialReminderBridgePage: some View {
-        OnboardingTrialPrimerView(
-            headline: "We'll remind you before billing.",
-            subhead: "Try it for a real week. Decide after.",
-            proofTitle: "Trial reminder included",
-            proofDetail: "Turn on notifications and Memo nudges you before the trial ends.",
-            footnote: "No payment due now. Cancel anytime in Settings.",
-            mascotName: "mascot-lookout",
-            tint: OB.amber,
-            ctaTitle: "Build my plan",
-            onContinue: {
-                trackOnboardingStepCompleted("trialReminderBridge", extraProperties: [
                     "next_step": "plan_personalizing"
                 ])
-                goToPage(OnboardingFlowOrder.page(afterTrialReminderBridge: true).rawValue)
+                goToPage(OnboardingFlowOrder.page(afterTrialTrustBridge: true).rawValue)
             }
         )
     }
@@ -1738,22 +1567,39 @@ struct OnboardingView: View {
 
     private var screenTimeAccessPage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Spacer().frame(height: screenTimeAuthorized ? 14 : 24)
+            Spacer().frame(height: screenTimeAuthorized ? 18 : 24)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(screenTimeAuthorized ? "Screen Time\nconnected." : "See what\nyour phone takes.")
-                    .font(.system(size: 38, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineSpacing(-1)
-                    .fixedSize(horizontal: false, vertical: true)
+            if screenTimeAuthorized {
+                // Receipt-style header: the Apple-rendered weekly total below is
+                // the headline, so the top stays a single quiet eyebrow. The
+                // report already says "hours on your phone this week" — no
+                // caption needed.
+                HStack(spacing: 7) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Screen Time connected")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .tracking(1.2)
+                        .textCase(.uppercase)
+                }
+                .foregroundStyle(OB.accent)
+                .padding(.horizontal, 28)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("See what\nyour phone takes.")
+                        .font(.system(size: 38, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .lineSpacing(-1)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Text(screenTimeAccessSubtitle)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppColors.textSecondary)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(screenTimeAccessSubtitle)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 28)
             }
-            .padding(.horizontal, 28)
 
             if screenTimeAuthorized {
                 screenTimePatternReport
@@ -1769,15 +1615,29 @@ struct OnboardingView: View {
 
             Spacer(minLength: screenTimeAuthorized ? 6 : 18)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
+                if screenTimeAuthorized {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Stays on your phone")
+                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                            .tracking(0.9)
+                            .textCase(.uppercase)
+                    }
+                    .foregroundStyle(OB.fg3)
+                    .opacity(screenTimeReceiptVisible ? 1 : 0)
+                    .animation(.easeOut(duration: 0.3).delay(0.26), value: screenTimeReceiptVisible)
+                }
+
                 continueButton(screenTimeAccessButtonTitle) {
                     if screenTimeAuthorized {
-                        refreshCachedScreenTimeHours()
+                        useScreenTimeEstimate = false
                         trackOnboardingStepCompleted("screenTimeAccess", extraProperties: [
                             "screen_time_permission": "approved_existing",
-                            "screen_time_cache_source": currentScreenTimeSnapshot.source.rawValue
+                            "reported_weekly_screen_time_hours": reportedWeeklyScreenTimeHours
                         ])
-                        prepareScreenTimeProjectionAndAdvance()
+                        goToPage(OnboardingFlowOrder.page(afterScreenTimeAccess: true).rawValue)
                     } else {
                         requestScreenTimeForOnboarding()
                     }
@@ -1786,7 +1646,7 @@ struct OnboardingView: View {
                 .opacity(screenTimeAccessButtonDisabled ? 0.6 : 1)
 
                 if !screenTimeAuthorized {
-                    Text("Required for your personalized lifetime-cost screen.")
+                    Text("Required. The math doesn't work without it.")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppColors.textTertiary)
                         .multilineTextAlignment(.center)
@@ -1813,10 +1673,6 @@ struct OnboardingView: View {
             syncScreenTimeAccessOnAppear()
         }
         .onDisappear {
-            if currentPage != OnboardingPage.lifetimeShock.rawValue
-                && currentPage != OnboardingPage.lifeSquaresReceipt.rawValue {
-                screenTimeCacheRefreshTask?.cancel()
-            }
             screenTimeReceiptVisible = false
         }
         .sheet(isPresented: $showingScreenTimeEstimateSheet) {
@@ -1824,9 +1680,6 @@ struct OnboardingView: View {
                 selection: $screenTimeEstimateHours,
                 onConfirm: {
                     useScreenTimeEstimate = true
-                    screenTimeEstimateFallbackAllowed = true
-                    measuredScreenTimeHours = nil
-                    measuredWeeklyScreenTimeHours = nil
                     showingScreenTimeEstimateSheet = false
                     trackOnboardingStepCompleted("screenTimeAccess", extraProperties: [
                         "screen_time_permission": "estimate",
@@ -1886,43 +1739,81 @@ struct OnboardingView: View {
     }
 
     private var screenTimePatternReport: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             DeviceActivityReport(.onboardingScreenTimeWeekTotal, filter: weeklyScreenTimeDeviceActivityFilter)
                 .frame(height: 184)
                 .id(screenTimeReportProbeID)
 
-            HStack(spacing: 8) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 11, weight: .bold))
-                Text("Stays on your phone")
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                    .tracking(0.9)
-                    .textCase(.uppercase)
-            }
-            .foregroundStyle(AppColors.textTertiary)
-            .opacity(screenTimeReceiptVisible ? 1 : 0)
-            .offset(y: screenTimeReceiptVisible ? 0 : 10)
-            .animation(.easeOut(duration: 0.28).delay(0.28), value: screenTimeReceiptVisible)
+            weeklyMatchSection
+                .padding(.top, 26)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 28)
-        .padding(.bottom, 12)
-        .overlay(alignment: .center) {
-            Circle()
-                .fill(AppColors.coral.opacity(0.15))
-                .frame(width: 260, height: 260)
-                .blur(radius: 70)
-                .offset(x: 70, y: -10)
-                .allowsHitTesting(false)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+    }
+
+    private var weeklyDailyEquivalentLabel: String {
+        String(format: "≈ %.1fh a day", reportedWeeklyScreenTimeHours / 7.0)
+    }
+
+    /// User transcribes the Apple-rendered weekly total into the app. The
+    /// report extension sandbox blocks data hand-off, so this slider is the
+    /// only honest channel — and the upward drag doubles as a commitment beat.
+    /// Styled as a line item on the receipt (hairline divider, no card box),
+    /// locked to the receipt's coral.
+    private var weeklyMatchSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Rectangle()
+                .fill(Color.white.opacity(0.10))
+                .frame(height: 1)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("Match your total")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .tracking(1.2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(OB.fg3)
+
+                Spacer(minLength: 8)
+
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(Int(reportedWeeklyScreenTimeHours))")
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(OB.coral)
+                        .contentTransition(.numericText())
+                        .animation(.snappy(duration: 0.18), value: reportedWeeklyScreenTimeHours)
+
+                    Text("h")
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                }
+            }
+
+            WeeklyHoursMatchSlider(
+                value: $reportedWeeklyScreenTimeHours,
+                range: 7...105,
+                tint: OB.coral
+            )
+
+            HStack {
+                Text("7h")
+                Spacer()
+                Text(weeklyDailyEquivalentLabel)
+                    .foregroundStyle(OB.fg2)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.18), value: reportedWeeklyScreenTimeHours)
+                Spacer()
+                Text("105h")
+            }
+            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+            .tracking(0.7)
+            .textCase(.uppercase)
+            .foregroundStyle(OB.fg3)
         }
-        .overlay(alignment: .bottomLeading) {
-            Circle()
-                .fill(AppColors.accent.opacity(0.12))
-                .frame(width: 210, height: 210)
-                .blur(radius: 64)
-                .offset(x: -84, y: 52)
-                .allowsHitTesting(false)
-        }
+        .opacity(screenTimeReceiptVisible ? 1 : 0)
+        .offset(y: screenTimeReceiptVisible ? 0 : 14)
+        .animation(.spring(response: 0.54, dampingFraction: 0.84).delay(0.12), value: screenTimeReceiptVisible)
     }
 
     private var screenTimeReceiptChart: some View {
@@ -2152,90 +2043,45 @@ struct OnboardingView: View {
         }
     }
 
-    private func prepareScreenTimeProjectionAndAdvance() {
-        guard !isRequestingScreenTimeAccess, !isPreparingScreenTimeProjection else { return }
-        screenTimeCacheRefreshTask?.cancel()
-        isPreparingScreenTimeProjection = true
-
-        Task { @MainActor in
-            for _ in 0..<6 {
-                refreshCachedScreenTimeHours()
-                if hasMeasuredScreenTimeHours { break }
-                try? await Task.sleep(for: .milliseconds(200))
-            }
-
-            refreshCachedScreenTimeHours()
-            if hasMeasuredScreenTimeHours {
-                useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
-            } else {
-                useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
-                startScreenTimeCacheRefreshLoop(
-                    maxAttempts: 120,
-                    intervalMilliseconds: 500,
-                    allowEstimateFallbackAfterTimeout: false
-                )
-                isPreparingScreenTimeProjection = false
-                return
-            }
-
-            isPreparingScreenTimeProjection = false
-            goToPage(OnboardingFlowOrder.page(afterScreenTimeAccess: true).rawValue)
-        }
-    }
-
     private func syncScreenTimeAccessOnAppear() {
         isRequestingScreenTimeAccess = true
-        Task {
+        Task { @MainActor in
             await focusModeService.checkAuthorizationStatus()
             screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
-            refreshCachedScreenTimeHours()
             isRequestingScreenTimeAccess = false
 
             if screenTimeAuthorized {
                 screenTimeAccessDenied = false
                 useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
-                resetMeasuredScreenTimeForWeeklyRead()
                 reloadScreenTimeReportProbe()
-                startScreenTimeCacheRefreshLoop()
                 animateScreenTimeReceipt()
             } else {
+                // No auto-prompt: the system dialog only fires from the
+                // "Allow Screen Time" button, after the primer has done its
+                // job. A cold prompt over an unread primer tanks grant rate.
                 screenTimeReceiptVisible = false
                 useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
-                if !screenTimePromptAttempted {
-                    screenTimePromptAttempted = true
-                    requestScreenTimeForOnboarding()
-                }
             }
         }
     }
 
     private func requestScreenTimeForOnboarding() {
         isRequestingScreenTimeAccess = true
-        Task {
+        Task { @MainActor in
             await focusModeService.requestAuthorization()
             screenTimeAuthorized = (focusModeService.authorizationStatus == .approved)
-            refreshCachedScreenTimeHours()
             isRequestingScreenTimeAccess = false
             if screenTimeAuthorized {
                 screenTimeAccessDenied = false
                 useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
-                resetMeasuredScreenTimeForWeeklyRead()
                 reloadScreenTimeReportProbe()
                 trackOnboardingStepCompleted("screenTimePermissionApproved", extraProperties: [
-                    "screen_time_permission": "approved",
-                    "screen_time_cache_source": currentScreenTimeSnapshot.source.rawValue
+                    "screen_time_permission": "approved"
                 ])
-                startScreenTimeCacheRefreshLoop()
                 animateScreenTimeReceipt()
             } else {
                 screenTimeAccessDenied = true
                 useScreenTimeEstimate = false
-                screenTimeEstimateFallbackAllowed = false
                 trackOnboardingStepCompleted("screenTimePermissionDenied", extraProperties: [
                     "screen_time_permission": "denied"
                 ])
@@ -2248,6 +2094,7 @@ struct OnboardingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             guard screenTimeAuthorized else { return }
             screenTimeReceiptVisible = true
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.7)
         }
     }
 
@@ -3243,6 +3090,71 @@ struct OnboardingView: View {
 
 // MARK: - Organic Circle Shape
 
+/// Custom capsule-track slider for the weekly Screen Time match card.
+/// Raw DragGesture (same precedent as AgeNumberRail) so onboarding page
+/// gestures never swallow it; light haptic tick per hour like the age rail.
+struct WeeklyHoursMatchSlider: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let tint: Color
+
+    private let trackHeight: CGFloat = 12
+    private let thumbSize: CGFloat = 28
+
+    private var fraction: CGFloat {
+        CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound))
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let usable = max(proxy.size.width - thumbSize, 1)
+            let thumbX = usable * fraction
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(Capsule().stroke(Color.white.opacity(0.07), lineWidth: 1))
+                    .frame(height: trackHeight)
+
+                Capsule()
+                    .fill(tint)
+                    .frame(width: max(trackHeight, thumbX + thumbSize / 2), height: trackHeight)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .shadow(color: .black.opacity(0.30), radius: 6, y: 2)
+                    .offset(x: thumbX)
+            }
+            .frame(height: thumbSize)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 4)
+                    .onChanged { gesture in
+                        let dragFraction = min(max((gesture.location.x - thumbSize / 2) / usable, 0), 1)
+                        let raw = range.lowerBound + Double(dragFraction) * (range.upperBound - range.lowerBound)
+                        let stepped = raw.rounded()
+                        if stepped != value {
+                            value = stepped
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                    }
+            )
+        }
+        .frame(height: thumbSize)
+        .accessibilityElement()
+        .accessibilityLabel("Weekly Screen Time hours")
+        .accessibilityValue("\(Int(value)) hours per week")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: value = min(range.upperBound, value + 1)
+            case .decrement: value = max(range.lowerBound, value - 1)
+            @unknown default: break
+            }
+        }
+    }
+}
+
 struct AgeNumberRail: View {
     @Binding var selectedAge: Int
     @State private var dragStartAge: Int?
@@ -3253,7 +3165,10 @@ struct AgeNumberRail: View {
     /// per-tick compensation and caused 60pt visual jumps at each age boundary.
     @State private var committedOffset: CGFloat = 0
 
-    private let range = 18...99
+    // Floor is 13 — the COPPA line, and TikTok's own minimum. Younger users
+    // get a scarier (more honest) lifetime receipt than anyone forced to
+    // lie upward to 18.
+    private let range = 13...99
     private let tickWidth: CGFloat = 60
 
     private var isDragging: Bool { dragStartAge != nil }
@@ -3969,7 +3884,7 @@ struct GoalCard: View {
         case .doomscrolling:    return "Sleep that survives"
         case .loseFocus:        return "Outscore the feed"
         case .forgetInstantly:  return "Memory that sticks"
-        case .getSharper:       return "Younger Brain Score"
+        case .getSharper:       return "A sharper brain"
         }
     }
 
@@ -3980,7 +3895,7 @@ struct GoalCard: View {
         case .doomscrolling:    return "Stop the 2am scroll before it starts"
         case .loseFocus:        return "Climb while your apps wait"
         case .forgetInstantly:  return "Remember what you read and opened"
-        case .getSharper:       return "Push your Brain Score up"
+        case .getSharper:       return "Every unlock is a brain rep"
         }
     }
 
@@ -4360,6 +4275,8 @@ struct OnboardingTrialPrimerView: View {
     let subhead: String
     let proofTitle: String
     let proofDetail: String
+    var secondProofTitle: String? = nil
+    var secondProofDetail: String? = nil
     let footnote: String
     let mascotName: String
     let tint: Color
@@ -4371,11 +4288,11 @@ struct OnboardingTrialPrimerView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(alignment: .leading, spacing: 0) {
-                Spacer().frame(height: 42)
+                Spacer().frame(height: 20)
 
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text(headline)
-                        .font(.system(size: 44, weight: .black, design: .rounded))
+                        .font(.system(size: 40, weight: .black, design: .rounded))
                         .foregroundStyle(OB.fg)
                         .lineSpacing(-2)
                         .minimumScaleFactor(0.74)
@@ -4391,7 +4308,7 @@ struct OnboardingTrialPrimerView: View {
                 .offset(y: appeared ? 0 : 10)
                 .animation(.easeOut(duration: 0.32), value: appeared)
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 14)
 
                 trustProof
                     .opacity(appeared ? 1 : 0)
@@ -4399,13 +4316,13 @@ struct OnboardingTrialPrimerView: View {
                     .offset(y: appeared ? 0 : 18)
                     .animation(.spring(response: 0.54, dampingFraction: 0.84).delay(0.10), value: appeared)
 
-                Spacer(minLength: 30)
+                Spacer(minLength: 18)
 
                 OBContinueButton(title: ctaTitle, action: onContinue)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 10)
                     .animation(.easeOut(duration: 0.28).delay(0.24), value: appeared)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 12)
             }
             .frame(width: min(max(proxy.size.width - 64, 0), 500), height: proxy.size.height, alignment: .leading)
             .padding(.horizontal, 32)
@@ -4437,11 +4354,11 @@ struct OnboardingTrialPrimerView: View {
                 Image(mascotName)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: 238, maxHeight: 238)
+                    .frame(maxWidth: 206, maxHeight: 206)
                     .shadow(color: tint.opacity(0.32), radius: 30, x: 0, y: 18)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 240)
+            .frame(height: 208)
 
             VStack(spacing: 10) {
                 VStack(spacing: 5) {
@@ -4457,6 +4374,27 @@ struct OnboardingTrialPrimerView: View {
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .multilineTextAlignment(.center)
+                }
+
+                if let secondProofTitle, let secondProofDetail {
+                    Divider().overlay(OB.border)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 2)
+
+                    VStack(spacing: 5) {
+                        Text(secondProofTitle)
+                            .font(.system(size: 19, weight: .black, design: .rounded))
+                            .foregroundStyle(OB.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.center)
+
+                        Text(secondProofDetail)
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(OB.fg2)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.center)
+                    }
                 }
 
                 Text(footnote)
