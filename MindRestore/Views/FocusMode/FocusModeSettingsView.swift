@@ -133,16 +133,13 @@ struct FocusModeSettingsView: View {
                     }
                 }
 
-                // MARK: Unlock Duration
-                Section("Unlock Duration") {
-                    Picker("After completing a game", selection: Binding(
-                        get: { focusModeService.unlockDuration },
-                        set: { focusModeService.setUnlockDuration($0) }
-                    )) {
-                        Text("5 min").tag(5)
-                        Text("15 min").tag(15)
-                        Text("30 min").tag(30)
-                        Text("60 min").tag(60)
+                // MARK: Unlock Window
+                Section("Unlock Window") {
+                    HStack {
+                        Text("Your spin decides")
+                        Spacer()
+                        Text("5–20 min")
+                            .foregroundStyle(.secondary)
                     }
                 }
 

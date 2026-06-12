@@ -1097,8 +1097,8 @@ struct ProgressDashboardView: View {
                 thinDivider
 
                 statsRow(
-                    label: "Unlock duration",
-                    value: "\(focusModeService.unlockDuration) min",
+                    label: "Unlock window",
+                    value: "5–20 min",
                     delta: nil,
                     inverted: false
                 )

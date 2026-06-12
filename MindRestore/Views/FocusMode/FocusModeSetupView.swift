@@ -38,8 +38,6 @@ struct FocusModeSetupView: View {
     @State private var scheduleStart = Calendar.current.date(from: DateComponents(hour: 22)) ?? Date()
     @State private var scheduleEnd   = Calendar.current.date(from: DateComponents(hour: 8)) ?? Date()
     @State private var scheduleDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7] // 1=Sun, 7=Sat
-    @State private var unlockDuration = 15
-    @State private var passPulse = false
     @State private var showingProPaywall = false
     @State private var showingAppPicker = false
 
@@ -720,7 +718,6 @@ struct FocusModeSetupView: View {
 
                 Task {
                     await focusModeService.requestAuthorization()
-                    focusModeService.setUnlockDuration(unlockDuration)
                     focusModeService.updateScheduleDays(scheduleDays)
                     focusModeService.updateSchedule(
                         enabled: scheduleEnabled,
@@ -755,15 +752,13 @@ struct FocusModeSetupView: View {
                     .fill(AppColors.violet.opacity(0.14))
                     .frame(width: 188, height: 188)
                     .blur(radius: 22)
-                    .scaleEffect(passPulse ? 1.08 : 1.0)
 
                 VStack(spacing: -4) {
-                    Text("\(unlockDuration)")
-                        .font(.system(size: 112, weight: .black, design: .rounded))
+                    Text("5–20")
+                        .font(.system(size: 96, weight: .black, design: .rounded))
                         .foregroundStyle(AppColors.textPrimary)
                         .monospacedDigit()
-                        .contentTransition(.numericText(value: Double(unlockDuration)))
-                        .minimumScaleFactor(0.86)
+                        .minimumScaleFactor(0.78)
 
                     Text("MIN PASS")
                         .font(.system(size: 15, weight: .black, design: .monospaced))
@@ -772,16 +767,14 @@ struct FocusModeSetupView: View {
                 }
             }
             .frame(height: 184)
-            .scaleEffect(passPulse ? 1.025 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: passPulse)
 
-            Text("Earned by one brain game")
+            Text("Your spin decides the window")
                 .font(.brand(size: 14, weight: .bold))
                 .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(unlockDuration) minute pass. Earned by one brain game.")
+        .accessibilityLabel("5 to 20 minute pass. Your spin decides the window.")
     }
 
     @ViewBuilder
@@ -835,11 +828,13 @@ struct FocusModeSetupView: View {
         }
     }
 
+    /// The spin decides the window now — this strip just explains the payout
+    /// table, no choice to make.
     private var passTextSelector: some View {
         HStack(spacing: 0) {
-            passTextOption(minutes: 5, title: "Strict")
-            passTextOption(minutes: 15, title: "Balanced", footnote: "recommended")
-            passTextOption(minutes: 30, title: "Soft")
+            payoutTierColumn(minutes: 5, label: "QUICK", tint: AppColors.textSecondary)
+            payoutTierColumn(minutes: 10, label: "SOLID", tint: AppColors.accent)
+            payoutTierColumn(minutes: 20, label: "RARE", tint: AppColors.amber)
         }
         .overlay(alignment: .top) {
             Rectangle()
@@ -851,50 +846,27 @@ struct FocusModeSetupView: View {
                 .fill(AppColors.cardBorder.opacity(0.48))
                 .frame(height: 1)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Payouts: 5 minutes for quick games, 10 for memory games, 20 for the rare hard games.")
     }
 
-    private func passTextOption(minutes: Int, title: String, footnote: String? = nil) -> some View {
-        let isSelected = unlockDuration == minutes
-
-        return Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
-                unlockDuration = minutes
+    private func payoutTierColumn(minutes: Int, label: String, tint: Color) -> some View {
+        VStack(spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text("\(minutes)")
+                    .font(.system(size: 21, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                Text("min")
+                    .font(.brand(size: 13, weight: .heavy))
             }
-            passPulse.toggle()
-        } label: {
-            VStack(spacing: 7) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text("\(minutes)")
-                        .font(.system(size: 21, weight: .black, design: .rounded))
-                        .monospacedDigit()
+            .foregroundStyle(tint)
 
-                    Text(title)
-                        .font(.brand(size: 13, weight: .heavy))
-                }
-                .foregroundStyle(isSelected ? AppColors.violet : AppColors.textSecondary)
-
-                Capsule()
-                    .fill(isSelected ? AppColors.violet : AppColors.cardBorder.opacity(0.0))
-                    .frame(width: 34, height: 3)
-
-                if let footnote, isSelected {
-                    Text(footnote)
-                        .font(.system(size: 8, weight: .black, design: .monospaced))
-                        .tracking(0.6)
-                        .foregroundStyle(AppColors.violet.opacity(0.92))
-                        .lineLimit(1)
-                } else {
-                    Text(" ")
-                        .font(.system(size: 8, weight: .black, design: .monospaced))
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 76)
-            .contentShape(Rectangle())
+            Text(label)
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .tracking(1.0)
+                .foregroundStyle(tint.opacity(0.78))
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(minutes) minute pass, \(title.lowercased())")
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .frame(maxWidth: .infinity, minHeight: 66)
     }
 
     // MARK: - Helpers

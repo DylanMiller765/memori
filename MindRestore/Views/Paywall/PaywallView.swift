@@ -124,6 +124,8 @@ struct PaywallView: View {
     var onConversionComplete: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var backgroundedAtPaywall = false
     @Environment(StoreService.self) private var storeService
 
     @State private var selectedPlan: PaywallPlan = .annual
@@ -143,7 +145,9 @@ struct PaywallView: View {
     }
 
     private var shouldShowCloseButton: Bool {
-        !isHardPaywall
+        // Hard paywall: the X never dismisses — it opens the founder offer.
+        // It must actually render for that path to exist.
+        true
     }
 
     var body: some View {
@@ -188,6 +192,19 @@ struct PaywallView: View {
             .presentationDragIndicator(.visible)
             .presentationBackground(PW.bg)
         }
+        // Purchase failures were silent — the error string was set but never
+        // rendered, so a failed buy looked like a dead button.
+        .alert(
+            "Purchase issue",
+            isPresented: Binding(
+                get: { storeService.purchaseError != nil },
+                set: { if !$0 { storeService.purchaseError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { storeService.purchaseError = nil }
+        } message: {
+            Text(storeService.purchaseError ?? "")
+        }
         .onAppear {
             Analytics.paywallShown(
                 trigger: triggerSource,
@@ -195,6 +212,20 @@ struct PaywallView: View {
                 selectedPlan: selectedPlan.analyticsName
             )
             scheduleHardFounderCueIfNeeded()
+        }
+        // Abandon-and-return: backgrounding the app IS the exit gesture on a
+        // hard paywall — greet the return with the founder offer (once ever,
+        // same caps as the decline path).
+        .onChange(of: scenePhase) { _, phase in
+            guard isHardPaywall, !storeService.isProUser else { return }
+            if phase == .background {
+                backgroundedAtPaywall = true
+            } else if phase == .active && backgroundedAtPaywall {
+                backgroundedAtPaywall = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    presentFounderOffer(trigger: "paywall_background_return")
+                }
+            }
         }
         .onChange(of: storeService.products.count) {
             scheduleHardFounderCueIfNeeded()
@@ -713,7 +744,7 @@ struct PaywallView: View {
             Task { await purchaseSelectedPlan() }
         } label: {
             HStack(spacing: 10) {
-                Text(selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access")
+                Text(storeService.isLoading ? "Opening…" : (selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access"))
                     .font(.system(size: 18, weight: .black, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -732,6 +763,8 @@ struct PaywallView: View {
             .shadow(color: PW.bg.opacity(0.30), radius: 20, y: 12)
         }
         .buttonStyle(.plain)
+        .disabled(storeService.isLoading)
+        .opacity(storeService.isLoading ? 0.75 : 1)
     }
 
     private var cuteFooter: some View {
@@ -1235,7 +1268,7 @@ struct PaywallView: View {
         Button {
             Task { await purchaseSelectedPlan() }
         } label: {
-            Text(selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access")
+            Text(storeService.isLoading ? "Opening…" : (selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access"))
                 .font(.system(size: 18, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -1248,6 +1281,8 @@ struct PaywallView: View {
                 .shadow(color: PW.accent.opacity(0.30), radius: 28, y: 12)
         }
         .buttonStyle(.plain)
+        .disabled(storeService.isLoading)
+        .opacity(storeService.isLoading ? 0.75 : 1)
     }
 
     private var trialPaymentNotice: some View {
@@ -1301,13 +1336,16 @@ struct PaywallView: View {
         }
     }
 
-    private func presentFounderOffer(trigger: String) {
-        guard !hasSeenExitOffer, exitOfferShownCount < maxExitOffers else { return }
+    private func presentFounderOffer(trigger: String, force: Bool = false) {
+        // The once-ever cap applies to automatic triggers only. An explicit
+        // X tap on the hard paywall must always work — it's the only thing
+        // that button does.
+        guard force || (!hasSeenExitOffer && exitOfferShownCount < maxExitOffers) else { return }
         guard canShowExitOffer else {
             Task { @MainActor in
                 await storeService.loadProducts()
                 if canShowExitOffer {
-                    showFounderOffer(trigger: trigger)
+                    showFounderOffer(trigger: trigger, force: force)
                 } else {
                     storeService.purchaseError = "Founder offer is still loading."
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)
@@ -1315,11 +1353,11 @@ struct PaywallView: View {
             }
             return
         }
-        showFounderOffer(trigger: trigger)
+        showFounderOffer(trigger: trigger, force: force)
     }
 
-    private func showFounderOffer(trigger: String) {
-        guard !hasSeenExitOffer, exitOfferShownCount < maxExitOffers else { return }
+    private func showFounderOffer(trigger: String, force: Bool = false) {
+        guard force || (!hasSeenExitOffer && exitOfferShownCount < maxExitOffers) else { return }
         Analytics.paywallExitOfferShown(
             trigger: trigger,
             selectedPlan: selectedPlan.analyticsName,
@@ -1355,7 +1393,7 @@ struct PaywallView: View {
 
         return Button {
             if isHardPaywall {
-                presentFounderOffer(trigger: "onboarding_hard_paywall_x")
+                presentFounderOffer(trigger: "onboarding_hard_paywall_x", force: true)
                 return
             }
             if hasSeenExitOffer || !isHighIntent || exitOfferShownCount >= maxExitOffers || !canShowExitOffer {
@@ -1400,7 +1438,7 @@ struct PaywallView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(isHardPaywall ? "View founder price" : "Close")
         .padding(.top, cappedTopPadding)
-        .padding(.trailing, 12)
+        .padding(.trailing, 22)
         .frame(width: width, height: cappedTapRegionHeight, alignment: .topTrailing)
     }
 

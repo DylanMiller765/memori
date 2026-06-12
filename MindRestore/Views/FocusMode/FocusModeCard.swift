@@ -57,7 +57,7 @@ struct FocusModeCard: View {
     }
 
     private var trainForPassTitle: String {
-        "Train for \(focusModeService.unlockDuration) min"
+        "Spin for your pass"
     }
 
     private var cardState: CardState {
@@ -113,7 +113,7 @@ struct FocusModeCard: View {
             leftTitle: "Focus Mode",
             leftValue: "Off duty",
             rightTitle: "Pass",
-            rightValue: "\(focusModeService.unlockDuration) min",
+            rightValue: "5–20 min",
             targetMode: .empty,
             ctaTitle: "Pick targets",
             ctaAction: { showingAppPicker = true }
@@ -131,7 +131,7 @@ struct FocusModeCard: View {
             leftTitle: "Focus Mode",
             leftValue: "Off duty",
             rightTitle: "Pass",
-            rightValue: "\(focusModeService.unlockDuration) min",
+            rightValue: "5–20 min",
             targetMode: .unlocked,
             ctaTitle: "Start blocking",
             ctaAction: {
@@ -180,7 +180,7 @@ struct FocusModeCard: View {
                 leftTitle: "Focus Mode",
                 leftValue: "Blocking",
                 rightTitle: "Pass",
-                rightValue: "\(focusModeService.unlockDuration) min",
+                rightValue: "5–20 min",
                 targetMode: .locked,
                 ctaTitle: trainForPassTitle,
                 ctaAction: { deepLinkRouter.pendingDestination = .focusUnlock }
@@ -201,7 +201,7 @@ struct FocusModeCard: View {
                 leftTitle: "Focus Mode",
                 leftValue: "Cooling down",
                 rightTitle: "Pass",
-                rightValue: "\(focusModeService.unlockDuration) min",
+                rightValue: "5–20 min",
                 targetMode: .unlocked,
                 ctaTitle: trainForPassTitle,
                 ctaAction: { deepLinkRouter.pendingDestination = .focusUnlock }
