@@ -1,5 +1,24 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let memoHandleDeepLink = Notification.Name("memoHandleDeepLink")
+}
+
+/// Bridge for deep links arriving from the AppDelegate (notification taps).
+/// AppDelegate can't reach ContentView's router directly, and round-tripping
+/// our own URL scheme through `UIApplication.shared.open` is unreliable —
+/// it silently drops the link and the app just lands on home. Instead we
+/// post to NotificationCenter for warm taps and stash the URL so a cold
+/// launch can drain it once the listener exists.
+enum PendingDeepLink {
+    static var url: URL?
+
+    static func route(_ url: URL) {
+        self.url = url
+        NotificationCenter.default.post(name: .memoHandleDeepLink, object: url)
+    }
+}
+
 enum DeepLinkDestination: Equatable {
     case home
     case train

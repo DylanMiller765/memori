@@ -86,7 +86,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 ? response.notification.request.identifier.components(separatedBy: "_").first ?? "unknown"
                 : response.notification.request.content.categoryIdentifier
             Analytics.appOpenedFromNotification(notificationType: notificationType)
-            UIApplication.shared.open(url)
+            // Route directly instead of UIApplication.shared.open(url): opening
+            // our own custom scheme back into the same app drops the link on
+            // cold launch and lands on home. PendingDeepLink posts to a live
+            // listener and stashes for cold-launch drain.
+            PendingDeepLink.route(url)
         }
         completionHandler()
     }

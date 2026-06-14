@@ -137,11 +137,24 @@ struct ContentView: View {
         .onOpenURL { url in
             deepLinkRouter.handle(url)
         }
+        // Notification taps (e.g. the shield "spin to unlock" notification)
+        // route here instead of through UIApplication.shared.open.
+        .onReceive(NotificationCenter.default.publisher(for: .memoHandleDeepLink)) { note in
+            guard let url = note.object as? URL else { return }
+            PendingDeepLink.url = nil
+            deepLinkRouter.handle(url)
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             gameCenterService.authenticate()
             Task {
                 await focusModeService.refreshForAppForeground()
+            }
+            // Cold-launch drain: a notification tapped while the app was dead
+            // stashes its link before this listener existed.
+            if let pending = PendingDeepLink.url {
+                PendingDeepLink.url = nil
+                deepLinkRouter.handle(pending)
             }
         }
         .onAppear {

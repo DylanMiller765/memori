@@ -163,6 +163,9 @@ struct PaywallView: View {
                 if shouldShowCloseButton {
                     closeButton(safeTop: proxy.safeAreaInsets.top, width: proxy.size.width)
                 }
+                #if DEBUG
+                debugSkipButton(safeTop: proxy.safeAreaInsets.top)
+                #endif
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -1390,6 +1393,30 @@ struct PaywallView: View {
         hasSeenExitOffer = true
         exitOfferShownCount += 1
     }
+
+    #if DEBUG
+    /// Dev-only bypass — sandbox purchases can't be exercised without a live
+    /// Paid Apps agreement, so this fakes a conversion to test everything
+    /// downstream. Compiled out of release builds entirely.
+    private func debugSkipButton(safeTop: CGFloat) -> some View {
+        Button {
+            storeService.isProUser = true
+            onConversionComplete?()
+            dismiss()
+        } label: {
+            Text("DEV SKIP")
+                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.red.opacity(0.85), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, min(max(12, safeTop + 8), 68))
+        .padding(.leading, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+    #endif
 
     // MARK: - Close Button
 

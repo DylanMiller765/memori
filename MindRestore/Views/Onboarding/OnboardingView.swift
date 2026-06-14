@@ -376,6 +376,29 @@ struct OnboardingView: View {
                     .transition(.opacity)
                     .zIndex(1001)
             }
+
+            #if DEBUG
+            // Dev-only: jump straight to the paywall to test conversion +
+            // everything downstream without walking all 16 screens. Compiled
+            // out of release builds.
+            if currentPage == 0 && presentedCover == nil {
+                Button {
+                    presentedCover = .paywall
+                } label: {
+                    Text("DEV → PAYWALL")
+                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.red.opacity(0.85), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, 16)
+                .padding(.bottom, 40)
+                .zIndex(1002)
+            }
+            #endif
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)

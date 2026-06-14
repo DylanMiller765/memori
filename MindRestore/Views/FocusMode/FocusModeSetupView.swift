@@ -420,6 +420,8 @@ struct FocusModeSetupView: View {
                     .font(.system(size: 11, weight: .black, design: .monospaced))
                     .tracking(1.1)
                     .foregroundStyle(scheduleEnabled ? AppColors.violet : AppColors.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Text(scheduleEnabled ? "Blocking these when the feed gets loud." : "Blocking these until you train.")
                     .font(.brand(size: 14, weight: .semibold))
@@ -448,8 +450,10 @@ struct FocusModeSetupView: View {
         let appTokens = Array(focusModeService.activitySelection.applicationTokens)
         let categoryTokens = Array(focusModeService.activitySelection.categoryTokens)
         let webCount = focusModeService.activitySelection.webDomainTokens.count
-        let visibleAppTokens = Array(appTokens.prefix(4))
-        let categorySlots = max(0, 4 - visibleAppTokens.count)
+        // Cap at 3 icons + a "+N" badge so the strip never crowds the
+        // header/body text column into an ellipsis.
+        let visibleAppTokens = Array(appTokens.prefix(3))
+        let categorySlots = max(0, 3 - visibleAppTokens.count)
         let visibleCategoryTokens = Array(categoryTokens.prefix(categorySlots))
         let visibleCount = visibleAppTokens.count + visibleCategoryTokens.count
         let hiddenCount = max(0, appTokens.count + categoryTokens.count + webCount - visibleCount)
@@ -681,7 +685,7 @@ struct FocusModeSetupView: View {
             Spacer().frame(height: 14)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("How long is\nthe pass?")
+                Text("Every pass is\na gamble.")
                     .font(.brand(size: 36, weight: .heavy))
                     .foregroundStyle(AppColors.textPrimary)
                     .multilineTextAlignment(.leading)
@@ -689,7 +693,7 @@ struct FocusModeSetupView: View {
                     .minimumScaleFactor(0.86)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Short enough to check in. Not long enough to disappear.")
+                Text("Spin the slot when you train. You win 5, 10, or 20 minutes.")
                     .font(.brand(size: 18, weight: .semibold))
                     .foregroundStyle(AppColors.textSecondary)
                     .multilineTextAlignment(.leading)
@@ -768,7 +772,7 @@ struct FocusModeSetupView: View {
             }
             .frame(height: 184)
 
-            Text("Your spin decides the window")
+            Text("Land a rare game, win the big window")
                 .font(.brand(size: 14, weight: .bold))
                 .foregroundStyle(AppColors.textSecondary)
         }
