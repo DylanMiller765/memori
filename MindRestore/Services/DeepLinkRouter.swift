@@ -1,5 +1,24 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let memoHandleDeepLink = Notification.Name("memoHandleDeepLink")
+}
+
+/// Bridge for deep links arriving from the AppDelegate (notification taps).
+/// AppDelegate can't reach ContentView's router directly, and round-tripping
+/// our own URL scheme through `UIApplication.shared.open` is unreliable —
+/// it silently drops the link and the app just lands on home. Instead we
+/// post to NotificationCenter for warm taps and stash the URL so a cold
+/// launch can drain it once the listener exists.
+enum PendingDeepLink {
+    static var url: URL?
+
+    static func route(_ url: URL) {
+        self.url = url
+        NotificationCenter.default.post(name: .memoHandleDeepLink, object: url)
+    }
+}
+
 enum DeepLinkDestination: Equatable {
     case home
     case train
@@ -7,29 +26,15 @@ enum DeepLinkDestination: Equatable {
     case compete
     case insights
     case profile
-    case dailyChallenge
-    case challenge(ChallengeLink)
-    case referral(String)
+    case focusUnlock
 }
 
 @MainActor @Observable
 final class DeepLinkRouter {
     var pendingDestination: DeepLinkDestination?
-    var pendingChallenge: ChallengeLink?
-
-    private static let universalLinkHost = "getmemoriapp.com"
 
     func handle(_ url: URL) {
-        // Handle Universal Links from Vercel domain
-        if url.host == Self.universalLinkHost && url.path == "/challenge" {
-            if let link = ChallengeLink(url: url) {
-                pendingChallenge = link
-                pendingDestination = .challenge(link)
-            }
-            return
-        }
-
-        guard url.scheme == "memori" else { return }
+        guard url.scheme == "memo" || url.scheme == "memori" else { return }
 
         switch url.host {
         case "home": pendingDestination = .home
@@ -37,14 +42,6 @@ final class DeepLinkRouter {
         case "compete": pendingDestination = .compete
         case "insights": pendingDestination = .insights
         case "profile": pendingDestination = .profile
-        case "challenge": pendingDestination = .dailyChallenge
-        case "duel":
-            if let link = ChallengeLink(url: url) {
-                pendingChallenge = link
-                pendingDestination = .challenge(link)
-            } else {
-                pendingDestination = .train
-            }
         case "game":
             if let typeName = url.pathComponents.dropFirst().first,
                let type = ExerciseType(rawValue: typeName) {
@@ -52,13 +49,7 @@ final class DeepLinkRouter {
             } else {
                 pendingDestination = .train
             }
-        case "refer":
-            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
-                pendingDestination = .referral(code)
-            } else {
-                pendingDestination = .home
-            }
+        case "focus-unlock": pendingDestination = .focusUnlock
         default:
             pendingDestination = .home
         }

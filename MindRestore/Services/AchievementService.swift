@@ -62,30 +62,10 @@ final class AchievementService {
             }
         }
 
-        // First exercise type completions
+        // First exercise type completion (Dual N-Back is the only "first type" achievement still active)
         let exerciseTypes = Set(exercises.map { $0.type })
-        let firstTypeMilestones: [(ExerciseType, AchievementType)] = [
-            (.spacedRepetition, .firstSpacedRep),
-            (.dualNBack, .firstDualNBack),
-            (.activeRecall, .firstActiveRecall)
-        ]
-        for (exerciseType, achievementType) in firstTypeMilestones {
-            if exerciseTypes.contains(exerciseType) && !unlockedSet.contains(achievementType) {
-                toUnlock.append(achievementType)
-            }
-        }
-
-        // Daily challenge check (activeRecall exercises with difficulty 2 are daily challenges)
-        if !unlockedSet.contains(.firstDailyChallenge) {
-            let hasDailyChallenge = exercises.contains { $0.type == .activeRecall && $0.difficulty == 2 }
-            if hasDailyChallenge {
-                toUnlock.append(.firstDailyChallenge)
-            }
-        }
-
-        // All exercise types completed
-        if exerciseTypes.count == ExerciseType.allCases.count && !unlockedSet.contains(.allExerciseTypes) {
-            toUnlock.append(.allExerciseTypes)
+        if exerciseTypes.contains(.dualNBack) && !unlockedSet.contains(.firstDualNBack) {
+            toUnlock.append(.firstDualNBack)
         }
 
         // Lightning reaction — under 200ms average
@@ -111,7 +91,7 @@ final class AchievementService {
         if !unlockedSet.contains(.nightOwl) {
             let hasLate = exercises.contains { exercise in
                 let hour = calendar.component(.hour, from: exercise.completedAt)
-                return hour >= 23
+                return hour >= 22
             }
             if hasLate {
                 toUnlock.append(.nightOwl)

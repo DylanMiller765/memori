@@ -1,0 +1,213 @@
+<h2>Train Tab: 3 Layout Approaches</h2>
+<p class="subtitle">Goal: games are the star, everything else gets out of the way</p>
+
+<div class="cards">
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="font-size: 11px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Current → Proposed</div>
+
+      <!-- Mock phone screen -->
+      <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; font-family: -apple-system, system-ui, sans-serif;">
+        <div style="font-size: 20px; font-weight: 800; color: white; margin-bottom: 12px;">Train</div>
+
+        <!-- Compact unified bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(74,127,229,0.08); border: 1px solid rgba(74,127,229,0.15); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; gap: 4px;">
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+            </div>
+            <span style="font-size: 11px; color: #aaa;">0 left</span>
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: white; background: #4A7FE5; padding: 4px 10px; border-radius: 20px;">Go Pro</div>
+        </div>
+
+        <!-- Daily challenge as inline card -->
+        <div style="background: linear-gradient(135deg, #D4A040, #C06040); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 1px;">DAILY CHALLENGE</div>
+            <div style="font-size: 13px; font-weight: 700; color: white;">Today's Challenge</div>
+          </div>
+          <div style="width: 28px; height: 28px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">⭐</div>
+        </div>
+
+        <!-- Games immediately -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #8B5CF6; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px;">🧠</div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Memory</span>
+        </div>
+        <div style="display: flex; gap: 8px; overflow: hidden;">
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Number</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Visual</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center; opacity: 0.5;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Chunk</div>
+          </div>
+        </div>
+        <div style="font-size: 10px; color: #4A7FE5; margin-top: 6px;">✨ NEW games get a free first play</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: Slim It Down</h3>
+      <p>Keep the same pieces but make them compact. Daily limit becomes a thin bar. Daily challenge shrinks. Referral moves to Profile tab. Games visible without scrolling.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="font-size: 11px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Daily challenge = first game card</div>
+
+      <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; font-family: -apple-system, system-ui, sans-serif;">
+        <!-- Header with limit inline -->
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+          <div style="font-size: 20px; font-weight: 800; color: white;">Train</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="display: flex; gap: 3px;">
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+            </div>
+            <span style="font-size: 10px; color: #888;">0/3</span>
+            <div style="font-size: 9px; font-weight: 700; color: white; background: #4A7FE5; padding: 3px 8px; border-radius: 12px;">Pro</div>
+          </div>
+        </div>
+
+        <!-- Games section with daily challenge as first card -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #8B5CF6; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Memory</span>
+        </div>
+        <div style="display: flex; gap: 8px; overflow: hidden;">
+          <!-- Daily challenge AS a game card -->
+          <div style="min-width: 80px; background: linear-gradient(135deg, #D4A040, #C06040); border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px;">⭐</div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Daily</div>
+            <div style="font-size: 8px; color: rgba(255,255,255,0.7); margin-top: 2px;">Play now</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Number</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Visual</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #E05555; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Speed</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Reaction</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Color</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: Games First, Everything Else Inline</h3>
+      <p>Daily limit moves into the header next to "Train". Daily challenge becomes a special game card in the first row. Referral gone from Train entirely. Zero banners — just games.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="font-size: 11px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Hybrid: one compact strip + games</div>
+
+      <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; font-family: -apple-system, system-ui, sans-serif;">
+        <div style="font-size: 20px; font-weight: 800; color: white; margin-bottom: 12px;">Train</div>
+
+        <!-- Single unified strip: limit + daily challenge -->
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <!-- Limit pill -->
+          <div style="flex: 1; display: flex; align-items: center; gap: 8px; background: rgba(74,127,229,0.06); border: 1px solid rgba(74,127,229,0.12); border-radius: 10px; padding: 8px 10px;">
+            <div style="display: flex; gap: 3px;">
+              <div style="width: 7px; height: 7px; border-radius: 50%; background: #4A7FE5;"></div>
+              <div style="width: 7px; height: 7px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 7px; height: 7px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+            </div>
+            <span style="font-size: 11px; font-weight: 600; color: #ccc;">1 left</span>
+          </div>
+          <!-- Daily challenge pill -->
+          <div style="flex: 1; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(212,160,64,0.15), rgba(192,96,64,0.15)); border: 1px solid rgba(212,160,64,0.25); border-radius: 10px; padding: 8px 10px;">
+            <span style="font-size: 13px;">⭐</span>
+            <span style="font-size: 11px; font-weight: 600; color: #D4A040;">Daily Challenge</span>
+          </div>
+        </div>
+
+        <!-- Games immediately -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #8B5CF6; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Memory</span>
+        </div>
+        <div style="display: flex; gap: 8px; overflow: hidden;">
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Number</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Visual</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Chunking</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #E05555; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Speed</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Reaction</div>
+          </div>
+          <div style="min-width: 80px; background: #1a1a2e; border-radius: 10px; padding: 8px; text-align: center;">
+            <div style="height: 40px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Color</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C: Two Pills, Then Games</h3>
+      <p>Daily limit and daily challenge sit side-by-side as compact pills on one row. Just one line of UI before games start. Referral moves to Profile. Clean and balanced.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+  <h3 style="margin-top: 0;">All 3 options share these changes:</h3>
+  <ul style="color: #aaa; font-size: 14px; line-height: 1.8;">
+    <li><strong>Referral banner</strong> → moves to Profile tab (not Train's job)</li>
+    <li><strong>"Try each game" hint</strong> → communicated through existing NEW badges on cards</li>
+    <li><strong>Games visible immediately</strong> → no scrolling past banners</li>
+  </ul>
+</div>

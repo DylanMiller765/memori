@@ -25,7 +25,28 @@ final class GameCenterService {
     static let memoryChainLeaderboard = "com.dylanmiller.mindrestore.leaderboard.memoryChain"
     static let chimpTestLeaderboard = "com.dylanmiller.mindrestore.leaderboard.chimpTest"
     static let verbalMemoryLeaderboard = "com.dylanmiller.mindrestore.leaderboard.verbalMemory"
-    static let dailyChallengeLeaderboard = "com.dylanmiller.mindrestore.leaderboard.dailyChallengeScore"
+    static let focusBlockingLeaderboard = "com.dylanmiller.mindrestore.leaderboard.focusBlocking"
+    static let focusBlockingDailyLeaderboard = "com.dylanmiller.mindrestore.leaderboard.focusBlocking.today"
+    static let focusBlockingWeeklyLeaderboard = "com.dylanmiller.mindrestore.leaderboard.focusBlocking.weekly"
+
+    // MARK: - Monthly Leaderboards
+    //
+    // Convention: every lifetime leaderboard ID has a sibling monthly-reset leaderboard
+    // with `.monthly` appended. Configure these in App Store Connect as recurring
+    // leaderboards with reset cadence = monthly. Reporting via `reportScore(...)` below
+    // submits to BOTH the lifetime and monthly IDs in one call so all callsites get
+    // monthly support automatically.
+    //
+    // MANUAL STEP for user: in App Store Connect, create a monthly recurring leaderboard
+    // for each ID below (lifetime ID + ".monthly"), e.g.
+    //   com.dylanmiller.mindrestore.leaderboard.brainScore.monthly
+    //   com.dylanmiller.mindrestore.leaderboard.xp.monthly
+    //   ...
+    static let monthlySuffix = ".monthly"
+
+    static func monthlyLeaderboardID(for category: LeaderboardCategory) -> String {
+        leaderboardID(for: category) + monthlySuffix
+    }
 
     // MARK: - Achievement ID Mapping
 
@@ -51,7 +72,49 @@ final class GameCenterService {
         case .memoryChain: return memoryChainLeaderboard
         case .chimpTest: return chimpTestLeaderboard
         case .verbalMemory: return verbalMemoryLeaderboard
-        case .dailyChallenge: return dailyChallengeLeaderboard
+        case .focusBlocking: return focusBlockingLeaderboard
+        }
+    }
+
+    static func leaderboardID(for category: LeaderboardCategory, timeFilter: LeaderboardTimeFilter) -> String {
+        if category == .focusBlocking {
+            return focusLeaderboardID(for: timeFilter)
+        }
+
+        switch timeFilter {
+        case .today, .thisWeek, .allTime:
+            return leaderboardID(for: category)
+        case .thisMonth:
+            return monthlyLeaderboardID(for: category)
+        }
+    }
+
+    static func focusLeaderboardID(for timeFilter: LeaderboardTimeFilter) -> String {
+        switch timeFilter {
+        case .today:
+            return focusBlockingDailyLeaderboard
+        case .thisWeek, .allTime:
+            return focusBlockingWeeklyLeaderboard
+        case .thisMonth:
+            // Focus League exposes Today and Week only; keep month routed away
+            // from the legacy encoded monthly board if it is ever requested.
+            return focusBlockingWeeklyLeaderboard
+        }
+    }
+
+    private static func gameCenterTimeScope(
+        for category: LeaderboardCategory,
+        timeFilter: LeaderboardTimeFilter
+    ) -> GKLeaderboard.TimeScope {
+        switch timeFilter {
+        case .today:
+            return .today
+        case .thisWeek:
+            return .week
+        case .thisMonth:
+            return category == .focusBlocking ? .week : .allTime
+        case .allTime:
+            return .allTime
         }
     }
 
@@ -95,14 +158,11 @@ final class GameCenterService {
             return LeaderboardResult(entries: [], localPlayerEntry: nil, totalPlayerCount: 0)
         }
 
-        let leaderboardID = Self.leaderboardID(for: category)
-
-        let timeScope: GKLeaderboard.TimeScope
-        switch timeFilter {
-        case .today: timeScope = .today
-        case .thisWeek: timeScope = .week
-        case .allTime: timeScope = .allTime
-        }
+        // Monthly uses a separate, monthly-reset leaderboard ID and queries it as `.allTime`
+        // (the leaderboard itself resets monthly server-side via App Store Connect config).
+        // Focus League uses distinct direct-minute leaderboards for Today and Week.
+        let leaderboardID = Self.leaderboardID(for: category, timeFilter: timeFilter)
+        let timeScope = Self.gameCenterTimeScope(for: category, timeFilter: timeFilter)
 
         do {
             let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardID])
@@ -119,7 +179,7 @@ final class GameCenterService {
             var entries: [LeaderboardEntryData] = []
             let localPlayerID = GKLocalPlayer.local.teamPlayerID
 
-            for (index, entry) in (globalEntries ?? []).enumerated() {
+            for entry in globalEntries {
                 entries.append(LeaderboardEntryData(
                     rank: max(1, entry.rank),
                     username: entry.player.displayName,
@@ -163,19 +223,54 @@ final class GameCenterService {
     func reportScore(_ score: Int, leaderboardID: String) {
         guard isAuthenticated else { return }
 
+        // Submit to lifetime + monthly in one call. If the monthly leaderboard isn't yet
+        // configured in App Store Connect, the call fails and is logged — lifetime
+        // submissions are not affected because Game Center accepts/rejects each ID
+        // independently inside a single submitScore call.
+        let monthlyID = leaderboardID + Self.monthlySuffix
+        let ids = [leaderboardID, monthlyID]
+
         Task {
             do {
-                print("[GameCenterService] Submitting score \(score) to leaderboard \(leaderboardID)")
+                print("[GameCenterService] Submitting score \(score) to \(ids)")
                 try await GKLeaderboard.submitScore(
                     score,
                     context: 0,
                     player: GKLocalPlayer.local,
-                    leaderboardIDs: [leaderboardID]
+                    leaderboardIDs: ids
                 )
-                print("[GameCenterService] Successfully submitted score \(score) to \(leaderboardID)")
+                print("[GameCenterService] Successfully submitted score \(score) to \(ids)")
             } catch {
-                print("[GameCenterService] Failed to report score \(score) to \(leaderboardID): \(error.localizedDescription)")
+                print("[GameCenterService] Failed to report score \(score) to \(ids): \(error.localizedDescription)")
             }
+        }
+    }
+
+    func reportFocusLeagueScore(_ score: Int, for timeFilter: LeaderboardTimeFilter) {
+        guard isAuthenticated else { return }
+
+        Task {
+            _ = await submitFocusLeagueScore(score, for: timeFilter)
+        }
+    }
+
+    func submitFocusLeagueScore(_ score: Int, for timeFilter: LeaderboardTimeFilter) async -> Error? {
+        guard isAuthenticated else { return nil }
+
+        let leaderboardID = Self.focusLeaderboardID(for: timeFilter)
+        do {
+            print("[GameCenterService] Submitting Focus League score \(score) to \(leaderboardID)")
+            try await GKLeaderboard.submitScore(
+                score,
+                context: 0,
+                player: GKLocalPlayer.local,
+                leaderboardIDs: [leaderboardID]
+            )
+            print("[GameCenterService] Successfully submitted Focus League score \(score) to \(leaderboardID)")
+            return nil
+        } catch {
+            print("[GameCenterService] Failed to report Focus League score: \(error.localizedDescription)")
+            return error
         }
     }
 
@@ -205,9 +300,18 @@ final class GameCenterService {
 
     // MARK: - Show Game Center UI
 
-    func showLeaderboard(leaderboardID: String = brainScoreLeaderboard) {
+    func showLeaderboard(leaderboardID: String) {
         guard isAuthenticated else { return }
         presentGameCenterVC(state: .leaderboards, leaderboardID: leaderboardID)
+    }
+
+    func showLeaderboard(category: LeaderboardCategory, timeFilter: LeaderboardTimeFilter) {
+        guard isAuthenticated else { return }
+
+        let leaderboardID = Self.leaderboardID(for: category, timeFilter: timeFilter)
+        let timeScope = Self.gameCenterTimeScope(for: category, timeFilter: timeFilter)
+
+        presentGameCenterVC(state: .leaderboards, leaderboardID: leaderboardID, timeScope: timeScope)
     }
 
     func showAchievements() {
@@ -219,11 +323,12 @@ final class GameCenterService {
 
     private func presentGameCenterVC(
         state: GKGameCenterViewControllerState,
-        leaderboardID: String? = nil
+        leaderboardID: String? = nil,
+        timeScope: GKLeaderboard.TimeScope = .allTime
     ) {
         let gcVC: GKGameCenterViewController
         if let leaderboardID, state == .leaderboards {
-            gcVC = GKGameCenterViewController(leaderboardID: leaderboardID, playerScope: .global, timeScope: .allTime)
+            gcVC = GKGameCenterViewController(leaderboardID: leaderboardID, playerScope: .global, timeScope: timeScope)
         } else {
             gcVC = GKGameCenterViewController(state: state)
         }

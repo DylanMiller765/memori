@@ -1,123 +1,331 @@
 import SwiftUI
 import SwiftData
 import GameKit
+import UIKit
+
+private struct LeaderboardCacheKey: Hashable {
+    let category: String
+    let filter: String
+
+    init(category: LeaderboardCategory, filter: LeaderboardTimeFilter) {
+        self.category = category.rawValue
+        self.filter = filter.rawValue
+    }
+}
+
+private struct CachedLeaderboardSnapshot {
+    let entries: [LeaderboardEntryData]
+    let totalPlayerCount: Int
+}
 
 struct LeaderboardView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var users: [User]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query(sort: \Exercise.completedAt, order: .reverse) private var exercises: [Exercise]
     @Environment(GameCenterService.self) private var gameCenterService
+    @Environment(FocusModeService.self) private var focusModeService
 
-    @State private var selectedCategory: LeaderboardCategory = .brainScore
-    @State private var selectedFilter: LeaderboardTimeFilter = .allTime
+    @State private var selectedCategory: LeaderboardCategory = Self.initialCategory
+    @State private var selectedFilter: LeaderboardTimeFilter = .thisWeek
     @State private var entries: [LeaderboardEntryData] = []
     @State private var totalPlayerCount: Int = 0
     @State private var isLoading = false
     @State private var hasLoaded = false
     @State private var podiumAppeared = false
     @State private var loadError: Error?
+    @State private var leaderboardCache: [LeaderboardCacheKey: CachedLeaderboardSnapshot] = [:]
+    @State private var activeLoadTask: Task<Void, Never>?
+    @State private var hasRenderedLeaderboardContent = false
+    @State private var renderedCategory: LeaderboardCategory = Self.initialCategory
+    @State private var renderedFilter: LeaderboardTimeFilter = .thisWeek
+    @Namespace private var categorySelectionNamespace
+    @Namespace private var filterSelectionNamespace
+
+    private static var initialCategory: LeaderboardCategory {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--screenshot-mode") {
+            return .focusBlocking
+        }
+        #endif
+        return .focusBlocking
+    }
 
     private var user: User? { users.first }
+    private let boardSwapAnimation = Animation.smooth(duration: 0.48, extraBounce: 0.015)
+    private let uncachedLoadDelayNanoseconds: UInt64 = 260_000_000
+    private var displayedFilters: [LeaderboardTimeFilter] {
+        Self.displayedFilters(for: selectedCategory)
+    }
+
+    private static func displayedFilters(for category: LeaderboardCategory) -> [LeaderboardTimeFilter] {
+        category == .focusBlocking ? [.today, .thisWeek] : [.today, .thisWeek, .allTime]
+    }
+
+    private static func defaultFilter(for category: LeaderboardCategory) -> LeaderboardTimeFilter {
+        category == .focusBlocking ? .thisWeek : .today
+    }
+
+    private static func normalizedFilter(_ filter: LeaderboardTimeFilter, for category: LeaderboardCategory) -> LeaderboardTimeFilter {
+        displayedFilters(for: category).contains(filter) ? filter : defaultFilter(for: category)
+    }
+
+    private var displayedCategories: [LeaderboardCategory] {
+        [.focusBlocking] + LeaderboardCategory.allCases.filter {
+            $0 != .focusBlocking && $0 != .wordScramble && $0 != .memoryChain
+        }
+    }
+    private var categoryRows: [GridItem] {
+        [
+            GridItem(.fixed(40), spacing: 8),
+            GridItem(.fixed(40), spacing: 8)
+        ]
+    }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Category picker
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(LeaderboardCategory.allCases.filter { $0 != .wordScramble && $0 != .memoryChain }) { category in
-                            Button {
-                                withAnimation(.spring(response: 0.3)) {
-                                    selectedCategory = category
-                                }
-                                Analytics.leaderboardViewed(category: category.rawValue)
-                                loadLeaderboard()
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: category.icon)
-                                        .font(.caption)
-                                    Text(category.rawValue)
-                                        .font(.subheadline.weight(.semibold))
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background {
-                                    if selectedCategory == category {
-                                        Capsule().fill(AppColors.accentGradient)
-                                    } else {
-                                        Capsule().fill(AppColors.cardSurface)
-                                            .overlay(
-                                                Capsule().stroke(AppColors.cardBorder, lineWidth: 1)
-                                            )
-                                    }
-                                }
-                                .foregroundStyle(selectedCategory == category ? .white : .primary)
-                            }
-                            .accessibilityLabel("\(category.rawValue)\(selectedCategory == category ? ", selected" : "")")
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-                .scrollIndicators(.hidden)
-                .padding(.vertical, 12)
-
-                // Time filter
-                Picker("Filter", selection: $selectedFilter) {
-                    ForEach(LeaderboardTimeFilter.allCases) { filter in
-                        Text(filter.rawValue).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .onChange(of: selectedFilter) {
-                    loadLeaderboard()
-                }
-
-                // Score explanation
-                Text(selectedCategory.scoreDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                    .padding(.bottom, 12)
-
-                if !gameCenterService.isAuthenticated {
-                    gameCenterRequiredView
-                } else if isLoading && entries.isEmpty {
-                    skeletonLoadingView
+            ZStack {
+                VStack(spacing: 0) {
+                    headerView
                         .padding(.horizontal)
-                        .padding(.top, 8)
-                } else if !isLoading && entries.isEmpty && loadError != nil {
-                    errorLeaderboardView
-                } else if !isLoading && entries.isEmpty {
-                    emptyLeaderboardView
-                } else {
-                    leaderboardList
-                        .opacity(isLoading ? 0.5 : 1)
-                        .animation(.easeInOut(duration: 0.2), value: isLoading)
+                        .padding(.top, 10)
+                        .padding(.bottom, 10)
+
+                    categoryRail
+
+                    periodPicker
+                        .padding(.horizontal)
+                        .padding(.top, 12)
+                        .padding(.bottom, 14)
+
+                    leaderboardContentHost
                 }
-            }
-            .pageBackground()
-            .navigationTitle("Rankings")
-            .toolbar {
-                if gameCenterService.isAuthenticated {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            let leaderboardID = GameCenterService.leaderboardID(for: selectedCategory)
-                            gameCenterService.showLeaderboard(leaderboardID: leaderboardID)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "gamecontroller.fill")
-                                Text("Game Center")
-                                    .font(.caption.weight(.semibold))
-                            }
-                        }
+                .pageBackground()
+                .onAppear {
+                    if !hasLoaded {
+                        Analytics.leaderboardViewed(category: selectedCategory.rawValue)
+                    }
+                    refreshVisibleLeaderboard()
+                }
+                .onDisappear {
+                    activeLoadTask?.cancel()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    guard phase == .active else { return }
+                    Task { @MainActor in
+                        await focusModeService.refreshForAppForeground()
+                        refreshVisibleLeaderboard()
                     }
                 }
+                .onChange(of: gameCenterService.isAuthenticated) { _, isAuthenticated in
+                    guard isAuthenticated else { return }
+                    refreshVisibleLeaderboard()
+                }
+                .onChange(of: focusModeService.authorizationStatus) { _, status in
+                    guard status == .approved else { return }
+                    refreshVisibleLeaderboard()
+                }
             }
-            .onAppear {
-                guard !hasLoaded else { return }
-                Analytics.leaderboardViewed(category: selectedCategory.rawValue)
-                loadLeaderboard()
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 12) {
+                Text(selectedCategory.displayTitle)
+                    .mainScreenTitleStyle()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .contentTransition(.opacity)
+
+                Spacer()
+
+                if gameCenterService.isAuthenticated {
+                    Button {
+                        gameCenterService.showLeaderboard(category: selectedCategory, timeFilter: selectedFilter)
+                    } label: {
+                        Image(systemName: "gamecontroller.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(AppColors.accent)
+                            .frame(width: 44, height: 44)
+                            .leaderboardGlassCircle(tint: AppColors.accent, isInteractive: true)
+                    }
+                    .accessibilityLabel("Open \(selectedCategory.displayTitle) in Game Center")
+                }
+            }
+
+            Text(selectedCategory.heroSubtitle)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .contentTransition(.opacity)
+        }
+        .animation(boardSwapAnimation, value: selectedCategory)
+    }
+
+    // MARK: - Board Controls
+
+    private var categoryRail: some View {
+        Group {
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer(spacing: 8) {
+                    categoryRailContent
+                }
+            } else {
+                categoryRailContent
+            }
+        }
+        .frame(height: 88)
+    }
+
+    private var categoryRailContent: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                LazyHGrid(rows: categoryRows, spacing: 8) {
+                    ForEach(displayedCategories) { category in
+                        CategoryRailChip(
+                            category: category,
+                            title: category.shortTitle,
+                            isSelected: selectedCategory == category,
+                            selectionNamespace: categorySelectionNamespace
+                        ) {
+                            selectCategory(category)
+                        }
+                        .id(category.id)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
+            .onChange(of: selectedCategory) { _, category in
+                withAnimation(boardSwapAnimation) {
+                    proxy.scrollTo(category.id, anchor: .center)
+                }
+            }
+        }
+    }
+
+    private var periodPicker: some View {
+        periodPickerButtons
+            .frame(height: 42)
+    }
+
+    private var periodPickerButtons: some View {
+        HStack(spacing: 6) {
+            ForEach(displayedFilters) { filter in
+                let isSelected = selectedFilter == filter
+
+                Button {
+                    selectFilter(filter)
+                } label: {
+                    ZStack(alignment: .bottom) {
+                        Text(filter.compactTitle)
+                            .font(.system(size: 14, weight: .black, design: .rounded))
+                            .foregroundStyle(isSelected ? .primary : AppColors.textSecondary)
+                            .padding(.horizontal, 18)
+                            .frame(height: 34)
+                            .background {
+                                if isSelected {
+                                    Capsule()
+                                        .fill(AppColors.cardElevated.opacity(0.52))
+                                        .matchedGeometryEffect(id: "filter-selection", in: filterSelectionNamespace)
+                                        .shadow(color: AppColors.accent.opacity(0.16), radius: 14, y: 5)
+                                }
+                            }
+
+                        if isSelected {
+                            Capsule()
+                                .fill(AppColors.accent.opacity(0.92))
+                                .frame(width: 22, height: 2)
+                                .shadow(color: AppColors.accent.opacity(0.42), radius: 8, y: 2)
+                                .offset(y: 3)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(filter.rawValue)\(isSelected ? ", selected" : "")")
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .animation(boardSwapAnimation, value: selectedFilter)
+    }
+
+    private var leaderboardContentHost: some View {
+        ZStack(alignment: .top) {
+            leaderboardStateContent
+                .id(leaderboardContentID)
+                .transition(leaderboardContentTransition)
+
+            if isLoading && hasRenderedLeaderboardContent {
+                leaderboardLoadingVeil
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .animation(boardSwapAnimation, value: leaderboardContentID)
+        .animation(.smooth(duration: 0.30, extraBounce: 0), value: isLoading)
+    }
+
+    private var leaderboardContentID: String {
+        let phase: String
+        if !gameCenterService.isAuthenticated {
+            phase = "auth"
+        } else if isLoading && entries.isEmpty && !hasRenderedLeaderboardContent {
+            phase = "loading"
+        } else if entries.isEmpty && loadError != nil {
+            phase = "error"
+        } else if entries.isEmpty {
+            phase = "empty"
+        } else {
+            phase = "list"
+        }
+
+        return "\(renderedCategory.rawValue)-\(renderedFilter.rawValue)-\(phase)"
+    }
+
+    private var leaderboardContentTransition: AnyTransition {
+        .asymmetric(
+            insertion: .leaderboardSettleIn,
+            removal: .leaderboardSettleOut
+        )
+    }
+
+    private var leaderboardLoadingVeil: some View {
+        LinearGradient(
+            colors: [
+                AppColors.pageBg.opacity(0.18),
+                AppColors.pageBg.opacity(0.06),
+                AppColors.pageBg.opacity(0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+        .transition(.opacity)
+    }
+
+    private var leaderboardStateContent: some View {
+        Group {
+            if !gameCenterService.isAuthenticated && !screenshotMode {
+                gameCenterRequiredView
+            } else if isLoading && entries.isEmpty && !hasRenderedLeaderboardContent {
+                skeletonLoadingView
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            } else if entries.isEmpty && loadError != nil {
+                errorLeaderboardView
+            } else if entries.isEmpty {
+                emptyLeaderboardView
+            } else {
+                leaderboardList
+                    .opacity(isLoading ? 0.72 : 1)
+                    .scaleEffect(isLoading ? 0.994 : 1, anchor: .top)
+                    .animation(.smooth(duration: 0.30, extraBounce: 0), value: isLoading)
             }
         }
     }
@@ -176,10 +384,10 @@ struct LeaderboardView: View {
                 .scaledToFit()
                 .frame(height: 160)
 
-            Text("No Rankings Yet")
+            Text(renderedCategory == .focusBlocking ? "No Focus Score Yet" : "No Rankings Yet")
                 .font(.title3.weight(.semibold))
 
-            Text("Be the first to set a score!\nComplete exercises to appear on the leaderboard.")
+            Text(emptyStateMessage)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -187,6 +395,13 @@ struct LeaderboardView: View {
 
             Spacer()
         }
+    }
+
+    private var emptyStateMessage: String {
+        if renderedCategory == .focusBlocking {
+            return "Turn on Focus Mode and protect time to appear on the board."
+        }
+        return "Be the first to set a score!\nComplete exercises to appear on the leaderboard."
     }
 
     // MARK: - Error State
@@ -556,20 +771,24 @@ struct LeaderboardView: View {
     // MARK: - Helpers
 
     private func formatScoreCompact(_ score: Int) -> String {
-        switch selectedCategory {
+        switch renderedCategory {
         case .colorMatch, .speedMatch:
             let accuracy = score / 1000
             return "\(accuracy)%"
         case .mathSpeed:
             let correct = score / 1000
             return "\(correct)/20"
+        case .focusBlocking:
+            let h = score / 60
+            let m = score % 60
+            return h > 0 ? "\(h)h \(m)m" : "\(m)m"
         default:
             return formatScore(score)
         }
     }
 
     private func formatScore(_ score: Int) -> String {
-        switch selectedCategory {
+        switch renderedCategory {
         case .streak: return "\(score)d"
         case .reactionTime: return "\(score)ms"
         case .colorMatch, .speedMatch:
@@ -593,8 +812,10 @@ struct LeaderboardView: View {
             return "\(primary)/10"
         case .memoryChain:
             return "\(score)"
-        case .dailyChallenge:
-            return "\(score)"
+        case .focusBlocking:
+            let h = score / 60
+            let m = score % 60
+            return h > 0 ? "\(h)h \(m)m protected" : "\(m)m protected"
         default:
             if score >= 1000 {
                 return String(format: "%.1fk", Double(score) / 1000.0)
@@ -644,100 +865,243 @@ struct LeaderboardView: View {
         .shimmer()
     }
 
-    private func loadLeaderboard() {
+    private func selectCategory(_ category: LeaderboardCategory) {
+        guard selectedCategory != category else { return }
+        playSelectionHaptic()
+        let nextFilter = Self.normalizedFilter(selectedFilter, for: category)
+        withAnimation(boardSwapAnimation) {
+            selectedCategory = category
+            selectedFilter = nextFilter
+        }
+        refreshVisibleLeaderboard(deferUncachedBy: uncachedLoadDelayNanoseconds)
+        Analytics.leaderboardViewed(category: category.rawValue)
+    }
+
+    private func selectFilter(_ filter: LeaderboardTimeFilter) {
+        guard displayedFilters.contains(filter) else { return }
+        guard selectedFilter != filter else { return }
+        playSelectionHaptic()
+        withAnimation(boardSwapAnimation) {
+            selectedFilter = filter
+        }
+        refreshVisibleLeaderboard(deferUncachedBy: uncachedLoadDelayNanoseconds)
+    }
+
+    private func playSelectionHaptic() {
+        let feedback = UISelectionFeedbackGenerator()
+        feedback.selectionChanged()
+    }
+
+    private func loadLeaderboard(deferUncachedBy delayNanoseconds: UInt64 = 0) {
+        #if DEBUG
+        if screenshotMode {
+            hasLoaded = true
+            let category = selectedCategory
+            let filter = selectedFilter
+            let snapshot = screenshotSnapshot(category: category, filter: filter)
+            leaderboardCache[LeaderboardCacheKey(category: category, filter: filter)] = snapshot
+            withAnimation(boardSwapAnimation) {
+                hasRenderedLeaderboardContent = true
+                renderedCategory = category
+                renderedFilter = filter
+                loadError = nil
+                entries = snapshot.entries
+                totalPlayerCount = snapshot.totalPlayerCount
+                isLoading = false
+            }
+            return
+        }
+        #endif
+
         guard gameCenterService.isAuthenticated else {
             hasLoaded = true
             return
         }
 
-        isLoading = true
         hasLoaded = true
-        loadError = nil
 
         let category = selectedCategory
         let filter = selectedFilter
+        let key = LeaderboardCacheKey(category: category, filter: filter)
+        let cachedSnapshot = leaderboardCache[key]
 
-        Task {
+        activeLoadTask?.cancel()
+
+        if let cached = cachedSnapshot {
+            withAnimation(boardSwapAnimation) {
+                hasRenderedLeaderboardContent = true
+                renderedCategory = category
+                renderedFilter = filter
+                loadError = nil
+                entries = cached.entries
+                totalPlayerCount = cached.totalPlayerCount
+                isLoading = false
+            }
+        } else if delayNanoseconds == 0 || !hasRenderedLeaderboardContent {
+            withAnimation(boardSwapAnimation) {
+                if !hasRenderedLeaderboardContent {
+                    renderedCategory = category
+                    renderedFilter = filter
+                    totalPlayerCount = 0
+                }
+                loadError = nil
+                isLoading = true
+            }
+        }
+
+        activeLoadTask = Task {
+            if cachedSnapshot == nil, delayNanoseconds > 0, hasRenderedLeaderboardContent {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
+                guard !Task.isCancelled, selectedCategory == category, selectedFilter == filter else { return }
+
+                withAnimation(boardSwapAnimation) {
+                    loadError = nil
+                    isLoading = true
+                }
+            }
+
             let result = await gameCenterService.loadLeaderboardEntries(
                 category: category,
                 timeFilter: filter
             )
-            loadError = result.error
-            var loadedEntries = result.entries
-
-            // Update local player's score if our local best is higher (GC can be stale)
-            if let localBest = localScore(for: category), localBest > 0,
-               let idx = loadedEntries.firstIndex(where: { $0.isCurrentUser }),
-               category != .reactionTime ? loadedEntries[idx].score < localBest : loadedEntries[idx].score > localBest {
-                loadedEntries[idx] = LeaderboardEntryData(
-                    rank: loadedEntries[idx].rank,
-                    username: loadedEntries[idx].username,
-                    score: localBest,
-                    avatarEmoji: loadedEntries[idx].avatarEmoji,
-                    level: loadedEntries[idx].level,
-                    isCurrentUser: true
-                )
-            }
-
-            // If the local player isn't in the results yet, inject their local score
-            let hasLocalPlayer = loadedEntries.contains { $0.isCurrentUser }
-            if !hasLocalPlayer, let localScore = localScore(for: category), localScore > 0 {
-                let localEntry = LeaderboardEntryData(
-                    rank: 0,
-                    username: GKLocalPlayer.local.displayName,
-                    score: localScore,
-                    avatarEmoji: "",
-                    level: 0,
-                    isCurrentUser: true
-                )
-                loadedEntries.append(localEntry)
-
-                // Re-sort based on category (reaction time = low to high, others = high to low)
-                if category == .reactionTime {
-                    loadedEntries.sort { $0.score < $1.score }
-                } else {
-                    loadedEntries.sort { $0.score > $1.score }
+            guard !Task.isCancelled else { return }
+            if result.error != nil, cachedSnapshot != nil {
+                guard selectedCategory == category, selectedFilter == filter else { return }
+                withAnimation(boardSwapAnimation) {
+                    hasRenderedLeaderboardContent = true
+                    renderedCategory = category
+                    renderedFilter = filter
+                    loadError = result.error
+                    isLoading = false
                 }
-
-                // Re-assign ranks
-                loadedEntries = loadedEntries.enumerated().map { index, entry in
-                    LeaderboardEntryData(
-                        rank: index + 1,
-                        username: entry.username,
-                        score: entry.score,
-                        avatarEmoji: entry.avatarEmoji,
-                        level: entry.level,
-                        isCurrentUser: entry.isCurrentUser
-                    )
-                }
+                return
             }
 
-            // Filter out zero-score entries (meaningless for all games)
-            loadedEntries = loadedEntries.filter { $0.score > 0 || $0.isCurrentUser }
-            // Re-assign ranks after filtering
-            loadedEntries = loadedEntries.enumerated().map { index, entry in
-                LeaderboardEntryData(
-                    rank: index + 1,
-                    username: entry.username,
-                    score: entry.score,
-                    avatarEmoji: entry.avatarEmoji,
-                    level: entry.level,
-                    isCurrentUser: entry.isCurrentUser
-                )
-            }
-            // Remove current user if their score is 0 (they haven't played this game)
-            if let userEntry = loadedEntries.first(where: { $0.isCurrentUser }), userEntry.score <= 0 {
-                loadedEntries = loadedEntries.filter { !$0.isCurrentUser }
-            }
+            let snapshot = makeSnapshot(from: result, category: category, filter: filter)
+            leaderboardCache[key] = snapshot
 
-            entries = loadedEntries
-            totalPlayerCount = max(result.totalPlayerCount, loadedEntries.count)
-            isLoading = false
+            guard selectedCategory == category, selectedFilter == filter else { return }
+            withAnimation(boardSwapAnimation) {
+                hasRenderedLeaderboardContent = true
+                renderedCategory = category
+                renderedFilter = filter
+                loadError = result.error
+                entries = snapshot.entries
+                totalPlayerCount = snapshot.totalPlayerCount
+                isLoading = false
+            }
+        }
+    }
+
+    private func refreshVisibleLeaderboard(deferUncachedBy delayNanoseconds: UInt64 = 0) {
+        if selectedCategory == .focusBlocking {
+            focusModeService.reconcileBlockedMinutes()
+            reportFocusLeagueScoresIfNeeded()
+        }
+        loadLeaderboard(deferUncachedBy: delayNanoseconds)
+    }
+
+    private func makeSnapshot(
+        from result: GameCenterService.LeaderboardResult,
+        category: LeaderboardCategory,
+        filter: LeaderboardTimeFilter
+    ) -> CachedLeaderboardSnapshot {
+        var loadedEntries = result.entries
+        let lowerScoreWins = isLowerScoreBetter(category)
+
+        // Update local player's score if local Focus/game data is fresher than Game Center.
+        if let localBest = localScore(for: category, timeFilter: filter), shouldUseLocalScore(localBest, for: category),
+           let idx = loadedEntries.firstIndex(where: { $0.isCurrentUser }),
+           lowerScoreWins ? loadedEntries[idx].score > localBest : loadedEntries[idx].score < localBest {
+            loadedEntries[idx] = LeaderboardEntryData(
+                rank: loadedEntries[idx].rank,
+                username: loadedEntries[idx].username,
+                score: localBest,
+                avatarEmoji: loadedEntries[idx].avatarEmoji,
+                level: loadedEntries[idx].level,
+                isCurrentUser: true
+            )
+        }
+
+        // If the local player isn't in the results yet, inject their local score.
+        let hasLocalPlayer = loadedEntries.contains { $0.isCurrentUser }
+        if !hasLocalPlayer, let localScore = localScore(for: category, timeFilter: filter), shouldUseLocalScore(localScore, for: category) {
+            loadedEntries.append(LeaderboardEntryData(
+                rank: 0,
+                username: GKLocalPlayer.local.displayName,
+                score: localScore,
+                avatarEmoji: "",
+                level: 0,
+                isCurrentUser: true
+            ))
+        }
+
+        // Zero minutes is not a real Focus League entry, and zero-score game rows are noise.
+        loadedEntries = loadedEntries.filter { $0.score > 0 || $0.isCurrentUser }
+
+        loadedEntries.sort { lowerScoreWins ? $0.score < $1.score : $0.score > $1.score }
+        loadedEntries = rankedEntries(from: loadedEntries)
+
+        // Remove current user if their score is 0.
+        if let userEntry = loadedEntries.first(where: { $0.isCurrentUser }), userEntry.score <= 0 {
+            loadedEntries = loadedEntries.filter { !$0.isCurrentUser }
+        }
+
+        return CachedLeaderboardSnapshot(
+            entries: loadedEntries,
+            totalPlayerCount: max(result.totalPlayerCount, loadedEntries.count)
+        )
+    }
+
+    #if DEBUG
+    private var screenshotMode: Bool {
+        ProcessInfo.processInfo.arguments.contains("--screenshot-mode")
+    }
+
+    private func screenshotSnapshot(category: LeaderboardCategory, filter: LeaderboardTimeFilter) -> CachedLeaderboardSnapshot {
+        if category == .focusBlocking {
+            let focusEntries = [
+                LeaderboardEntryData(rank: 1, username: "Maya", score: 614, avatarEmoji: "M", level: 16, isCurrentUser: false),
+                LeaderboardEntryData(rank: 2, username: "Ava", score: 548, avatarEmoji: "A", level: 18, isCurrentUser: false),
+                LeaderboardEntryData(rank: 3, username: "Leo", score: 487, avatarEmoji: "L", level: 14, isCurrentUser: false),
+                LeaderboardEntryData(rank: 4, username: user?.username ?? "Dylan", score: 426, avatarEmoji: "", level: user?.level ?? 12, isCurrentUser: true),
+                LeaderboardEntryData(rank: 5, username: "Noah", score: 392, avatarEmoji: "N", level: 13, isCurrentUser: false),
+                LeaderboardEntryData(rank: 6, username: "Zoe", score: 361, avatarEmoji: "Z", level: 11, isCurrentUser: false)
+            ]
+
+            return CachedLeaderboardSnapshot(entries: focusEntries, totalPlayerCount: 1_204)
+        }
+
+        let baseEntries = [
+            LeaderboardEntryData(rank: 1, username: "Ava", score: 872, avatarEmoji: "A", level: 18, isCurrentUser: false),
+            LeaderboardEntryData(rank: 2, username: "Maya", score: 846, avatarEmoji: "M", level: 16, isCurrentUser: false),
+            LeaderboardEntryData(rank: 3, username: "Leo", score: 821, avatarEmoji: "L", level: 14, isCurrentUser: false),
+            LeaderboardEntryData(rank: 4, username: "Noah", score: 803, avatarEmoji: "N", level: 13, isCurrentUser: false),
+            LeaderboardEntryData(rank: 5, username: user?.username ?? "Dylan", score: 748, avatarEmoji: "", level: user?.level ?? 12, isCurrentUser: true),
+            LeaderboardEntryData(rank: 6, username: "Zoe", score: 731, avatarEmoji: "Z", level: 11, isCurrentUser: false)
+        ]
+
+        return CachedLeaderboardSnapshot(entries: baseEntries, totalPlayerCount: 128)
+    }
+    #else
+    private var screenshotMode: Bool { false }
+    #endif
+
+    private func rankedEntries(from entries: [LeaderboardEntryData]) -> [LeaderboardEntryData] {
+        entries.enumerated().map { index, entry in
+            LeaderboardEntryData(
+                rank: index + 1,
+                username: entry.username,
+                score: entry.score,
+                avatarEmoji: entry.avatarEmoji,
+                level: entry.level,
+                isCurrentUser: entry.isCurrentUser
+            )
         }
     }
 
     /// Get the user's local best score for a leaderboard category
-    private func localScore(for category: LeaderboardCategory) -> Int? {
+    private func localScore(for category: LeaderboardCategory, timeFilter: LeaderboardTimeFilter) -> Int? {
         switch category {
         case .brainScore:
             return brainScores.first?.brainScore
@@ -769,8 +1133,337 @@ struct LeaderboardView: View {
             return PersonalBestTracker.shared.best(for: .chimpTest)
         case .verbalMemory:
             return PersonalBestTracker.shared.best(for: .verbalMemory)
-        case .dailyChallenge:
-            return nil
+        case .focusBlocking:
+            return focusModeService.focusLeagueScore(for: timeFilter)
+        }
+    }
+
+    private func isLowerScoreBetter(_ category: LeaderboardCategory) -> Bool {
+        category == .reactionTime
+    }
+
+    private func shouldUseLocalScore(_ score: Int, for category: LeaderboardCategory) -> Bool {
+        score > 0
+    }
+
+    private func reportFocusLeagueScoresIfNeeded() {
+        guard selectedCategory == .focusBlocking,
+              gameCenterService.isAuthenticated else { return }
+
+        for filter in Self.displayedFilters(for: .focusBlocking) {
+            guard let score = focusModeService.focusLeagueScore(for: filter) else { continue }
+            gameCenterService.reportFocusLeagueScore(score, for: filter)
         }
     }
 }
+
+private struct CategoryRailChip: View {
+    let category: LeaderboardCategory
+    let title: String
+    let isSelected: Bool
+    let selectionNamespace: Namespace.ID
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                if isSelected {
+                    Capsule()
+                        .fill(category.pickerTint.opacity(0.18))
+                        .matchedGeometryEffect(id: "category-selection", in: selectionNamespace)
+                        .shadow(color: category.pickerTint.opacity(0.26), radius: 18, y: 5)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: category.icon)
+                        .font(.system(size: 13, weight: .black))
+                        .foregroundStyle(isSelected ? .white : category.pickerTint)
+                        .frame(width: 24, height: 24)
+                        .background(iconBackground, in: Circle())
+
+                    Text(title)
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(isSelected ? .primary : AppColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+                .padding(.leading, 8)
+                .padding(.trailing, 12)
+            }
+            .frame(minWidth: category.chipWidth, maxWidth: category.chipWidth)
+            .frame(height: 40)
+            .leaderboardGlassCapsule(tint: isSelected ? category.pickerTint : category.pickerTint.opacity(0.24), isInteractive: true)
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? category.pickerTint.opacity(0.76) : AppColors.cardBorder.opacity(0.42), lineWidth: isSelected ? 1.35 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isSelected ? 1.015 : 1)
+        .accessibilityLabel("\(category.displayTitle), \(category.pickerMetric)\(isSelected ? ", selected" : "")")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .animation(.smooth(duration: 0.42, extraBounce: 0.015), value: isSelected)
+    }
+
+    private var iconBackground: some ShapeStyle {
+        if isSelected {
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [category.pickerTint, AppColors.electricViolet.opacity(0.88)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+
+        return AnyShapeStyle(AppColors.cardElevated.opacity(0.64))
+    }
+}
+
+private struct LeaderboardSettleModifier: ViewModifier {
+    let opacity: Double
+    let scale: CGFloat
+    let y: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(opacity)
+            .scaleEffect(scale, anchor: .top)
+            .offset(y: y)
+    }
+}
+
+private extension AnyTransition {
+    static var leaderboardSettleIn: AnyTransition {
+        .modifier(
+            active: LeaderboardSettleModifier(opacity: 0, scale: 0.985, y: 10),
+            identity: LeaderboardSettleModifier(opacity: 1, scale: 1, y: 0)
+        )
+    }
+
+    static var leaderboardSettleOut: AnyTransition {
+        .modifier(
+            active: LeaderboardSettleModifier(opacity: 0, scale: 1.006, y: -6),
+            identity: LeaderboardSettleModifier(opacity: 1, scale: 1, y: 0)
+        )
+    }
+}
+
+private extension LeaderboardCategory {
+    var displayTitle: String {
+        switch self {
+        case .focusBlocking: return "Focus League"
+        default: return rawValue
+        }
+    }
+
+    var heroSubtitle: String {
+        switch self {
+        case .focusBlocking: return "Most protected Focus time wins."
+        case .brainScore: return "Overall training score."
+        case .xp: return "Most training XP wins."
+        case .streak: return "Longest training streak wins."
+        case .reactionTime: return "Fastest reaction time wins."
+        case .colorMatch: return "Accuracy under pressure."
+        case .speedMatch: return "Speed and precision."
+        case .visualMemory: return "Highest grid level wins."
+        case .numberMemory: return "Longest sequence wins."
+        case .mathSpeed: return "Fast math, clean answers."
+        case .dualNBack: return "Highest N-back level wins."
+        case .wordScramble: return "Most words solved wins."
+        case .memoryChain: return "Longest memory chain wins."
+        case .chimpTest: return "Highest level reached wins."
+        case .verbalMemory: return "Longest clean streak wins."
+        }
+    }
+
+    var pickerMetric: String {
+        switch self {
+        case .focusBlocking: return "Protected Focus time"
+        case .brainScore: return "Overall cognitive score"
+        case .xp: return "Total training XP"
+        case .streak: return "Longest daily run"
+        case .reactionTime: return "Lowest average milliseconds"
+        case .colorMatch: return "Best color accuracy"
+        case .speedMatch: return "Best speed-match accuracy"
+        case .visualMemory: return "Highest grid level"
+        case .numberMemory: return "Longest digit sequence"
+        case .mathSpeed: return "Correct answers plus speed"
+        case .dualNBack: return "Highest N-back level"
+        case .wordScramble: return "Words solved out of 10"
+        case .memoryChain: return "Longest recalled chain"
+        case .chimpTest: return "Highest board level"
+        case .verbalMemory: return "Longest no-mistake streak"
+        }
+    }
+
+    var compactMetric: String {
+        switch self {
+        case .focusBlocking: return "Protected time"
+        case .brainScore: return "Overall score"
+        case .xp: return "Total XP"
+        case .streak: return "Daily run"
+        case .reactionTime: return "Lower ms"
+        case .colorMatch: return "Accuracy"
+        case .speedMatch: return "Accuracy"
+        case .visualMemory: return "Grid level"
+        case .numberMemory: return "Digits"
+        case .mathSpeed: return "Correct + speed"
+        case .dualNBack: return "N-back level"
+        case .wordScramble: return "Words solved"
+        case .memoryChain: return "Chain length"
+        case .chimpTest: return "Board level"
+        case .verbalMemory: return "Clean streak"
+        }
+    }
+
+    var shelfTitle: String {
+        switch self {
+        case .focusBlocking: return "Focus"
+        case .brainScore: return "Brain"
+        case .xp: return "XP"
+        case .streak: return "Streak"
+        default: return shortTitle
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .focusBlocking: return "Focus"
+        case .brainScore: return "Brain"
+        case .reactionTime: return "Reaction"
+        case .colorMatch: return "Color"
+        case .speedMatch: return "Speed"
+        case .visualMemory: return "Visual"
+        case .numberMemory: return "Number"
+        case .mathSpeed: return "Math"
+        case .dualNBack: return "N-Back"
+        case .wordScramble: return "Words"
+        case .memoryChain: return "Chain"
+        case .chimpTest: return "Chimp"
+        case .verbalMemory: return "Verbal"
+        default: return rawValue
+        }
+    }
+
+    var chipWidth: CGFloat {
+        switch self {
+        case .xp: return 78
+        case .streak, .colorMatch, .speedMatch, .visualMemory, .numberMemory, .mathSpeed, .memoryChain, .chimpTest:
+            return 96
+        case .focusBlocking, .brainScore, .wordScramble, .verbalMemory:
+            return 104
+        case .reactionTime, .dualNBack:
+            return 112
+        }
+    }
+
+    var pickerTint: Color {
+        switch self {
+        case .focusBlocking: return AppColors.periwinkle
+        case .brainScore: return AppColors.violet
+        case .xp: return AppColors.amber
+        case .streak: return AppColors.coral
+        case .reactionTime: return AppColors.sky
+        case .colorMatch: return AppColors.rose
+        case .speedMatch: return AppColors.accent
+        case .visualMemory: return AppColors.teal
+        case .numberMemory: return AppColors.mint
+        case .mathSpeed: return AppColors.indigo
+        case .dualNBack: return AppColors.electricViolet
+        case .wordScramble: return AppColors.coral
+        case .memoryChain: return AppColors.periwinkle
+        case .chimpTest: return AppColors.amber
+        case .verbalMemory: return AppColors.violet
+        }
+    }
+
+}
+
+private extension LeaderboardTimeFilter {
+    var compactTitle: String {
+        switch self {
+        case .today: return "Today"
+        case .thisWeek: return "Week"
+        case .allTime: return "All Time"
+        case .thisMonth: return "30d"
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func leaderboardGlassCapsule(tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.18)).interactive(isInteractive), in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(AppColors.cardBorder.opacity(0.78), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.14), radius: 16, y: 6)
+        } else {
+            self
+                .background(.ultraThinMaterial, in: Capsule())
+                .background(AppColors.cardSurface.opacity(0.68), in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(AppColors.cardBorder.opacity(0.78), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.12), radius: 12, y: 4)
+        }
+    }
+
+    @ViewBuilder
+    func leaderboardGlassRounded(cornerRadius: CGFloat, tint: Color, isInteractive: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.13)).interactive(isInteractive), in: shape)
+                .background(AppColors.cardSurface.opacity(0.35), in: shape)
+                .overlay(
+                    shape.stroke(AppColors.cardBorder.opacity(0.64), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.10), radius: 16, y: 6)
+        } else {
+            self
+                .background(.ultraThinMaterial, in: shape)
+                .background(AppColors.cardSurface.opacity(0.78), in: shape)
+                .overlay(
+                    shape.stroke(AppColors.cardBorder.opacity(0.72), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.08), radius: 10, y: 4)
+        }
+    }
+
+    @ViewBuilder
+    func leaderboardGlassCircle(tint: Color, isInteractive: Bool) -> some View {
+        if #available(iOS 26.0, *) {
+            self
+                .glassEffect(.regular.tint(tint.opacity(0.16)).interactive(isInteractive), in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(AppColors.cardBorder.opacity(0.72), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.12), radius: 12, y: 4)
+        } else {
+            self
+                .background(.ultraThinMaterial, in: Circle())
+                .background(AppColors.cardSurface.opacity(0.68), in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(AppColors.cardBorder.opacity(0.72), lineWidth: 1)
+                )
+                .shadow(color: tint.opacity(0.10), radius: 9, y: 3)
+        }
+    }
+}
+
+#if DEBUG
+#Preview("Compete") {
+    MainScreenPreview {
+        LeaderboardView()
+    }
+}
+#endif

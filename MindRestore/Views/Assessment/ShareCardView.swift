@@ -22,7 +22,7 @@ struct ShareCardView: View {
                     Image(systemName: "brain.fill")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(AppColors.accent)
-                    Text("MEMORI")
+                    Text("MEMO")
                         .font(.system(size: 13, weight: .heavy))
                         .tracking(3)
                         .foregroundStyle(Color.black.opacity(0.4))
@@ -138,7 +138,7 @@ struct ShareCardView: View {
 
                 Spacer().frame(height: 8)
 
-                Text("Test yours free — Memori")
+                Text("Test yours free — Memo")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.black.opacity(0.3))
 

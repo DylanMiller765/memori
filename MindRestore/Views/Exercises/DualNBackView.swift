@@ -13,6 +13,10 @@ struct DualNBackView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    /// Auto-starts at the user's currently selected N (defaults to 1).
+    var autoStart: Bool = false
+
     @State private var viewModel = DualNBackViewModel()
     @State private var selectedN: Int = 1
     @State private var gameStarted = false
@@ -20,10 +24,8 @@ struct DualNBackView: View {
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var showingInfo = false
     @State private var isNewPersonalBest = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -44,28 +46,13 @@ struct DualNBackView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.showResults)
         .animation(.easeInOut(duration: 0.3), value: gameStarted)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.currentN,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Dual N-Back")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && !gameStarted && !viewModel.showResults {
+                Analytics.exerciseStarted(game: ExerciseType.dualNBack.rawValue)
+                gameStarted = true
+                viewModel.startGame(n: selectedN, dual: true)
             }
         }
         .onDisappear {
@@ -363,12 +350,6 @@ struct DualNBackView: View {
     }
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .dualNBack,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.currentN,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Dual N-Back",
             gameIcon: "square.grid.3x3",
@@ -388,12 +369,6 @@ struct DualNBackView: View {
             personalBest: PersonalBestTracker.shared.best(for: .dualNBack),
             exerciseType: .dualNBack,
             leaderboardScore: viewModel.currentN,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.dualNBack.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 selectedN = viewModel.nextN

@@ -13,7 +13,7 @@ final class VisualMemoryViewModel {
     var level = 1
     var highlightedCells: Set<Int> = []
     var selectedCells: Set<Int> = []
-    var gridSize: Int = 3
+    var gridSize: Int = 4
     var highlightCount: Int = 3
     var challengeSeed: Int?
     private var rng: SeededGenerator?
@@ -42,12 +42,11 @@ final class VisualMemoryViewModel {
         max(0.6, 1.5 - Double(level - 1) * 0.1)
     }
 
-    // Grid grows: levels 1-3 = 3x3, levels 4-6 = 4x4, levels 7+ = 5x5
+    // Grid grows: levels 1-3 = 4x4 (matches onboarding assessment), levels 4+ = 5x5.
+    // No 3x3 entry tier — Visual Memory is intentionally non-trivial.
     private func updateGridForLevel() {
         switch level {
         case 1...3:
-            gridSize = 3
-        case 4...6:
             gridSize = 4
         default:
             gridSize = 5
@@ -110,23 +109,19 @@ final class VisualMemoryViewModel {
         guard phase == .input else { return }
 
         if selectedCells == highlightedCells {
-            // Correct — advance
+            // Correct — advance straight to the next level. No "Passed Level X"
+            // interstitial — the next level's squares flashing IS the success
+            // signal, and the haptic + sound register the win without burning
+            // a second on a green-checkmark screen.
             levelsCompleted = level
-            SoundService.shared.playCorrect()
             HapticService.correct()
-
-            phase = .correct
-            showTimer?.invalidate()
-            showTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    HapticService.levelUp()
-                    self?.level += 1
-                    self?.startLevel()
-                }
-            }
+            HapticService.levelUp()
+            level += 1
+            startLevel()
         } else {
-            // Wrong — show correct answer, then game over
-            SoundService.shared.playWrong()
+            // Wrong — show correct answer, then game over. Haptic only: the
+            // system "horn" buzzer reads as cheap, the wrong-answer haptic
+            // already carries the moment.
             HapticService.wrong()
             phase = .wrongReveal
             showTimer?.invalidate()
@@ -167,16 +162,20 @@ struct VisualMemoryView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// When true, skip the setup screen on appear and jump straight into the
+    /// game after a brief "get ready" overlay. Used for Focus unlock launches
+    /// where the user already pressed "Train" — landing on a Tap-to-Begin
+    /// screen is one step too many.
+    var autoStart: Bool = false
+
     @State private var viewModel = VisualMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -208,28 +207,12 @@ struct VisualMemoryView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .correct)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .wrongReveal)
         .sheet(isPresented: $showingPaywall) { PaywallView() }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.maxLevelReached,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Visual Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.visualMemory.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {
@@ -500,12 +483,6 @@ struct VisualMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .visualMemory,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.maxLevelReached,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Visual Memory",
             gameIcon: "square.grid.3x3.fill",
@@ -521,12 +498,6 @@ struct VisualMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .visualMemory),
             exerciseType: .visualMemory,
             leaderboardScore: viewModel.maxLevelReached,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.visualMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

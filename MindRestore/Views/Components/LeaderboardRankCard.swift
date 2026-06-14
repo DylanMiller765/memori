@@ -196,7 +196,7 @@ struct LeaderboardRankCard: View {
 
             Spacer()
 
-            Text("\(entry.score)")
+            Text(formatScore(entry.score))
                 .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
                 .foregroundStyle(entry.isCurrentUser ? accentColor : AppColors.textPrimary)
         }
@@ -219,6 +219,32 @@ struct LeaderboardRankCard: View {
         let start = max(0, userIndex - 1)
         let end = min(entries.count - 1, userIndex + 1)
         return Array(entries[start...end])
+    }
+
+    private func formatScore(_ score: Int) -> String {
+        guard let type = exerciseType else { return "\(score)" }
+        switch type {
+        case .reactionTime: return "\(score)ms"
+        case .colorMatch, .speedMatch:
+            let accuracy = score / 1000
+            if accuracy == 0 { return "\(score)" }
+            return "\(accuracy)%"
+        case .mathSpeed:
+            let correct = score / 1000
+            if correct == 0 { return "\(score)" }
+            return "\(correct)/20"
+        case .visualMemory: return "Lvl \(score)"
+        case .dualNBack: return "Lvl \(score)"
+        case .sequentialMemory: return "\(score)"
+        case .wordScramble:
+            let primary = score / 1000
+            if primary == 0 { return "\(score)" }
+            return "\(primary)/10"
+        case .memoryChain: return "\(score)"
+        case .chimpTest: return "Lvl \(score)"
+        case .verbalMemory: return "\(score)"
+        default: return "\(score)"
+        }
     }
 
     private func loadRank() {

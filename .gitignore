@@ -1,3 +1,46 @@
 MindRestore.xcodeproj/project.xcworkspace/xcuserdata/
+MindRestore.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
 *.xcuserstate
 build/
+build-sim/
+build-*/
+DerivedData/
+DerivedData-*/
+.build/
+.swiftpm/
+*.xcresult
+*.dSYM
+*.dSYM.zip
+*.ipa
+*.moved-aside
+
+# macOS junk
+.DS_Store
+
+# Tool / skill caches
+.superpowers/
+.xcodebuildmcp/
+.playwright-mcp/
+.agents/skills-archive/
+.claude/skills-archive/
+.claude/settings.local.json
+.codex/
+.planning/sketches/
+*.log
+
+# Generated marketing and screenshot exports
+/marketing/
+/screenshots/
+
+# Local planning/spec artifacts generated during agent work.
+# Existing tracked files remain tracked; this keeps new scratch plans out.
+/docs/superpowers/
+/docs/analytics/
+/docs/product/
+/docs/marketing/
+
+# Per-user Xcode state (scheme management, etc.)
+MindRestore.xcodeproj/xcuserdata/
+xcuserdata/
+*.xcuserdatad/
+*.xcscmblueprint

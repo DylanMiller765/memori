@@ -220,16 +220,17 @@ struct MathSpeedView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = MathSpeedViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -251,28 +252,12 @@ struct MathSpeedView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.leaderboardScore,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Math Speed")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.mathSpeed.rawValue)
+                viewModel.startGame()
             }
         }
         .onChange(of: viewModel.phase) { _, newPhase in
@@ -459,54 +444,36 @@ struct MathSpeedView: View {
 
             Spacer()
 
-            // Input
+            // Input — large mono answer display + custom keypad
             VStack(spacing: 12) {
-                TextField("", text: $viewModel.userAnswer)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 36, weight: .bold, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .focused($inputFocused)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.amber.opacity(0.3), lineWidth: 1.5)
-                    )
-                    .padding(.horizontal, 40)
-                    .onSubmit {
-                        if !viewModel.userAnswer.isEmpty {
-                            viewModel.submitAnswer()
-                        }
-                    }
+                Text(viewModel.userAnswer.isEmpty ? "—" : viewModel.userAnswer)
+                    .font(.system(size: 56, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(viewModel.userAnswer.isEmpty ? AppColors.textTertiary : AppColors.amber)
+                    .frame(height: 70)
+                    .contentTransition(.numericText())
 
-                HStack(spacing: 16) {
-                    Button {
-                        viewModel.skipProblem()
-                    } label: {
-                        Text("Skip")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.gray.opacity(0.12), in: Capsule())
-                    }
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userAnswer },
+                        set: { viewModel.userAnswer = $0 }
+                    ),
+                    submitEnabled: !viewModel.userAnswer.isEmpty,
+                    onSubmit: { viewModel.submitAnswer() }
+                )
+                .padding(.horizontal, 28)
 
-                    Button {
-                        viewModel.submitAnswer()
-                    } label: {
-                        Text("Submit")
-                            .accentButton()
-                    }
-                    .disabled(viewModel.userAnswer.isEmpty)
-                    .opacity(viewModel.userAnswer.isEmpty ? 0.5 : 1)
+                Button {
+                    viewModel.skipProblem()
+                } label: {
+                    Text("Skip")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 8)
                 }
-                .padding(.horizontal, 32)
+                .padding(.top, 4)
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, 16)
         }
         .padding(.vertical, 16)
         .modifier(ShakeEffect(animatableData: shakeAmount))
@@ -528,12 +495,6 @@ struct MathSpeedView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .mathSpeed,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.leaderboardScore,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Math Speed",
             gameIcon: "multiply.circle.fill",
@@ -550,12 +511,6 @@ struct MathSpeedView: View {
             personalBest: PersonalBestTracker.shared.best(for: .mathSpeed),
             exerciseType: .mathSpeed,
             leaderboardScore: viewModel.leaderboardScore,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.mathSpeed.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

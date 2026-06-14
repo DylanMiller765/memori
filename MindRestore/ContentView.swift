@@ -8,25 +8,55 @@ extension Notification.Name {
     static let brainScoreImproved = Notification.Name("brainScoreImproved")
 }
 
+private enum MainTab: Int, CaseIterable {
+    case home
+    case train
+    case compete
+    case insights
+    case profile
+
+    var analyticsName: String {
+        switch self {
+        case .home: return "Home"
+        case .train: return "Train"
+        case .compete: return "Compete"
+        case .insights: return "Insights"
+        case .profile: return "Profile"
+        }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var users: [User]
     @Query private var sessions: [DailySession]
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScoreResults: [BrainScoreResult]
     @State private var showOnboarding = false
-    @State private var selectedTab = 0
+    @State private var selectedTab: MainTab = .home
     @State private var storeService = StoreService()
     @State private var achievementService = AchievementService()
     @State private var paywallTrigger = PaywallTriggerService()
     @State private var trainingManager = TrainingSessionManager()
     @State private var gameCenterService = GameCenterService()
     @State private var deepLinkRouter = DeepLinkRouter()
-    @State private var workoutEngine = WorkoutEngine()
-    @State private var referralService = ReferralService()
+    @State private var focusModeService = FocusModeService()
+    #if DEBUG
+    @State private var didConfigureScreenshotMode = false
+    @State private var showingScreenshotBrainAge = false
+    @State private var showingScreenshotFocusSetup = false
+    @State private var showingScreenshotHardPaywall = false
+    #endif
 
-    // Challenge accept flow
-    @State private var showingChallengeAccept = false
-    @State private var showReferralWelcome = false
+    @State private var showQuickGame = false
+    @State private var focusUnlockPending = false
+    @State private var focusUnlockExercise: ExerciseType?
+    @State private var focusUnlockExerciseAutoStart = false
+    @State private var showingFocusUnlockSlot = false
+    @State private var focusUnlockExpectedExercise: ExerciseType?
+    @State private var showFocusUnlockToast = false
+    /// Minutes granted by the most recent spin payout — feeds the toast.
+    @State private var lastUnlockMinutes = 5
 
     // Toast state
     @State private var showingXPToast = false
@@ -46,13 +76,30 @@ struct ContentView: View {
     @State private var showingBrainScoreMilestone = false
     @State private var milestoneBrainScore = 0
 
-    // Score decay warning
-    @State private var decayPointsLost: Int = 0
-
     private var user: User? { users.first }
+
+    private var selectedTabIndex: Binding<Int> {
+        Binding(
+            get: { selectedTab.rawValue },
+            set: { selectedTab = MainTab(rawValue: $0) ?? .home }
+        )
+    }
 
     var body: some View {
         Group {
+            #if DEBUG
+            if let onboardingStartPage = screenshotOnboardingStartPage {
+                OnboardingView(startPage: onboardingStartPage) {}
+            } else if user?.hasCompletedOnboarding == true {
+                mainTabView
+            } else {
+                OnboardingView {
+                    withAnimation {
+                        showOnboarding = false
+                    }
+                }
+            }
+            #else
             if user?.hasCompletedOnboarding == true {
                 mainTabView
             } else {
@@ -62,6 +109,7 @@ struct ContentView: View {
                     }
                 }
             }
+            #endif
         }
         .environment(storeService)
         .environment(achievementService)
@@ -69,10 +117,45 @@ struct ContentView: View {
         .environment(trainingManager)
         .environment(gameCenterService)
         .environment(deepLinkRouter)
-        .environment(workoutEngine)
-        .environment(referralService)
+        .environment(focusModeService)
+        #if DEBUG
+        .fullScreenCover(isPresented: $showingScreenshotHardPaywall) {
+            PaywallView(
+                isHighIntent: true,
+                triggerSource: "onboarding_personalized_plan",
+                isHardPaywall: true,
+                dailyScreenTimeHours: 50.2 / 7.0,
+                onboardingAge: 25,
+                onboardingGoalSummary: "hours back",
+                screenTimeIsEstimate: false,
+                protectTarget: .school,
+                feedWinMoment: .lateNight
+            )
+            .environment(storeService)
+        }
+        #endif
         .onOpenURL { url in
             deepLinkRouter.handle(url)
+        }
+        // Notification taps (e.g. the shield "spin to unlock" notification)
+        // route here instead of through UIApplication.shared.open.
+        .onReceive(NotificationCenter.default.publisher(for: .memoHandleDeepLink)) { note in
+            guard let url = note.object as? URL else { return }
+            PendingDeepLink.url = nil
+            deepLinkRouter.handle(url)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            gameCenterService.authenticate()
+            Task {
+                await focusModeService.refreshForAppForeground()
+            }
+            // Cold-launch drain: a notification tapped while the app was dead
+            // stashes its link before this listener existed.
+            if let pending = PendingDeepLink.url {
+                PendingDeepLink.url = nil
+                deepLinkRouter.handle(pending)
+            }
         }
         .onAppear {
             if users.isEmpty {
@@ -103,21 +186,17 @@ struct ContentView: View {
                 )
             }
             gameCenterService.authenticate()
+            focusModeService.reconcileBlockedMinutes()
+            #if DEBUG
+            configureScreenshotModeIfNeeded()
+            #endif
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
-            scheduleWeeklyReportIfNeeded()
             // Daily notifications
             if user?.notificationsEnabled == true {
                 NotificationService.shared.scheduleDailyBrainFact()
                 NotificationService.shared.scheduleSocialProof()
-                NotificationService.shared.scheduleDecayPreview()
-            }
-            // Brain score decay — mascot ages if you don't train
-            let decayed = BrainScoreDecayService.applyDecayIfNeeded(modelContext: modelContext)
-            if decayed > 0 {
-                decayPointsLost = decayed
-                NotificationService.shared.scheduleDecayWarning(pointsLost: decayed)
-                Analytics.brainScoreDecayed(pointsLost: decayed, newScore: brainScoreResults.first?.brainScore ?? 0)
+                NotificationService.shared.scheduleWeeklyLeaderboardReset()
             }
             // Sync widget data on app launch (off the main thread)
             Task { syncWidgetData() }
@@ -127,48 +206,48 @@ struct ContentView: View {
     private var mainTabView: some View {
         ZStack {
             TabView(selection: $selectedTab) {
-                HomeView(selectedTab: $selectedTab, decayPointsLost: $decayPointsLost)
+                HomeView(selectedTab: selectedTabIndex)
                     .tabItem {
                         Label("Home", systemImage: "brain.head.profile")
                     }
-                    .tag(0)
+                    .tag(MainTab.home)
                     .accessibilityLabel("Home tab")
 
-                TrainingView()
+                TrainingView(
+                    externalExercise: $focusUnlockExercise,
+                    externalExerciseAutoStart: $focusUnlockExerciseAutoStart
+                )
                     .tabItem {
                         Label("Train", systemImage: "dumbbell.fill")
                     }
-                    .tag(1)
+                    .tag(MainTab.train)
                     .accessibilityLabel("Train tab")
 
                 LeaderboardView()
                     .tabItem {
                         Label("Compete", systemImage: "trophy.fill")
                     }
-                    .tag(2)
+                    .tag(MainTab.compete)
                     .accessibilityLabel("Compete tab")
 
                 ProgressDashboardView()
                     .tabItem {
                         Label("Insights", systemImage: "chart.bar.xaxis.ascending")
                     }
-                    .tag(3)
+                    .tag(MainTab.insights)
                     .accessibilityLabel("Insights tab")
 
-                SettingsView()
+                ProfileView()
                     .tabItem {
                         Label("Profile", systemImage: "person.circle.fill")
                     }
-                    .tag(4)
+                    .tag(MainTab.profile)
                     .accessibilityLabel("Profile tab")
             }
             .tint(AppColors.accent)
             .symbolRenderingMode(.hierarchical)
             .onChange(of: selectedTab) { _, newTab in
-                let tabNames = ["Home", "Train", "Compete", "Insights", "Profile"]
-                if newTab >= 0 && newTab < tabNames.count {
-                    Analytics.tabViewed(tab: tabNames[newTab])
-                }
+                Analytics.tabViewed(tab: newTab.analyticsName)
             }
 
             // Achievement toast overlay
@@ -225,6 +304,29 @@ struct ContentView: View {
                 showingBrainScoreMilestone = false
             }
         }
+        #if DEBUG
+        .fullScreenCover(isPresented: $showingScreenshotBrainAge) {
+            ScoreRevealView(
+                viewModel: screenshotBrainAgeViewModel(),
+                previousScore: brainScoreResults.first,
+                userAge: user?.userAge ?? 25,
+                onDone: { showingScreenshotBrainAge = false }
+            )
+        }
+        .fullScreenCover(isPresented: $showingScreenshotFocusSetup) {
+            FocusModeSetupView(initialStep: 1) {
+                showingScreenshotFocusSetup = false
+            } onSkip: {
+                showingScreenshotFocusSetup = false
+            }
+        }
+        #endif
+        .fullScreenCover(isPresented: $showingFocusUnlockSlot) {
+            FocusUnlockSlotView(games: TrainingGameCatalog.focusUnlockGames) { game in
+                launchFocusUnlockGame(game.type)
+            }
+            .interactiveDismissDisabled(true)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .streakMilestoneCelebration)) { notification in
             if let streak = notification.userInfo?["streak"] as? Int {
                 celebrationStreak = streak
@@ -245,79 +347,109 @@ struct ContentView: View {
             guard let destination else { return }
             switch destination {
             case .home:
-                selectedTab = 0
+                selectedTab = .home
                 deepLinkRouter.pendingDestination = nil
-            case .train, .dailyChallenge:
-                selectedTab = 1
+            case .train:
+                selectedTab = .train
                 deepLinkRouter.pendingDestination = nil
             case .game(_):
-                selectedTab = 1
+                selectedTab = .train
                 // Leave pendingDestination so TrainingView can handle it
-            case .challenge:
-                selectedTab = 1
-                showingChallengeAccept = true
-                deepLinkRouter.pendingDestination = nil
             case .compete:
-                selectedTab = 2
+                selectedTab = .compete
                 deepLinkRouter.pendingDestination = nil
             case .insights:
-                selectedTab = 3
+                selectedTab = .insights
                 deepLinkRouter.pendingDestination = nil
             case .profile:
-                selectedTab = 4
+                selectedTab = .profile
                 deepLinkRouter.pendingDestination = nil
-            case .referral(let code):
-                // Don't process self-referrals
-                if let myCode = referralService.getReferralCode(modelContext: modelContext),
-                   code == myCode {
-                    deepLinkRouter.pendingDestination = nil
-                    break
-                }
-                // Record referrer and grant trial to new user
-                if !referralService.wasReferred {
-                    referralService.recordReferrer(code: code)
-                    referralService.grantReferralTrial()
-                    showReferralWelcome = true
-                    // Notify referrer via CloudKit so they get their trial too
-                    referralService.notifyReferrer(referrerCode: code)
-                    // Refresh Pro status
-                    Task { await storeService.updateSubscriptionStatus() }
-                    Analytics.trackReferralRedeemed()
-                    Analytics.trackReferralTrialStarted()
-                }
+            case .focusUnlock:
+                focusUnlockPending = true
+                focusUnlockExpectedExercise = nil
+                selectedTab = .train
+                Analytics.focusUnlockSlotShown()
+                showingFocusUnlockSlot = true
                 deepLinkRouter.pendingDestination = nil
             }
         }
-        .fullScreenCover(isPresented: $showingChallengeAccept) {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                ChallengeAcceptView(
-                    challenge: challenge,
-                    onAccept: {
-                        showingChallengeAccept = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            deepLinkRouter.pendingDestination = .game(challenge.game)
+        .onReceive(NotificationCenter.default.publisher(for: .workoutGameCompleted)) { notification in
+            if focusUnlockPending {
+                let completedGame = notification.userInfo?["exerciseType"] as? String
+                guard FocusUnlockCompletionGate.shouldGrant(
+                    completedGameRawValue: completedGame,
+                    expectedGame: focusUnlockExpectedExercise
+                ) else {
+                    focusUnlockPending = false
+                    focusUnlockExpectedExercise = nil
+                    return
+                }
+
+                focusUnlockPending = false
+                focusUnlockExpectedExercise = nil
+                // Payout is derived from the game that was actually completed —
+                // the spin's stake cashes out here.
+                let payoutMinutes = ExerciseType(rawValue: completedGame ?? "")
+                    .map(FocusUnlockPayout.minutes(for:)) ?? focusModeService.unlockDuration
+                lastUnlockMinutes = payoutMinutes
+                focusModeService.temporaryUnlock(durationMinutes: payoutMinutes)
+                if let gameType = completedGame,
+                   let score = notification.userInfo?["score"] as? Double {
+                    Analytics.focusUnlockGameCompleted(gameType: gameType, score: Int(score * 100))
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    showFocusUnlockToast = true
+                }
+            }
+        }
+        // Reset the pending flag when the user navigates away from the Train tab
+        // without completing. This is a safer trigger than watching
+        // focusUnlockExercise — that binding is reset to nil immediately after
+        // navigation as part of the standard binding-passthrough pattern, which
+        // caused the previous reset logic to fire before the game could even
+        // start (the unlock toast then never fired on completion).
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab != .train && focusUnlockPending {
+                focusUnlockPending = false
+                focusUnlockExpectedExercise = nil
+            }
+        }
+        .overlay(alignment: .top) {
+            if showFocusUnlockToast {
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.mint)
+                    Text("Apps unlocked for \(lastUnlockMinutes) min")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().stroke(AppColors.mint.opacity(0.3), lineWidth: 1))
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                .padding(.top, 60)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            showFocusUnlockToast = false
                         }
-                    },
-                    onDismiss: {
-                        showingChallengeAccept = false
-                        deepLinkRouter.pendingChallenge = nil
                     }
-                )
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showFocusUnlockToast)
             }
         }
-        .alert("Welcome to Memori!", isPresented: $showReferralWelcome) {
-            Button("Let's go!") {}
-        } message: {
-            Text("Your friend referred you! Enjoy 1 week of Memori Pro — all games unlocked.")
-        }
-        .task {
-            // Check for pending referral rewards from CloudKit (only after onboarding)
-            guard user?.hasCompletedOnboarding == true else { return }
-            if let myCode = referralService.getReferralCode(modelContext: modelContext) {
-                referralService.checkForPendingRewards(myCode: myCode)
-            }
-            // Register short referral code in CloudKit (not yet implemented)
-            // Task { _ = await referralService.getOrCreateShortCode(modelContext: modelContext) }
+    }
+
+    private func launchFocusUnlockGame(_ type: ExerciseType) {
+        focusUnlockExpectedExercise = type
+        Analytics.focusUnlockGameStarted(gameType: type.rawValue)
+        focusUnlockExerciseAutoStart = true
+        focusUnlockExercise = type
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            showingFocusUnlockSlot = false
         }
     }
 
@@ -328,6 +460,124 @@ struct ContentView: View {
             NotificationService.shared.scheduleStreakRisk(streak: user.currentStreak)
         }
     }
+
+    #if DEBUG
+    private var screenshotTargetArgument: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--screenshot-target") else { return nil }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex) else { return nil }
+        return arguments[valueIndex]
+    }
+
+    private var screenshotOnboardingStartPage: Int? {
+        guard ProcessInfo.processInfo.arguments.contains("--screenshot-mode") else { return nil }
+        guard let target = screenshotTargetArgument else { return nil }
+
+        switch target {
+        case "onboarding-name":
+            return OnboardingPage.name.rawValue
+        case "onboarding-goals":
+            return OnboardingPage.goals.rawValue
+        case "onboarding-age":
+            return OnboardingPage.age.rawValue
+        case "onboarding-screen-time", "onboarding-screen-time-estimate":
+            return OnboardingPage.screenTimeAccess.rawValue
+        case "onboarding-lifetime-shock":
+            return OnboardingPage.lifetimeShock.rawValue
+        case "onboarding-life-receipt",
+             "onboarding-life-receipt-years",
+             "onboarding-life-receipt-sleep",
+             "onboarding-life-receipt-work":
+            return OnboardingPage.lifeSquaresReceipt.rawValue
+        case "onboarding-life-receipt-phone", "onboarding-life-receipt-rescue":
+            return OnboardingPage.lifeSquaresReceipt.rawValue
+        case "onboarding-protect-target", "onboarding-willpower-proof":
+            return OnboardingPage.protectTarget.rawValue
+        case "onboarding-feed-win-moment":
+            return OnboardingPage.feedWinMoment.rawValue
+        case "onboarding-personalization-beat":
+            return OnboardingPage.personalizationBeat.rawValue
+        case "onboarding-memo-plan":
+            return OnboardingPage.memoPlan.rawValue
+        case "onboarding-trial-free":
+            return OnboardingPage.trialTrustBridge.rawValue
+        // trial-reminder page merged into trial-free; keep the link alive.
+        case "onboarding-trial-reminder":
+            return OnboardingPage.trialTrustBridge.rawValue
+        case "onboarding-loader", "onboarding-plan-personalizing":
+            return OnboardingPage.planPersonalizing.rawValue
+        case "onboarding-focus-mode":
+            return OnboardingPage.focusMode.rawValue
+        case "onboarding-notification-priming":
+            return OnboardingPage.notificationPriming.rawValue
+        default:
+            return nil
+        }
+    }
+
+    @MainActor
+    private func configureScreenshotModeIfNeeded() {
+        guard !didConfigureScreenshotMode else { return }
+        guard ProcessInfo.processInfo.arguments.contains("--screenshot-mode") else { return }
+        didConfigureScreenshotMode = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            let screenshotUser: User
+            if let user {
+                screenshotUser = user
+            } else {
+                let newUser = User()
+                modelContext.insert(newUser)
+                screenshotUser = newUser
+            }
+
+            ScreenshotDataGenerator.generate(
+                modelContext: modelContext,
+                user: screenshotUser,
+                gameCenterService: gameCenterService
+            )
+            storeService.isProUser = true
+            focusModeService.isEnabled = true
+            focusModeService.dailyAttemptCount = 3
+            focusModeService.setUnlockDuration(15)
+
+            switch screenshotTargetArgument {
+            case "focus-setup":
+                showingScreenshotFocusSetup = true
+            case "paywall-hard":
+                showingScreenshotHardPaywall = true
+            case "brain-age":
+                showingScreenshotBrainAge = true
+            case "train":
+                selectedTab = .train
+            case "compete":
+                selectedTab = .compete
+            case "insights":
+                selectedTab = .insights
+            case "profile":
+                selectedTab = .profile
+            default:
+                selectedTab = .home
+            }
+        }
+    }
+
+    private func screenshotBrainAgeViewModel() -> BrainAssessmentViewModel {
+        let viewModel = BrainAssessmentViewModel()
+        viewModel.brainScore = 820
+        viewModel.brainAge = 25
+        viewModel.brainType = .balancedBrain
+        viewModel.percentile = 90
+        viewModel.digitScore = 85
+        viewModel.reactionScore = 78
+        viewModel.visualScore = 90
+        viewModel.digitMaxCorrect = 9
+        viewModel.avgReactionMs = 220
+        viewModel.visualMaxCorrect = 7
+        return viewModel
+    }
+    #endif
 
     private func scheduleComebackIfNeeded() {
         guard let user, user.notificationsEnabled else { return }
@@ -359,20 +609,6 @@ struct ContentView: View {
         )
     }
 
-    private func scheduleWeeklyReportIfNeeded() {
-        guard let user, user.notificationsEnabled else { return }
-
-        let currentScore = brainScoreResults.first?.brainScore ?? 0
-
-        // Find a brain score from 7+ days ago for comparison
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
-        let previousScore = brainScoreResults.first(where: { $0.date <= weekAgo })?.brainScore ?? currentScore
-
-        NotificationService.shared.scheduleWeeklyReport(
-            brainScore: currentScore,
-            previousBrainScore: previousScore
-        )
-    }
 }
 
 // MARK: - XP Helper
@@ -383,9 +619,6 @@ extension ContentView {
         let leveledUp = user.addXP(xp)
         user.totalExercises += 1
         if score >= 0.95 { user.totalPerfectScores += 1 }
-
-        // Cancel decay warning since user is playing
-        NotificationService.shared.cancelDecayWarning()
 
         achievementService.checkAchievements(context: modelContext, user: user)
 
@@ -612,20 +845,16 @@ struct TrainingView: View {
     @Query(sort: \Exercise.completedAt, order: .reverse) private var allExercises: [Exercise]
     private var exercises: [Exercise] { Array(allExercises.prefix(20)) }
 
+    /// External trigger for focus unlock — set by ContentView to navigate to a specific game
+    @Binding var externalExercise: ExerciseType?
+    /// When the external trigger fires, indicates the game should skip its setup screen.
+    /// Captured into `pendingAutoStart` on the externalExercise transition; the binding
+    /// is reset to false immediately to keep ContentView's source-of-truth clean.
+    @Binding var externalExerciseAutoStart: Bool
+
     @State private var showingPaywall = false
     @State private var selectedExercise: ExerciseType?
-    @State private var navigateToDailyChallenge = false
-    @AppStorage("daily_challenge_completed_date") private var dailyChallengeCompletedDate: String = ""
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    private var hasDoneDailyChallenge: Bool {
-        dailyChallengeCompletedDate == Self.dayFormatter.string(from: Date.now)
-    }
+    @State private var pendingAutoStart = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -644,7 +873,7 @@ struct TrainingView: View {
         let icon: String
         let color: Color
         let subtitle: String
-        let games: [(type: ExerciseType, title: String, icon: String, color: Color)]
+        let games: [TrainingGame]
     }
 
     private static let gameCategories: [GameCategory] = [
@@ -653,34 +882,21 @@ struct TrainingView: View {
             icon: "brain.head.profile",
             color: AppColors.violet,
             subtitle: "Train your recall",
-            games: [
-                (.sequentialMemory, "Number Memory", "number.circle.fill", AppColors.teal),
-                (.visualMemory, "Visual Memory", "square.grid.3x3.fill", AppColors.indigo),
-                (.chunkingTraining, "Chunking", "rectangle.split.3x1.fill", AppColors.rose),
-                (.verbalMemory, "Verbal Memory", "text.book.closed.fill", AppColors.violet),
-            ]
+            games: TrainingGameCatalog.memoryGames
         ),
         GameCategory(
             name: "Speed",
             icon: "bolt.fill",
             color: AppColors.coral,
             subtitle: "Sharpen your reflexes",
-            games: [
-                (.reactionTime, "Reaction Time", "bolt.fill", AppColors.coral),
-                (.mathSpeed, "Math Speed", "multiply.circle.fill", AppColors.amber),
-                (.speedMatch, "Speed Match", "bolt.square.fill", AppColors.sky),
-                (.colorMatch, "Color Match", "paintpalette.fill", AppColors.violet),
-            ]
+            games: TrainingGameCatalog.speedGames
         ),
         GameCategory(
             name: "Focus",
             icon: "eye.fill",
             color: AppColors.sky,
             subtitle: "Build concentration",
-            games: [
-                (.dualNBack, "Dual N-Back", "square.grid.3x3", AppColors.sky),
-                (.chimpTest, "Chimp Test", "pawprint.fill", AppColors.amber),
-            ]
+            games: TrainingGameCatalog.focusGames
         ),
     ]
 
@@ -688,56 +904,9 @@ struct TrainingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Daily limit pill for free users
-                    if !isProUser {
-                        dailyLimitBanner
-                    }
-
-                    // Daily Challenge — always accessible, once per day
-                    Button {
-                        if !hasDoneDailyChallenge {
-                            navigateToDailyChallenge = true
-                        }
-                    } label: {
-                        HStack(alignment: .center, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("DAILY CHALLENGE")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(.white.opacity(0.7))
-                                    .tracking(1.5)
-                                Text(hasDoneDailyChallenge ? "Completed!" : "Today's Challenge")
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(.white)
-                                Text(hasDoneDailyChallenge ? "Come back tomorrow" : "Compete for the daily high score")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.75))
-                            }
-
-                            Spacer()
-
-                            Image(systemName: hasDoneDailyChallenge ? "checkmark.circle.fill" : "star.fill")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(.white.opacity(0.2), in: Circle())
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            LinearGradient(
-                                colors: hasDoneDailyChallenge ? [AppColors.teal, AppColors.teal.opacity(0.8)] : [AppColors.amber, AppColors.coral],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            in: RoundedRectangle(cornerRadius: 12)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal)
-
-                    // Referral banner — always show so users can keep inviting
-                    ReferralBannerView()
-                        .padding(.horizontal)
+                    MainScreenTitle(text: "Train")
+                        .padding(.horizontal, 16)
+                        .staggeredEntrance(index: 0)
 
                     // Game Categories
                     ForEach(Array(Self.gameCategories.enumerated()), id: \.offset) { index, category in
@@ -766,17 +935,13 @@ struct TrainingView: View {
                                 HStack(spacing: 12) {
                                     ForEach(Array(category.games.enumerated()), id: \.element.type) { offset, game in
                                         Button {
-                                            if hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type) {
-                                                showingPaywall = true
-                                            } else {
-                                                selectedExercise = game.type
-                                            }
+                                            selectedExercise = game.type
                                         } label: {
                                             GameCard(
                                                 title: game.title,
                                                 type: game.type,
                                                 color: game.color,
-                                                isLocked: hasReachedLimit && !paywallTrigger.isFirstTimeGame(game.type),
+                                                isLocked: false,
                                                 lastPlayedText: lastPlayedText(for: game.type)
                                             )
                                         }
@@ -786,14 +951,16 @@ struct TrainingView: View {
                                 .padding(.horizontal, 16)
                             }
                         }
-                        .staggeredEntrance(index: index)
+                        .staggeredEntrance(index: index + 1)
                     }
                 }
                 .navigationDestination(item: $selectedExercise) { type in
                     exerciseDestination(for: type)
-                }
-                .navigationDestination(isPresented: $navigateToDailyChallenge) {
-                    DailyChallengeView()
+                        // Clear the auto-start flag once the destination owns it.
+                        // Defers to onAppear so the destination's init has already
+                        // consumed pendingAutoStart for ReactionTime; subsequent
+                        // navigations to any game start with a clean flag.
+                        .onAppear { pendingAutoStart = false }
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 32)
@@ -801,7 +968,15 @@ struct TrainingView: View {
                 .frame(maxWidth: .infinity)
             }
             .pageBackground()
-            .navigationTitle("Train")
+            .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: externalExercise) { _, newValue in
+                if let game = newValue {
+                    pendingAutoStart = externalExerciseAutoStart
+                    selectedExercise = game
+                    externalExercise = nil
+                    externalExerciseAutoStart = false
+                }
+            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView(
                     isHighIntent: true,
@@ -826,97 +1001,41 @@ struct TrainingView: View {
         }
     }
 
-    private var hasReachedLimit: Bool {
-        !isProUser && paywallTrigger.hasReachedDailyLimit
-    }
-
-    private var dailyLimitBanner: some View {
-        let remaining = paywallTrigger.freeExercisesRemaining
-        let total = Constants.Defaults.freeExercisesPerDay
-
-        return HStack(spacing: 12) {
-            // Dot indicators — filled = remaining, unfilled = used
-            HStack(spacing: 6) {
-                ForEach(0..<total, id: \.self) { i in
-                    Circle()
-                        .fill(i < remaining ? AppColors.accent : AppColors.accent.opacity(0.2))
-                        .frame(width: 10, height: 10)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 1) {
-                if remaining == 0 {
-                    Text("Daily limit reached")
-                        .font(.caption.weight(.semibold))
-                } else {
-                    Text("\(remaining) free game\(remaining == 1 ? "" : "s") left today")
-                        .font(.caption.weight(.semibold))
-                }
-                Text("Go Pro for unlimited")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                showingPaywall = true
-            } label: {
-                Text("Go Pro")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(AppColors.accent, in: Capsule())
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(remaining == 0 ? AppColors.coral.opacity(0.08) : AppColors.accent.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(remaining == 0 ? AppColors.coral.opacity(0.2) : AppColors.accent.opacity(0.15), lineWidth: 1)
-                )
-        )
-        .padding(.horizontal)
-    }
-
     @ViewBuilder
     private func exerciseDestination(for type: ExerciseType) -> some View {
         switch type {
         case .spacedRepetition:
             SpacedRepetitionView(category: .numbers)
         case .dualNBack:
-            DualNBackView()
+            DualNBackView(autoStart: pendingAutoStart)
         case .activeRecall:
             ActiveRecallView()
         case .chunkingTraining:
-            ChunkingTrainingView()
+            ChunkingTrainingView(autoStart: pendingAutoStart)
         case .prospectiveMemory:
             ProspectiveMemoryView()
         case .memoryPalace:
             MemoryPalaceView()
         case .reactionTime:
-            ReactionTimeView()
+            ReactionTimeView(autoStart: pendingAutoStart)
         case .sequentialMemory:
-            SequentialMemoryView()
+            SequentialMemoryView(autoStart: pendingAutoStart)
         case .mathSpeed:
-            MathSpeedView()
+            MathSpeedView(autoStart: pendingAutoStart)
         case .colorMatch:
-            ColorMatchView()
+            ColorMatchView(autoStart: pendingAutoStart)
         case .speedMatch:
-            SpeedMatchView()
+            SpeedMatchView(autoStart: pendingAutoStart)
         case .visualMemory:
-            VisualMemoryView()
+            VisualMemoryView(autoStart: pendingAutoStart)
         case .wordScramble:
             WordScrambleView()
         case .memoryChain:
             MemoryChainView()
         case .chimpTest:
-            ChimpTestView()
+            ChimpTestView(autoStart: pendingAutoStart)
         case .verbalMemory:
-            VerbalMemoryView()
+            VerbalMemoryView(autoStart: pendingAutoStart)
         }
     }
 
@@ -1004,6 +1123,17 @@ struct TrainingTile: View {
         TrainingTileMiniPreview(type: type, color: color)
     }
 }
+
+#if DEBUG
+#Preview("Train") {
+    MainScreenPreview {
+        TrainingView(
+            externalExercise: .constant(nil),
+            externalExerciseAutoStart: .constant(false)
+        )
+    }
+}
+#endif
 
 // MARK: - Shared Mini Preview (used by TrainingTile and GameCard)
 
@@ -1477,7 +1607,7 @@ struct ExerciseInfoSheet: View {
                 "Sustained attention over growing word pools"
             ]
         default:
-            return ["General cognitive training"]
+            return ["General brain training"]
         }
     }
 }

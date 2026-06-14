@@ -9,80 +9,41 @@ final class PaywallTriggerService {
     private let defaults = UserDefaults.standard
     private let paywallDismissCountKey = "paywall_dismiss_count"
     private let lastPaywallDateKey = "last_paywall_date"
-    private let dailyExerciseCountKey = "daily_exercise_count"
-    private let dailyExerciseDateKey = "daily_exercise_date"
-    private let triedGameTypesKey = "tried_game_types"
+    private let trainingCountKey = "training_exercise_count"
+    private let trainingCountDateKey = "training_exercise_date"
 
     enum PaywallContext: String {
         case generic
         case afterAssessment
         case streakMilestone
-        case dailyChallengeResult
-        case dailyLimit
         case lockedCategory
         case progressAnalytics
         case brainScoreHistory
         case leaderboard
     }
 
-    // MARK: - Try Each Game Once
-
-    private var triedGameTypes: Set<String> {
-        get { Set(defaults.stringArray(forKey: triedGameTypesKey) ?? []) }
-        set { defaults.set(Array(newValue), forKey: triedGameTypesKey) }
-    }
-
-    func isFirstTimeGame(_ type: ExerciseType) -> Bool {
-        !triedGameTypes.contains(type.rawValue)
-    }
-
-    // MARK: - Daily Exercise Limit (Free = 3/day)
+    // MARK: - Training Counts
 
     var exercisesToday: Int {
-        guard let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
+        guard let savedDate = defaults.object(forKey: trainingCountDateKey) as? Date,
               Calendar.current.isDateInToday(savedDate) else {
             return 0
         }
-        return defaults.integer(forKey: dailyExerciseCountKey)
-    }
-
-    var freeExercisesRemaining: Int {
-        max(0, Constants.Defaults.freeExercisesPerDay - exercisesToday)
-    }
-
-    var hasReachedDailyLimit: Bool {
-        exercisesToday >= Constants.Defaults.freeExercisesPerDay
+        return defaults.integer(forKey: trainingCountKey)
     }
 
     func recordExerciseCompleted(gameType: ExerciseType? = nil) {
-        // First-time game types don't count toward the daily limit
-        if let gameType, isFirstTimeGame(gameType) {
-            var tried = triedGameTypes
-            tried.insert(gameType.rawValue)
-            triedGameTypes = tried
-            return
-        }
-
         let today = Date.now
-        if let savedDate = defaults.object(forKey: dailyExerciseDateKey) as? Date,
+        if let savedDate = defaults.object(forKey: trainingCountDateKey) as? Date,
            Calendar.current.isDateInToday(savedDate) {
-            defaults.set(exercisesToday + 1, forKey: dailyExerciseCountKey)
+            defaults.set(exercisesToday + 1, forKey: trainingCountKey)
         } else {
-            defaults.set(today, forKey: dailyExerciseDateKey)
-            defaults.set(1, forKey: dailyExerciseCountKey)
+            defaults.set(today, forKey: trainingCountDateKey)
+            defaults.set(1, forKey: trainingCountKey)
         }
     }
 
     // MARK: - Smart Trigger Logic
-
-    /// Call when free user tries to start an exercise but has hit daily limit
-    func triggerDailyLimit(isProUser: Bool) {
-        guard !isProUser else { return }
-        guard hasReachedDailyLimit else { return }
-        Analytics.dailyLimitReached(exercisesToday: exercisesToday)
-        triggerContext = .dailyLimit
-        shouldShowPaywall = true
-    }
 
     /// Call when user taps a locked category
     func triggerLockedCategory(isProUser: Bool) {
@@ -105,20 +66,6 @@ final class PaywallTriggerService {
         guard [3, 7, 14].contains(streak) else { return }
         guard canShowPaywall() else { return }
         triggerContext = .streakMilestone
-        shouldShowPaywall = true
-    }
-
-    /// Call after daily challenge results
-    func triggerAfterDailyChallenge(isProUser: Bool) {
-        guard !isProUser else { return }
-        let count = defaults.integer(forKey: "daily_challenge_paywall_count")
-        guard count % 2 == 0 else {
-            defaults.set(count + 1, forKey: "daily_challenge_paywall_count")
-            return
-        }
-        defaults.set(count + 1, forKey: "daily_challenge_paywall_count")
-        guard canShowPaywall() else { return }
-        triggerContext = .dailyChallengeResult
         shouldShowPaywall = true
     }
 

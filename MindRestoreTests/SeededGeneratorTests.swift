@@ -88,3 +88,44 @@ final class SeededGeneratorTests: XCTestCase {
         XCTAssertGreaterThan(values.count, 90, "Should produce varied output")
     }
 }
+
+final class FocusModeScheduleStateTests: XCTestCase {
+    func testScheduledOffIsSuppressedDuringManualOverride() {
+        XCTAssertFalse(
+            FocusModeService.shouldShowScheduledOff(
+                scheduleEnabled: true,
+                isWithinScheduledWindow: false,
+                manualOverrideActive: true
+            )
+        )
+    }
+
+    func testBlockWindowStartPreservesExistingStartOnForegroundRefresh() {
+        let now = Date(timeIntervalSince1970: 120)
+        let originalStart = Date(timeIntervalSince1970: 0)
+
+        XCTAssertEqual(
+            FocusModeService.blockWindowStartToPersist(existingStart: originalStart, now: now),
+            originalStart
+        )
+    }
+
+    func testBlockWindowStartBeginsWhenMissing() {
+        let now = Date(timeIntervalSince1970: 120)
+
+        XCTAssertEqual(
+            FocusModeService.blockWindowStartToPersist(existingStart: nil, now: now),
+            now
+        )
+    }
+
+    func testEffectiveProtectedMinutesIncludeLiveBlockedWindow() {
+        let now = Date(timeIntervalSince1970: 125)
+        let start = Date(timeIntervalSince1970: 0)
+
+        XCTAssertEqual(
+            FocusModeService.effectiveProtectedMinutes(storedMinutes: 3, blockStart: start, now: now),
+            5
+        )
+    }
+}

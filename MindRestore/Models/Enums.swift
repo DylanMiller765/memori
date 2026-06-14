@@ -80,37 +80,6 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    var challengeEmoji: String {
-        switch self {
-        case .reactionTime: return "⚡"
-        case .colorMatch: return "🎨"
-        case .speedMatch: return "⚡"
-        case .visualMemory: return "🟦"
-        case .sequentialMemory: return "🔢"
-        case .mathSpeed: return "🧮"
-        case .dualNBack: return "🧠"
-        case .chunkingTraining: return "📦"
-        case .chimpTest: return "🐵"
-        case .verbalMemory: return "📝"
-        default: return "🧠"
-        }
-    }
-
-    func challengeDisplayText(score: Int) -> String {
-        switch self {
-        case .reactionTime: return "\(score)ms"
-        case .colorMatch: return "\(score)%"
-        case .speedMatch: return "\(score)%"
-        case .visualMemory: return "Level \(score)"
-        case .sequentialMemory: return "\(score) digits"
-        case .mathSpeed: return "\(score) solved"
-        case .dualNBack: return "N=\(score)"
-        case .chunkingTraining: return "\(score) correct"
-        case .chimpTest: return "Level \(score)"
-        case .verbalMemory: return "\(score) words"
-        default: return "\(score)"
-        }
-    }
 }
 
 // MARK: - Card Category
@@ -190,40 +159,44 @@ enum ChallengeType: String, Codable, CaseIterable, Identifiable {
 // MARK: - User Focus Goal
 
 enum UserFocusGoal: String, Codable, CaseIterable, Identifiable {
+    case screenTimeFrying = "screentime"
+    case doomscrolling = "doomscroll"
     case attentionShot = "attention"
     case loseFocus = "focus"
     case forgetInstantly = "forget"
     case getSharper = "sharper"
-    case screenTimeFrying = "screentime"
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
+        case .screenTimeFrying: return "My screen time is out of control"
+        case .doomscrolling: return "I doomscroll way too much"
         case .attentionShot: return "I can't focus like I used to"
         case .loseFocus: return "I lose my train of thought easily"
         case .forgetInstantly: return "I forget things too quickly"
         case .getSharper: return "I want to stay mentally sharp"
-        case .screenTimeFrying: return "My screen time is out of control"
         }
     }
 
     var icon: String {
         switch self {
-        case .attentionShot: return "brain.head.profile"
-        case .loseFocus: return "eye.slash"
-        case .forgetInstantly: return "wind"
+        case .screenTimeFrying: return "iphone"
+        case .doomscrolling: return "infinity"
+        case .attentionShot: return "scope"
+        case .loseFocus: return "cloud.fill"
+        case .forgetInstantly: return "questionmark"
         case .getSharper: return "bolt.fill"
-        case .screenTimeFrying: return "iphone.gen3.slash"
         }
     }
 
     var emoji: String {
         switch self {
+        case .screenTimeFrying: return "📱"
+        case .doomscrolling: return "🫠"
         case .attentionShot: return "🧠"
         case .loseFocus: return "💭"
         case .forgetInstantly: return "💨"
         case .getSharper: return "⚡️"
-        case .screenTimeFrying: return "📱"
         }
     }
 }

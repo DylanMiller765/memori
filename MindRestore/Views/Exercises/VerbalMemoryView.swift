@@ -246,13 +246,15 @@ struct VerbalMemoryView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = VerbalMemoryViewModel()
     @State private var shareImage: UIImage?
     @State private var showingShareSheet = false
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var wordOffset: CGFloat = 0
     @State private var resultsAppeared = false
     @State private var showingInfo = false
@@ -280,9 +282,9 @@ struct VerbalMemoryView: View {
         .navigationTitle("Verbal Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.verbalMemory.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {
@@ -448,12 +450,6 @@ struct VerbalMemoryView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .verbalMemory,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.leaderboardScore,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Verbal Memory",
             gameIcon: "text.book.closed.fill",
@@ -470,12 +466,6 @@ struct VerbalMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .verbalMemory),
             exerciseType: .verbalMemory,
             leaderboardScore: viewModel.bestStreak,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                generateShareCard()
-                Analytics.shareTapped(game: ExerciseType.verbalMemory.rawValue)
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

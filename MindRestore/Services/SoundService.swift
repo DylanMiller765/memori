@@ -30,6 +30,22 @@ final class SoundService {
         play(systemSoundID: 1104)
     }
 
+    // MARK: Focus unlock slot — the one screen that earns audio.
+    // System IDs for v1; custom-recorded sounds are a flagged follow-up
+    // (the recordings are TikTok material).
+
+    func playReelTick() {
+        play(systemSoundID: 1104)
+    }
+
+    func playReelLock() {
+        play(systemSoundID: 1103)
+    }
+
+    func playJackpotSting() {
+        play(systemSoundID: 1026)
+    }
+
     private func play(systemSoundID: SystemSoundID) {
         guard isEnabled else { return }
         AudioServicesPlaySystemSound(systemSoundID)

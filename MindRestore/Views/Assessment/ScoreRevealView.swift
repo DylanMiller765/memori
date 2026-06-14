@@ -21,7 +21,6 @@ struct ScoreRevealView: View {
     @State private var showBreakdown = false
     @State private var showComparison = false
     @State private var scoreTimer: Timer?
-    // @State private var showChallenge = false
     @AppStorage("celebratedBrainAgeBelow") private var celebratedBrainAgeBelow = false
 
     // Brain Age dramatic reveal states
@@ -115,7 +114,7 @@ struct ScoreRevealView: View {
                         // First-time brain age below real age celebration
                         if userAge > 0 && viewModel.brainAge < userAge && !celebratedBrainAgeBelow {
                             ShareLink(
-                                item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                                item: "My Brain Age is \(viewModel.brainAge) — that's \(userAge - viewModel.brainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memo"
                             ) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "square.and.arrow.up")
@@ -283,7 +282,7 @@ struct ScoreRevealView: View {
 
                             if let previous = previousScore, viewModel.brainScore > previous.brainScore {
                                 let diff = viewModel.brainScore - previous.brainScore
-                                ShareLink(item: "I improved my Brain Score by +\(diff) points! (\(previous.brainScore) -> \(viewModel.brainScore)/1000)\n\nTest yours with Memori") {
+                                ShareLink(item: "I improved my Brain Score by +\(diff) points! (\(previous.brainScore) -> \(viewModel.brainScore)/1000)\n\nTest yours with Memo") {
                                     HStack {
                                         Image(systemName: "chart.line.uptrend.xyaxis")
                                         Text("Share Your Improvement")
@@ -293,22 +292,6 @@ struct ScoreRevealView: View {
                             }
 
                             HStack(spacing: 12) {
-                                /*
-                                Button {
-                                    showChallenge = true
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "person.2.fill")
-                                        Text("Challenge")
-                                    }
-                                    .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(AppColors.accent)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                                }
-                                */
-
                                 Button(action: onDone) {
                                     Text("Done")
                                         .font(.subheadline.weight(.bold))
@@ -558,7 +541,7 @@ struct ScoreRevealView: View {
     }
 
     private var brainAgeShareText: String {
-        "My Brain Age is \(viewModel.brainAge)! Better than \(viewModel.percentile)% of players.\n\nTest yours with Memori"
+        "My Brain Age is \(viewModel.brainAge)! Better than \(viewModel.percentile)% of players.\n\nTest yours with Memo"
     }
 
     private func brainAgeVerdict(_ age: Int) -> String {
@@ -583,7 +566,7 @@ struct ScoreRevealView: View {
     }
 
     private var shareText: String {
-        "My Brain Score is \(viewModel.brainScore)/1000 (Brain Age: \(viewModel.brainAge)) \u{1F9E0}\n\nI'm a \(viewModel.brainType.displayName) \u{2014} better than \(viewModel.percentile)% of players!\n\nTest yours with Memori"
+        "My Brain Score is \(viewModel.brainScore)/1000 (Brain Age: \(viewModel.brainAge)) \u{1F9E0}\n\nI'm a \(viewModel.brainType.displayName) \u{2014} better than \(viewModel.percentile)% of players!\n\nTest yours with Memo"
     }
 
     private var brainTypeColor: Color {

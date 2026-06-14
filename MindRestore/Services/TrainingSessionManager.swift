@@ -11,7 +11,7 @@ final class TrainingSessionManager {
 
     // MARK: - Constants
 
-    private static let dailyLimitMinutes: Double = 20
+    private static let targetSessionMinutes: Double = 20
     private static let sweetSpotMinutes: Double = 15
     private static let defaultsPrefix = "trainingSeconds_"
 
@@ -28,14 +28,14 @@ final class TrainingSessionManager {
         Double(todayTrainingSeconds) / 60.0
     }
 
-    /// True once the user has trained for 20+ minutes today.
-    var hasReachedDailyLimit: Bool {
-        todayTrainingMinutes >= Self.dailyLimitMinutes
+    /// True once the user has reached the recommended training target today.
+    var hasReachedDailyTarget: Bool {
+        todayTrainingMinutes >= Self.targetSessionMinutes
     }
 
     /// True when the user is in the 15-20 minute sweet-spot window.
     var shouldShowSlowDown: Bool {
-        todayTrainingMinutes >= Self.sweetSpotMinutes && !hasReachedDailyLimit
+        todayTrainingMinutes >= Self.sweetSpotMinutes && !hasReachedDailyTarget
     }
 
     /// Formatted string like "12 min" for display.
@@ -47,9 +47,9 @@ final class TrainingSessionManager {
         return "\(minutes) min"
     }
 
-    /// Progress toward the 20-minute daily limit (0.0 – 1.0).
+    /// Progress toward the 20-minute daily training target (0.0 – 1.0).
     var dailyProgress: Double {
-        min(todayTrainingMinutes / Self.dailyLimitMinutes, 1.0)
+        min(todayTrainingMinutes / Self.targetSessionMinutes, 1.0)
     }
 
     // MARK: - Methods
@@ -149,7 +149,7 @@ final class TrainingSessionManager {
             return [
                 ExerciseRecommendation(
                     title: "Dual N-Back",
-                    subtitle: "The gold standard for cognitive training",
+                    subtitle: "The focus game that trains your brain",
                     icon: "square.grid.3x3",
                     color: AppColors.sky,
                     destination: .dualNBack
@@ -219,6 +219,31 @@ final class TrainingSessionManager {
                     destination: .exercise(.speedMatch)
                 ),
             ]
+
+        case .doomscrolling:
+            return [
+                ExerciseRecommendation(
+                    title: "Dual N-Back",
+                    subtitle: "Rebuild attention damaged by scrolling",
+                    icon: "square.grid.3x3",
+                    color: AppColors.sky,
+                    destination: .dualNBack
+                ),
+                ExerciseRecommendation(
+                    title: "Reaction Time",
+                    subtitle: "Sharpen sluggish processing speed",
+                    icon: "bolt.fill",
+                    color: AppColors.coral,
+                    destination: .exercise(.reactionTime)
+                ),
+                ExerciseRecommendation(
+                    title: "Color Match",
+                    subtitle: "Fight distraction with Stroop effect",
+                    icon: "paintpalette.fill",
+                    color: AppColors.violet,
+                    destination: .exercise(.colorMatch)
+                ),
+            ]
         }
     }
 
@@ -265,7 +290,6 @@ enum ExerciseDestination {
     case dualNBack
     case activeRecall
     case mixedTraining
-    case dailyChallenge
     case brainAssessment
     case exercise(ExerciseType)
 }

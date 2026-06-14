@@ -131,7 +131,7 @@ struct BrainScoreMilestoneView: View {
                         }
                     } else {
                         ShareLink(
-                            item: "I just hit a Brain Score of \(milestone) on Memori! \(milestoneTitle) \u{1F9E0}\u{1F525}",
+                            item: "I just hit a Brain Score of \(milestone) on Memo! \(milestoneTitle) \u{1F9E0}\u{1F525}",
                             preview: SharePreview("Brain Score: \(milestone)")
                         ) {
                             HStack(spacing: 8) {
@@ -193,7 +193,7 @@ private struct BSM_BrandingHeader: View {
             Image(systemName: "brain.fill")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(AppColors.accent)
-            Text("MEMORI")
+            Text("MEMO")
                 .font(.system(size: 12, weight: .heavy))
                 .tracking(3)
                 .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40))
@@ -203,7 +203,7 @@ private struct BSM_BrandingHeader: View {
 
 private struct BSM_BrandingFooter: View {
     var body: some View {
-        Text("Train your brain free \u{2014} Memori")
+        Text("Block apps. Train your brain. \u{2014} Memo")
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color(red: 0.62, green: 0.60, blue: 0.58))
     }

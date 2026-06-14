@@ -211,8 +211,8 @@ struct MemoriWidget: Widget {
         StaticConfiguration(kind: kind, provider: MemoriTimelineProvider()) { entry in
             MemoriWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Memori")
-        .description("Track your memory training streak and progress.")
+        .configurationDisplayName("Memo")
+        .description("Track your blocking streak and brain training progress.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

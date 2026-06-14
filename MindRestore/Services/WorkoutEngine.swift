@@ -421,7 +421,7 @@ final class WorkoutEngine {
             switch goal {
             case .forgetInstantly, .attentionShot:
                 return .memory
-            case .loseFocus, .screenTimeFrying:
+            case .loseFocus, .screenTimeFrying, .doomscrolling:
                 return .speed
             case .getSharper:
                 return .visual

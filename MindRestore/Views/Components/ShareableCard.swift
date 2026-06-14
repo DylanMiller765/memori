@@ -36,7 +36,7 @@ struct LevelUpShareCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("Memori")
+            Text("Memo")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }
@@ -95,7 +95,7 @@ struct AchievementShareCard: View {
                     .padding(.horizontal, 8)
             }
 
-            Text("Memori")
+            Text("Memo")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }
@@ -148,7 +148,7 @@ struct ProfileShareCard: View {
                 profileStat(value: "\(achievements)", label: "Badges", color: AppColors.violet)
             }
 
-            Text("Memori")
+            Text("Memo")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color(red: 0.45, green: 0.43, blue: 0.40).opacity(0.6))
         }

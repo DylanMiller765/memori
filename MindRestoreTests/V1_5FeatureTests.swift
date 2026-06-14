@@ -1,365 +1,402 @@
 import XCTest
 @testable import MindRestore
 
-// MARK: - ChallengeLink v1.5 Tests
-
-final class ChallengeLinkV15Tests: XCTestCase {
-
-    // MARK: - vercelURL Generation
-
-    func testVercelURLScheme() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let url = link.vercelURL!
-
-        XCTAssertEqual(url.scheme, "https")
-    }
-
-    func testVercelURLHost() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let url = link.vercelURL!
-
-        XCTAssertEqual(url.host, "memori-website-sooty.vercel.app")
-    }
-
-    func testVercelURLPath() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let url = link.vercelURL!
-
-        XCTAssertEqual(url.path, "/challenge")
-    }
-
-    func testVercelURLQueryParams() {
-        let link = ChallengeLink(game: .colorMatch, seed: 54321, score: 92, challengerName: "TestUser")
-        let url = link.vercelURL!
-        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-        let params = components.queryItems!
-
-        XCTAssertEqual(params.first(where: { $0.name == "game" })?.value, "colorMatch")
-        XCTAssertEqual(params.first(where: { $0.name == "seed" })?.value, "54321")
-        XCTAssertEqual(params.first(where: { $0.name == "score" })?.value, "92")
-        XCTAssertEqual(params.first(where: { $0.name == "name" })?.value, "TestUser")
-    }
-
-    func testVercelURLWithSpacesInName() {
-        let link = ChallengeLink(game: .mathSpeed, seed: 11111, score: 15, challengerName: "Dylan Miller")
-        let url = link.vercelURL!
-        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-
-        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "name" })?.value, "Dylan Miller")
-    }
-
-    // MARK: - shareMessage()
-
-    func testShareMessageIncludesDisplayText() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let message = link.shareMessage()
-
-        XCTAssertTrue(message.contains("288ms"), "Share message should include the game display text '288ms'")
-    }
-
-    func testShareMessageIncludesGameName() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let message = link.shareMessage()
-
-        XCTAssertTrue(message.contains("Reaction Time"), "Share message should include the game name")
-    }
-
-    func testShareMessageIncludesVercelURL() {
-        let link = ChallengeLink(game: .reactionTime, seed: 12345, score: 288, challengerName: "Dylan")
-        let message = link.shareMessage()
-        let expectedURL = link.vercelURL!.absoluteString
-
-        XCTAssertTrue(message.contains(expectedURL), "Share message should include the vercel URL")
-    }
-
-    func testShareMessageEmojiForReactionTime() {
-        let link = ChallengeLink(game: .reactionTime, seed: 1, score: 250, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("⚡"))
-    }
-
-    func testShareMessageEmojiForColorMatch() {
-        let link = ChallengeLink(game: .colorMatch, seed: 1, score: 95, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🎨"))
-    }
-
-    func testShareMessageEmojiForVisualMemory() {
-        let link = ChallengeLink(game: .visualMemory, seed: 1, score: 8, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🟦"))
-    }
-
-    func testShareMessageEmojiForChimpTest() {
-        let link = ChallengeLink(game: .chimpTest, seed: 1, score: 12, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🐵"))
-    }
-
-    func testShareMessageEmojiForVerbalMemory() {
-        let link = ChallengeLink(game: .verbalMemory, seed: 1, score: 50, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("📝"))
-    }
-
-    func testShareMessageEmojiForMathSpeed() {
-        let link = ChallengeLink(game: .mathSpeed, seed: 1, score: 15, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🧮"))
-    }
-
-    func testShareMessageEmojiForDualNBack() {
-        let link = ChallengeLink(game: .dualNBack, seed: 1, score: 3, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🧠"))
-    }
-
-    func testShareMessageEmojiForChunkingTraining() {
-        let link = ChallengeLink(game: .chunkingTraining, seed: 1, score: 10, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("📦"))
-    }
-
-    func testShareMessageEmojiForSequentialMemory() {
-        let link = ChallengeLink(game: .sequentialMemory, seed: 1, score: 7, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("🔢"))
-    }
-
-    func testShareMessageEmojiForSpeedMatch() {
-        let link = ChallengeLink(game: .speedMatch, seed: 1, score: 88, challengerName: "A")
-        XCTAssertTrue(link.shareMessage().contains("⚡"))
-    }
-}
-
-// MARK: - ExerciseType Challenge Extensions Tests
-
-final class ExerciseTypeChallengeTests: XCTestCase {
-
-    // MARK: - challengeEmoji
-
-    func testChallengeEmojiReactionTime() {
-        XCTAssertEqual(ExerciseType.reactionTime.challengeEmoji, "⚡")
-    }
-
-    func testChallengeEmojiColorMatch() {
-        XCTAssertEqual(ExerciseType.colorMatch.challengeEmoji, "🎨")
-    }
-
-    func testChallengeEmojiSpeedMatch() {
-        XCTAssertEqual(ExerciseType.speedMatch.challengeEmoji, "⚡")
-    }
-
-    func testChallengeEmojiVisualMemory() {
-        XCTAssertEqual(ExerciseType.visualMemory.challengeEmoji, "🟦")
-    }
-
-    func testChallengeEmojiSequentialMemory() {
-        XCTAssertEqual(ExerciseType.sequentialMemory.challengeEmoji, "🔢")
-    }
-
-    func testChallengeEmojiMathSpeed() {
-        XCTAssertEqual(ExerciseType.mathSpeed.challengeEmoji, "🧮")
-    }
-
-    func testChallengeEmojiDualNBack() {
-        XCTAssertEqual(ExerciseType.dualNBack.challengeEmoji, "🧠")
-    }
-
-    func testChallengeEmojiChunkingTraining() {
-        XCTAssertEqual(ExerciseType.chunkingTraining.challengeEmoji, "📦")
-    }
-
-    func testChallengeEmojiChimpTest() {
-        XCTAssertEqual(ExerciseType.chimpTest.challengeEmoji, "🐵")
-    }
-
-    func testChallengeEmojiVerbalMemory() {
-        XCTAssertEqual(ExerciseType.verbalMemory.challengeEmoji, "📝")
-    }
-
-    // MARK: - challengeDisplayText
-
-    func testDisplayTextReactionTime() {
-        XCTAssertEqual(ExerciseType.reactionTime.challengeDisplayText(score: 288), "288ms")
-    }
-
-    func testDisplayTextColorMatch() {
-        XCTAssertEqual(ExerciseType.colorMatch.challengeDisplayText(score: 92), "92%")
-    }
-
-    func testDisplayTextSpeedMatch() {
-        XCTAssertEqual(ExerciseType.speedMatch.challengeDisplayText(score: 85), "85%")
-    }
-
-    func testDisplayTextVisualMemory() {
-        XCTAssertEqual(ExerciseType.visualMemory.challengeDisplayText(score: 8), "Level 8")
-    }
-
-    func testDisplayTextSequentialMemory() {
-        XCTAssertEqual(ExerciseType.sequentialMemory.challengeDisplayText(score: 7), "7 digits")
-    }
-
-    func testDisplayTextMathSpeed() {
-        XCTAssertEqual(ExerciseType.mathSpeed.challengeDisplayText(score: 15), "15 solved")
-    }
-
-    func testDisplayTextDualNBack() {
-        XCTAssertEqual(ExerciseType.dualNBack.challengeDisplayText(score: 3), "N=3")
-    }
-
-    func testDisplayTextChunkingTraining() {
-        XCTAssertEqual(ExerciseType.chunkingTraining.challengeDisplayText(score: 10), "10 correct")
-    }
-
-    func testDisplayTextChimpTest() {
-        XCTAssertEqual(ExerciseType.chimpTest.challengeDisplayText(score: 12), "Level 12")
-    }
-
-    func testDisplayTextVerbalMemory() {
-        XCTAssertEqual(ExerciseType.verbalMemory.challengeDisplayText(score: 50), "50 words")
-    }
-}
-
-// MARK: - PaywallTriggerService Try-Each-Game-Once Tests
-
 @MainActor
-final class PaywallTriggerServiceTryOnceTests: XCTestCase {
+final class RemovedV15ChallengeFeatureTests: XCTestCase {
+    func testPaywallTrainingCountDoesNotGateGames() {
+        UserDefaults.standard.removeObject(forKey: "training_exercise_count")
+        UserDefaults.standard.removeObject(forKey: "training_exercise_date")
 
-    private var service: PaywallTriggerService!
-    private let suiteName = "PaywallTriggerServiceTests"
+        let service = PaywallTriggerService()
 
-    override func setUp() {
-        super.setUp()
-        // Use a fresh UserDefaults suite to avoid polluting real defaults
-        let testDefaults = UserDefaults(suiteName: suiteName)!
-        testDefaults.removePersistentDomain(forName: suiteName)
-
-        service = PaywallTriggerService()
-        // Clear the keys used by the service in standard defaults
-        UserDefaults.standard.removeObject(forKey: "tried_game_types")
-        UserDefaults.standard.removeObject(forKey: "daily_exercise_count")
-        UserDefaults.standard.removeObject(forKey: "daily_exercise_date")
-    }
-
-    override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: "tried_game_types")
-        UserDefaults.standard.removeObject(forKey: "daily_exercise_count")
-        UserDefaults.standard.removeObject(forKey: "daily_exercise_date")
-        service = nil
-        super.tearDown()
-    }
-
-    // MARK: - isFirstTimeGame
-
-    func testIsFirstTimeGameReturnsTrueForNeverPlayedGame() {
-        XCTAssertTrue(service.isFirstTimeGame(.reactionTime),
-                      "A game type that has never been played should return true for isFirstTimeGame")
-    }
-
-    func testIsFirstTimeGameReturnsTrueForAllGamesInitially() {
-        let gameTypes: [ExerciseType] = [
-            .reactionTime, .colorMatch, .speedMatch, .visualMemory,
-            .sequentialMemory, .mathSpeed, .dualNBack, .chunkingTraining,
-            .chimpTest, .verbalMemory
-        ]
-        for gameType in gameTypes {
-            XCTAssertTrue(service.isFirstTimeGame(gameType),
-                          "\(gameType.rawValue) should be first time initially")
+        for _ in 0..<10 {
+            service.recordExerciseCompleted(gameType: .reactionTime)
         }
+
+        XCTAssertEqual(service.exercisesToday, 10)
+        XCTAssertFalse(service.shouldShowPaywall)
+    }
+}
+
+final class AnalyticsFunnelTests: XCTestCase {
+    func testOnboardingStepPropertiesIncludeFunnelContext() {
+        let properties = Analytics.onboardingStepProperties(
+            step: "screenTimeAccessApproved",
+            stepIndex: 7,
+            totalSteps: 15,
+            secondsSinceStart: 91.4,
+            secondsOnStep: 12.8,
+            goals: ["doomscrolling", "loseFocus"],
+            selectedAge: 22,
+            screenTimeHours: 5.25,
+            screenTimeIsEstimate: false,
+            brainAge: 29,
+            brainScore: 612,
+            receiptCount: 3
+        )
+
+        XCTAssertEqual(properties["step"] as? String, "screenTimeAccessApproved")
+        XCTAssertEqual(properties["step_index"] as? Int, 7)
+        XCTAssertEqual(properties["total_steps"] as? Int, 15)
+        XCTAssertEqual(properties["progress_percent"] as? Int, 53)
+        XCTAssertEqual(properties["seconds_since_onboarding_start"] as? Int, 91)
+        XCTAssertEqual(properties["seconds_on_step"] as? Int, 13)
+        XCTAssertEqual(properties["goal_count"] as? Int, 2)
+        XCTAssertEqual(properties["goals"] as? String, "doomscrolling,loseFocus")
+        XCTAssertEqual(properties["selected_age"] as? Int, 22)
+        XCTAssertEqual(properties["screen_time_hours"] as? Double, 5.25)
+        XCTAssertEqual(properties["screen_time_is_estimate"] as? Bool, false)
+        XCTAssertEqual(properties["brain_age"] as? Int, 29)
+        XCTAssertEqual(properties["brain_score"] as? Int, 612)
+        XCTAssertEqual(properties["brain_age_delta"] as? Int, 7)
+        XCTAssertEqual(properties["receipt_count"] as? Int, 3)
     }
 
-    func testIsFirstTimeGameReturnsFalseAfterRecording() {
-        service.recordExerciseCompleted(gameType: .reactionTime)
+    func testPaywallPurchasePropertiesIncludeConversionContext() {
+        let properties = Analytics.paywallPurchaseProperties(
+            productID: "com.memori.ultra.annual",
+            plan: "annual",
+            trigger: "onboarding",
+            isHighIntent: true,
+            isExitOffer: false,
+            price: 39.99,
+            errorReason: nil
+        )
 
-        XCTAssertFalse(service.isFirstTimeGame(.reactionTime),
-                       "After recording reactionTime, isFirstTimeGame should return false")
+        XCTAssertEqual(properties["product_id"] as? String, "com.memori.ultra.annual")
+        XCTAssertEqual(properties["plan"] as? String, "annual")
+        XCTAssertEqual(properties["trigger"] as? String, "onboarding")
+        XCTAssertEqual(properties["is_high_intent"] as? Bool, true)
+        XCTAssertEqual(properties["is_exit_offer"] as? Bool, false)
+        XCTAssertEqual(properties["$revenue"] as? Double, 39.99)
+        XCTAssertNil(properties["error_reason"])
     }
 
-    func testIsFirstTimeGameOnlyAffectsRecordedType() {
-        service.recordExerciseCompleted(gameType: .reactionTime)
+    func testExitOfferPropertiesIncludeDiscountContext() {
+        let properties = Analytics.paywallExitOfferProperties(
+            trigger: "onboarding",
+            selectedPlan: "annual",
+            offerProductID: "com.memori.ultra.annual.firstyear",
+            displayedPrice: 29.99,
+            regularPrice: 39.99,
+            discountLabel: "first_year_offer",
+            displayedPriceText: "$29.99",
+            regularPriceText: "$39.99"
+        )
 
-        XCTAssertFalse(service.isFirstTimeGame(.reactionTime))
-        XCTAssertTrue(service.isFirstTimeGame(.colorMatch),
-                      "Recording reactionTime should not affect colorMatch")
-        XCTAssertTrue(service.isFirstTimeGame(.mathSpeed),
-                      "Recording reactionTime should not affect mathSpeed")
+        XCTAssertEqual(properties["trigger"] as? String, "onboarding")
+        XCTAssertEqual(properties["selected_plan"] as? String, "annual")
+        XCTAssertEqual(properties["offer_product_id"] as? String, "com.memori.ultra.annual.firstyear")
+        XCTAssertEqual(properties["displayed_price"] as? Double, 29.99)
+        XCTAssertEqual(properties["regular_price"] as? Double, 39.99)
+        XCTAssertEqual(properties["discount_label"] as? String, "first_year_offer")
+        XCTAssertEqual(properties["displayed_price_text"] as? String, "$29.99")
+        XCTAssertEqual(properties["regular_price_text"] as? String, "$39.99")
+        XCTAssertEqual(properties["is_exit_offer"] as? Bool, true)
+    }
+}
+
+final class OnboardingLifetimeProjectionTests: XCTestCase {
+    func testLifetimeReceiptQuestionUsesFreeYearsAndPhoneYears() {
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: 4)
+
+        XCTAssertEqual(projection.freeYearsBeforePhoneText, "24.8")
+        XCTAssertEqual(projection.phoneYearsText, "9.2 years")
+        XCTAssertEqual(
+            projection.finalQuestion,
+            "You have about 24.8 free years left. At this pace, your phone takes 9.2 years of them (37%). Do you really want that?"
+        )
     }
 
-    // MARK: - Daily Exercise Count
+    func testLifetimeReceiptQuestionUsesMeasuredWeeklyScreenTimeAverage() {
+        let measuredWeeklyHours = 50.2
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: measuredWeeklyHours / 7)
 
-    func testFirstTimeGameDoesNotIncreaseDailyCount() {
-        let countBefore = service.exercisesToday
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        let countAfter = service.exercisesToday
-
-        XCTAssertEqual(countBefore, 0, "Count should start at 0")
-        XCTAssertEqual(countAfter, 0,
-                       "First-time game play should NOT increase the daily exercise count")
+        XCTAssertEqual(projection.freeYearsBeforePhoneText, "24.8")
+        XCTAssertEqual(projection.phoneYearsText, "16.4 years")
+        XCTAssertEqual(
+            projection.finalQuestion,
+            "You have about 24.8 free years left. At this pace, your phone takes 16.4 years of them (66%). Do you really want that?"
+        )
     }
 
-    func testSecondPlayOfSameGameCountsTowardDailyLimit() {
-        // First play: try-once free pass
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        XCTAssertEqual(service.exercisesToday, 0, "First play should not count")
+    func testLifeReceiptDoublesMemoProtectedPhoneYears() {
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: 50.2 / 7)
+        let model = OnboardingLifeReceiptSquareModel(projection: projection)
 
-        // Second play: should count
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        XCTAssertEqual(service.exercisesToday, 1,
-                       "Second play of the same game should count toward daily limit")
+        XCTAssertGreaterThanOrEqual(
+            Double(model.protectedPhoneCount) / Double(model.phoneCount),
+            0.50
+        )
     }
 
-    func testMultipleFirstTimeGamesDoNotCount() {
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        service.recordExerciseCompleted(gameType: .colorMatch)
-        service.recordExerciseCompleted(gameType: .visualMemory)
+    func testScreenTimeProjectionTreatsUserReportedWeeklyHoursAsRealData() {
+        let userReported = OnboardingScreenTimeProjectionState(
+            isAuthorized: true,
+            useEstimate: false
+        )
 
-        XCTAssertEqual(service.exercisesToday, 0,
-                       "Playing 3 different games for the first time should not increase daily count")
+        XCTAssertFalse(userReported.isEstimate)
+        XCTAssertTrue(userReported.canContinueFromScreenTime)
+        XCTAssertEqual(userReported.receiptSourceLine, "Using your Screen Time")
+
+        let confirmedEstimate = OnboardingScreenTimeProjectionState(
+            isAuthorized: true,
+            useEstimate: true
+        )
+
+        XCTAssertTrue(confirmedEstimate.isEstimate)
+        XCTAssertTrue(confirmedEstimate.canContinueFromScreenTime)
+        XCTAssertEqual(confirmedEstimate.receiptSourceLine, "Using your estimate")
+
+        let unauthorized = OnboardingScreenTimeProjectionState(
+            isAuthorized: false,
+            useEstimate: false
+        )
+
+        XCTAssertFalse(unauthorized.canContinueFromScreenTime)
     }
 
-    func testMixOfFirstTimeAndRepeatGames() {
-        // First-time plays (free)
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        service.recordExerciseCompleted(gameType: .colorMatch)
+    func testScreenTimeAccessCTAEnablesImmediatelyOnceAuthorized() {
+        let cta = OnboardingScreenTimeAccessButtonState(
+            isRequestingAccess: false,
+            isAuthorized: true
+        )
 
-        // Repeat play (counts)
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        XCTAssertEqual(service.exercisesToday, 1)
-
-        // Another first-time (free)
-        service.recordExerciseCompleted(gameType: .mathSpeed)
-        XCTAssertEqual(service.exercisesToday, 1, "New first-time game should not increase count")
-
-        // Another repeat (counts)
-        service.recordExerciseCompleted(gameType: .colorMatch)
-        XCTAssertEqual(service.exercisesToday, 2)
+        XCTAssertEqual(cta.title, "Show my lifetime cost")
+        XCTAssertFalse(cta.isDisabled)
     }
 
-    // MARK: - UserDefaults Persistence
+    func testScreenTimeAccessCTADisabledOnlyWhileSystemPromptIsPending() {
+        let requesting = OnboardingScreenTimeAccessButtonState(
+            isRequestingAccess: true,
+            isAuthorized: false
+        )
 
-    func testTriedGameTypesPersistInUserDefaults() {
-        service.recordExerciseCompleted(gameType: .reactionTime)
-        service.recordExerciseCompleted(gameType: .colorMatch)
+        XCTAssertEqual(requesting.title, "Checking Screen Time...")
+        XCTAssertTrue(requesting.isDisabled)
 
-        // Read directly from UserDefaults
-        let stored = UserDefaults.standard.stringArray(forKey: "tried_game_types") ?? []
-        let storedSet = Set(stored)
+        let unauthorized = OnboardingScreenTimeAccessButtonState(
+            isRequestingAccess: false,
+            isAuthorized: false
+        )
 
-        XCTAssertTrue(storedSet.contains("reactionTime"),
-                      "reactionTime should be persisted in UserDefaults")
-        XCTAssertTrue(storedSet.contains("colorMatch"),
-                      "colorMatch should be persisted in UserDefaults")
+        XCTAssertEqual(unauthorized.title, "Allow Screen Time")
+        XCTAssertFalse(unauthorized.isDisabled)
     }
 
-    func testNewServiceInstanceReadsPersistedTriedGames() {
-        service.recordExerciseCompleted(gameType: .reactionTime)
+    func testUserReportedWeeklyHoursConvertToDailyAverageForLifetimeReceipt() {
+        let reportedWeeklyHours = 52.0
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: reportedWeeklyHours / 7.0)
 
-        // Create a new service instance (simulating app restart)
-        let newService = PaywallTriggerService()
-
-        XCTAssertFalse(newService.isFirstTimeGame(.reactionTime),
-                       "New service instance should read persisted tried games")
-        XCTAssertTrue(newService.isFirstTimeGame(.colorMatch),
-                      "Games not yet tried should still be first-time in new instance")
+        XCTAssertEqual(projection.phoneYearsText, "17.0 years")
     }
 
-    // MARK: - recordExerciseCompleted without gameType
+    func testMeasuredWeeklyScreenTimeFormatsDailyAverageInHoursAndMinutes() {
+        let measuredWeeklyHours = 50.2
 
-    func testRecordWithoutGameTypeAlwaysCountsTowardDaily() {
-        service.recordExerciseCompleted()
-        XCTAssertEqual(service.exercisesToday, 1,
-                       "Calling recordExerciseCompleted without a gameType should always count")
+        XCTAssertEqual(
+            OnboardingScreenTimeHoursFormatter.dailyLabel(
+                hours: measuredWeeklyHours / 7,
+                isEstimate: false
+            ),
+            "7h 10m"
+        )
+    }
+
+    func testLifetimeReceiptCanContinueOnlyAfterFinalLineFinishes() {
+        XCTAssertFalse(OnboardingLifeReceiptProgress.canContinue(stage: 5, receiptFinished: false))
+        XCTAssertFalse(OnboardingLifeReceiptProgress.canContinue(stage: 6, receiptFinished: false))
+        XCTAssertFalse(OnboardingLifeReceiptProgress.canContinue(stage: OnboardingLifeReceiptBeat.phoneTruth.rawValue, receiptFinished: true))
+        XCTAssertFalse(OnboardingLifeReceiptProgress.canContinue(stage: OnboardingLifeReceiptBeat.rescue.rawValue, receiptFinished: false))
+        XCTAssertTrue(OnboardingLifeReceiptProgress.canContinue(stage: OnboardingLifeReceiptBeat.rescue.rawValue, receiptFinished: true))
+    }
+
+    func testLifeReceiptSquareModelKeepsCostsContiguousAndConserved() {
+        let projection = OnboardingLifetimeProjection(age: 25, dailyScreenTimeHours: 50.2 / 7.0)
+        let model = OnboardingLifeReceiptSquareModel(projection: projection)
+
+        XCTAssertEqual(model.totalYearsCount, 80)
+        XCTAssertEqual(model.yearsAheadCount, 55)
+        XCTAssertEqual(
+            model.livedCount + model.sleepCount + model.workSchoolCount + model.yourTimeAfterPhoneCount + model.phoneCount,
+            model.totalYearsCount
+        )
+        XCTAssertEqual(model.yourTimeBeforePhoneCount, model.yourTimeAfterPhoneCount + model.phoneCount)
+
+        let costRoles = model.finalCostRoles
+        XCTAssertEqual(costRoles.count, 80)
+        XCTAssertTrue(costRoles.isContiguous(.lived))
+        XCTAssertTrue(costRoles.isContiguous(.sleep))
+        XCTAssertTrue(costRoles.isContiguous(.workSchool))
+        XCTAssertTrue(costRoles.isContiguous(.yourTime))
+        XCTAssertTrue(costRoles.isContiguous(.phone))
+
+        XCTAssertEqual(model.roles(for: .allLife).count, 80)
+        XCTAssertTrue(model.roles(for: .yearsAhead).contains(.lived))
+        XCTAssertTrue(model.roles(for: .yourTime).contains(.sleep))
+        XCTAssertTrue(model.roles(for: .yourTime).contains(.workSchool))
+        XCTAssertFalse(model.roles(for: .yourTime).contains(.phone))
+        XCTAssertEqual(model.roles(for: .phoneTakeover).filter { $0 == .phone }.count, model.phoneCount)
+        XCTAssertEqual(model.roles(for: .phoneTruth).filter { $0 == .phone }.count, model.phoneCount)
+        XCTAssertEqual(model.roles(for: .rescue).count, 80)
+        XCTAssertEqual(model.roles(for: .rescue).filter { $0 == .phone }.count, model.remainingPhoneCountAfterProtection)
+        XCTAssertEqual(model.roles(for: .rescue).filter { $0 == .protectedPhone }.count, model.protectedPhoneCount)
+    }
+
+    func testLifeReceiptViewportShrinksToRemainingYearsAfterAge() {
+        let projection = OnboardingLifetimeProjection(age: 20, dailyScreenTimeHours: 50.2 / 7.0)
+        let model = OnboardingLifeReceiptSquareModel(projection: projection)
+
+        XCTAssertEqual(model.viewportRoles(for: .allLife).count, 80)
+        XCTAssertEqual(model.viewportRoles(for: .yearsAhead).count, 60)
+        XCTAssertFalse(model.viewportRoles(for: .yearsAhead).contains(.lived))
+        XCTAssertEqual(model.viewportRoles(for: .sleepLocked).count, 60)
+        XCTAssertLessThan(model.viewportRoles(for: .workSchoolLocked).count, model.viewportRoles(for: .sleepLocked).count)
+        XCTAssertEqual(model.viewportRoles(for: .yourTime).count, model.yourTimeBeforePhoneCount)
+        XCTAssertEqual(model.viewportRoles(for: .phoneTakeover).count, model.yourTimeBeforePhoneCount)
+        XCTAssertEqual(model.viewportRoles(for: .rescue).count, model.yourTimeBeforePhoneCount)
+    }
+
+    func testOnboardingMonetizationFlowPlacesTrialBridgeBeforeFinalPlanAndPaywall() {
+        XCTAssertEqual(OnboardingFlowOrder.monetizationPages, [.trialTrustBridge, .planPersonalizing])
+        XCTAssertEqual(OnboardingFlowOrder.page(afterScreenTimeAccess: true), .lifetimeShock)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterLifetimeShock: true), .lifeSquaresReceipt)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterLifeSquaresReceipt: true), .protectTarget)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterProtectTarget: true), .feedWinMoment)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterFeedWinMoment: true), .personalizationBeat)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterPersonalizationBeat: true), .memoPlan)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterMemoPlan: true), .trialTrustBridge)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterTrialTrustBridge: true), .planPersonalizing)
+        XCTAssertEqual(OnboardingFlowOrder.page(afterPaywallConverted: true), .focusMode)
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.protectTarget.rawValue), "protectTarget")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.feedWinMoment.rawValue), "feedWinMoment")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.personalizationBeat.rawValue), "personalizationBeat")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.lifetimeShock.rawValue), "lifetimeShock")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.trialTrustBridge.rawValue), "trialTrustBridge")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.trialReminderBridge.rawValue), "trialReminderBridge")
+        XCTAssertEqual(Analytics.onboardingStepName(for: OnboardingPage.planPersonalizing.rawValue), "planPersonalizing")
+    }
+}
+
+private extension Array where Element == OnboardingLifeReceiptSquareRole {
+    func isContiguous(_ role: OnboardingLifeReceiptSquareRole) -> Bool {
+        let matchingIndices = indices.filter { self[$0] == role }
+        guard let first = matchingIndices.first, let last = matchingIndices.last else { return true }
+        return matchingIndices == Swift.Array(first...last)
+    }
+}
+
+final class FocusUnlockSlotTests: XCTestCase {
+    func testFocusUnlockSlotCopyStaysShortAndNative() {
+        XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "MEMO'S BOOTH")
+        XCTAssertEqual(FocusUnlockSlotCopy.headline, "NO FEED TIL YOU TRAIN")
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "win the rep, win the window.")
+        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap when you're ready")
+        XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "MEMO'S PICKING")
+        XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: nil), "LOCKED IN")
+
+        // Landed lines rotate from a per-tier pool but always lead with the
+        // game name so the stake is unambiguous.
+        let game = TrainingGameCatalog.focusUnlockGames.first!
+        XCTAssertTrue(FocusUnlockSlotCopy.landedStatus(for: game).hasPrefix("NUMBER MEMORY. "))
+    }
+
+    func testFocusUnlockCatalogMatchesVisibleTrainGames() {
+        let games = TrainingGameCatalog.focusUnlockGames
+
+        XCTAssertEqual(games.map(\.type), [
+            .sequentialMemory,
+            .visualMemory,
+            .chunkingTraining,
+            .verbalMemory,
+            .reactionTime,
+            .mathSpeed,
+            .speedMatch,
+            .colorMatch,
+            .dualNBack,
+            .chimpTest,
+        ])
+        XCTAssertEqual(games.map(\.title), [
+            "Number Memory",
+            "Visual Memory",
+            "Chunking",
+            "Verbal Memory",
+            "Reaction Time",
+            "Math Speed",
+            "Speed Match",
+            "Color Match",
+            "Dual N-Back",
+            "Chimp Test",
+        ])
+    }
+
+    func testFocusUnlockCompletionGateOnlyGrantsForSelectedGame() {
+        XCTAssertTrue(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.colorMatch.rawValue,
+                expectedGame: .colorMatch
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.reactionTime.rawValue,
+                expectedGame: .colorMatch
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: ExerciseType.colorMatch.rawValue,
+                expectedGame: nil
+            )
+        )
+
+        XCTAssertFalse(
+            FocusUnlockCompletionGate.shouldGrant(
+                completedGameRawValue: "not-a-game",
+                expectedGame: .colorMatch
+            )
+        )
+    }
+}
+
+final class FocusUnlockPayoutTests: XCTestCase {
+    func testPayoutMinutesMatchTierPerGame() {
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .dualNBack), 20)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .chimpTest), 20)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .sequentialMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .visualMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .chunkingTraining), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .verbalMemory), 10)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .reactionTime), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .mathSpeed), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .speedMatch), 5)
+        XCTAssertEqual(FocusUnlockPayout.minutes(for: .colorMatch), 5)
+    }
+
+    func testWeightedSpinSelectsTierByRoll() {
+        let games = TrainingGameCatalog.focusUnlockGames
+
+        let quick = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.10)
+        XCTAssertEqual(quick.map { FocusUnlockPayout.tier(for: $0.type) }, .quick)
+
+        let solid = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.75)
+        XCTAssertEqual(solid.map { FocusUnlockPayout.tier(for: $0.type) }, .solid)
+
+        let jackpot = FocusUnlockPayout.weightedRandomGame(from: games, roll: 0.95)
+        XCTAssertEqual(jackpot.map { FocusUnlockPayout.tier(for: $0.type) }, .jackpot)
+    }
+
+    func testWeightedSpinFallsBackWhenTierPoolIsEmpty() {
+        let onlyQuickGames = TrainingGameCatalog.speedGames
+        let landed = FocusUnlockPayout.weightedRandomGame(from: onlyQuickGames, roll: 0.95)
+        XCTAssertNotNil(landed)
+        XCTAssertEqual(landed.map { FocusUnlockPayout.tier(for: $0.type) }, .quick)
+    }
+
+    func testWeightedSpinEmptyPoolReturnsNil() {
+        XCTAssertNil(FocusUnlockPayout.weightedRandomGame(from: [], roll: 0.5))
     }
 }

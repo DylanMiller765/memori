@@ -31,7 +31,7 @@ struct AchievementDetailView: View {
             "Every point earned is a step toward mastery.",
         ],
         .exerciseTypes: [
-            "Variety is the spice of cognitive training!",
+            "Different reps make Memo harder to beat.",
             "Different exercises build different strengths.",
             "A well-rounded brain is a powerful brain.",
         ],

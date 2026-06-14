@@ -156,16 +156,17 @@ struct SequentialMemoryView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = SequentialMemoryViewModel()
     @State private var showingPaywall = false
     @State private var isNewPersonalBest = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
-    // @State private var showingChallengeResult = false
     @FocusState private var inputFocused: Bool
 
     private var user: User? { users.first }
@@ -193,28 +194,12 @@ struct SequentialMemoryView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.maxCorrectLength,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Number Memory")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.sequentialMemory.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {
@@ -399,38 +384,21 @@ struct SequentialMemoryView: View {
                 Text("Enter the sequence")
                     .font(.title3.weight(.semibold))
 
-                TextField("", text: $viewModel.userInput)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 36, weight: .bold, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .focused($inputFocused)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.teal.opacity(0.3), lineWidth: 1.5)
-                    )
-                    .padding(.horizontal, 40)
-                    .onSubmit { viewModel.submitAnswer() }
+                MonoKeypadSlots(
+                    input: viewModel.userInput,
+                    length: viewModel.currentLength
+                )
+                .padding(.bottom, 4)
 
-                Text("\(viewModel.userInput.count) / \(viewModel.currentLength) digits")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.numericText())
-
-                Button {
-                    viewModel.submitAnswer()
-                } label: {
-                    Text("Submit")
-                        .accentButton()
-                }
-                .padding(.horizontal, 32)
-                .disabled(viewModel.userInput.isEmpty)
-                .opacity(viewModel.userInput.isEmpty ? 0.5 : 1)
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userInput },
+                        set: { viewModel.userInput = $0 }
+                    ),
+                    maxLength: viewModel.currentLength,
+                    onSubmit: { viewModel.submitAnswer() }
+                )
+                .padding(.horizontal, 28)
             }
 
             Spacer()
@@ -439,7 +407,6 @@ struct SequentialMemoryView: View {
         .modifier(ShakeEffect(animatableData: shakeAmount))
         .scaleEffect(correctPulse ? 1.03 : 1.0)
         .animation(.spring(response: 0.2, dampingFraction: 0.5), value: correctPulse)
-        .onAppear { inputFocused = true }
     }
 
     // MARK: - Round Result
@@ -497,12 +464,6 @@ struct SequentialMemoryView: View {
     // MARK: - Final Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .sequentialMemory,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.maxCorrectLength,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Number Memory",
             gameIcon: "number.circle.fill",
@@ -518,12 +479,6 @@ struct SequentialMemoryView: View {
             personalBest: PersonalBestTracker.shared.best(for: .sequentialMemory),
             exerciseType: .sequentialMemory,
             leaderboardScore: viewModel.maxCorrectLength,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.sequentialMemory.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

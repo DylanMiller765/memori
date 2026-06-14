@@ -1,0 +1,142 @@
+<h2>Train Tab v2: All 3 Elements Redesigned</h2>
+<p class="subtitle">Daily challenge, referral, and popup — inspired by Duolingo's compactness + Liquid Glass</p>
+
+<div class="cards">
+  <!-- Full mockup -->
+  <div class="card" data-choice="layout" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #1a1a2e;">
+      <div style="font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Complete Train Tab</div>
+
+      <div style="background: #0a0a0f; border-radius: 16px; padding: 16px; font-family: -apple-system, system-ui, sans-serif; max-width: 320px; margin: 0 auto;">
+        <div style="font-size: 22px; font-weight: 800; color: white; margin-bottom: 14px;">Train</div>
+
+        <!-- Daily limit — stays as-is (already compact enough) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(229,85,85,0.08); border: 1px solid rgba(229,85,85,0.15); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; gap: 4px;">
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: #ddd;">Daily limit reached</div>
+              <div style="font-size: 10px; color: #888;">Go Pro for unlimited</div>
+            </div>
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: white; background: #4A7FE5; padding: 5px 12px; border-radius: 20px;">Go Pro</div>
+        </div>
+
+        <!-- NEW: Daily Challenge + Referral as side-by-side compact pills -->
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <!-- Daily Challenge pill -->
+          <div style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 18px;">⭐</div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: white;">Daily Challenge</div>
+              <div style="font-size: 10px; color: #22cc00; font-weight: 600;">Play now</div>
+            </div>
+          </div>
+
+          <!-- Referral pill -->
+          <div style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 18px;">🎁</div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: white;">Invite friends</div>
+              <div style="font-size: 10px; color: #8B5CF6; font-weight: 600;">1 week Pro each</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Games immediately -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #8B5CF6; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Memory</span>
+          <span style="font-size: 11px; color: #888;">Train your recall</span>
+        </div>
+        <div style="display: flex; gap: 8px; overflow: hidden;">
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Number</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Visual</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Chunking</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+          <div style="min-width: 40px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center; opacity: 0.4;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 9px; font-weight: 700; color: white;">Ve...</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #E05555; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Speed</span>
+          <span style="font-size: 11px; color: #888;">Sharpen your reflexes</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Reaction</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Math</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Speed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Train Tab Layout</h3>
+      <p>Daily challenge + referral merged into two side-by-side glass pills. One row, equal weight. Referral now says "1 week Pro each" so users know the reward. Both use Liquid Glass (.glassEffect) material. Games start immediately after.</p>
+    </div>
+  </div>
+
+  <!-- Popup redesign -->
+  <div class="card" data-choice="popup" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #1a1a2e; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 260px; position: relative;">
+        <!-- Dimmed bg -->
+        <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; opacity: 0.15; height: 300px;"></div>
+
+        <!-- Popup — using glass material aesthetic -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; border-radius: 24px; padding: 28px 22px; text-align: center; background: rgba(30, 30, 50, 0.85); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 24px 48px rgba(0,0,0,0.4);">
+
+          <!-- Mascot -->
+          <div style="font-size: 64px; margin-bottom: 8px;">🎉</div>
+          <div style="font-size: 10px; color: #888; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px;">MEMO SAYS</div>
+
+          <div style="font-size: 20px; font-weight: 800; color: white; line-height: 1.3; margin-bottom: 8px;">Every game is free<br>to try!</div>
+          <div style="font-size: 13px; color: #aaa; line-height: 1.5; margin-bottom: 20px;">Your first play of each game<br>is on the house 🏠</div>
+
+          <div style="background: linear-gradient(135deg, #4A7FE5, #6366F1); color: white; font-size: 15px; font-weight: 700; padding: 12px 28px; border-radius: 14px; display: inline-block;">Let's go!</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Popup — Glass + Playful</h3>
+      <p>Uses glass material background matching iOS 26. "MEMO SAYS" label ties it to the mascot. Copy is shorter and more fun — "on the house 🏠". Mascot-celebrate image replaces the emoji in real implementation.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+  <h3 style="margin-top: 0;">What changed from v1:</h3>
+  <ul style="color: #aaa; font-size: 14px; line-height: 1.8;">
+    <li><strong>Daily challenge:</strong> Full gradient card → compact glass pill (same row as referral)</li>
+    <li><strong>Referral:</strong> Generic text row → glass pill with clear "1 week Pro each" reward</li>
+    <li><strong>Both use glass material</strong> — ready for Liquid Glass on iOS 26, graceful fallback on 17+</li>
+    <li><strong>Popup:</strong> Frosted glass bg, "MEMO SAYS" label, shorter playful copy</li>
+    <li><strong>Net result:</strong> 3 separate UI elements → 1 row of 2 pills</li>
+  </ul>
+</div>

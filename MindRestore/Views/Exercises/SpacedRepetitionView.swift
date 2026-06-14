@@ -68,7 +68,7 @@ struct SpacedRepetitionView: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 48))
                     .foregroundStyle(.secondary)
-                Text("Pro Feature")
+                Text("Full access feature")
                     .font(.title2.weight(.bold))
                 Text("Upgrade to unlock \(category.displayName) training.")
                     .font(.subheadline)
@@ -78,7 +78,7 @@ struct SpacedRepetitionView: View {
                 Button {
                     paywallTrigger.triggerLockedCategory(isProUser: false)
                 } label: {
-                    Text("Unlock Pro")
+                    Text("Unlock Memo")
                         .gradientButton()
                 }
                 .padding(.horizontal, 32)

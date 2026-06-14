@@ -120,10 +120,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
     case brainScore900
 
     // Exercise Types
-    case firstSpacedRep
     case firstDualNBack
-    case firstActiveRecall
-    case firstDailyChallenge
 
     // Speed
     case lightningReaction
@@ -137,7 +134,6 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
     case weekendWarrior
 
     // Mastery
-    case allExerciseTypes
     case memoryMaster
 
     // MARK: - Display Name
@@ -170,10 +166,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .brainScore900: return "Genius Level"
 
         // Exercise Types
-        case .firstSpacedRep: return "Spaced Out"
         case .firstDualNBack: return "Dual Threat"
-        case .firstActiveRecall: return "Total Recall"
-        case .firstDailyChallenge: return "Challenge Accepted"
 
         // Speed
         case .lightningReaction: return "Lightning Reflexes"
@@ -187,7 +180,6 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .weekendWarrior: return "Weekend Warrior"
 
         // Mastery
-        case .allExerciseTypes: return "Jack of All Trades"
         case .memoryMaster: return "Memory Master"
         }
     }
@@ -197,8 +189,8 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
     var description: String {
         switch self {
         // Streaks
-        case .streak3: return "You kept your brain training going for 3 days straight. Consistency is key!"
-        case .streak7: return "A full week of cognitive training. Your brain thanks you!"
+        case .streak3: return "You kept Memo on patrol for 3 days straight. Consistency is key!"
+        case .streak7: return "A full week of blocking the noise. Your brain thanks you!"
         case .streak14: return "Two weeks of dedication. You are building powerful habits."
         case .streak30: return "A whole month of daily training. You are truly committed!"
         case .streak60: return "60 days without missing a beat. Your willpower is incredible."
@@ -222,10 +214,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .brainScore900: return "Brain score of 900. You have reached genius territory!"
 
         // Exercise Types
-        case .firstSpacedRep: return "You completed your first spaced repetition exercise."
         case .firstDualNBack: return "You took on the dual n-back challenge for the first time."
-        case .firstActiveRecall: return "You completed your first active recall exercise."
-        case .firstDailyChallenge: return "You tackled your first daily challenge. Come back for more!"
 
         // Speed
         case .lightningReaction: return "Sub-200ms average reaction time. Your reflexes are superhuman!"
@@ -239,7 +228,6 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .weekendWarrior: return "You trained every day of the week. No days off!"
 
         // Mastery
-        case .allExerciseTypes: return "All three exercise types completed in a single day. Versatile!"
         case .memoryMaster: return "Scored 95%+ on five exercises. Your memory is exceptional."
         }
     }
@@ -274,10 +262,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .brainScore900: return "brain.fill"
 
         // Exercise Types
-        case .firstSpacedRep: return "clock.arrow.2.circlepath"
         case .firstDualNBack: return "square.grid.2x2"
-        case .firstActiveRecall: return "lightbulb.fill"
-        case .firstDailyChallenge: return "calendar.badge.exclamationmark"
 
         // Speed
         case .lightningReaction: return "bolt.fill"
@@ -291,7 +276,6 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .weekendWarrior: return "figure.strengthtraining.traditional"
 
         // Mastery
-        case .allExerciseTypes: return "rectangle.3.group.fill"
         case .memoryMaster: return "medal.fill"
         }
     }
@@ -314,7 +298,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
             return .scores
         case .brainScore500, .brainScore700, .brainScore900:
             return .brainScore
-        case .firstSpacedRep, .firstDualNBack, .firstActiveRecall, .firstDailyChallenge:
+        case .firstDualNBack:
             return .exerciseTypes
         case .lightningReaction:
             return .speed
@@ -322,7 +306,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
             return .social
         case .earlyBird, .nightOwl, .weekendWarrior:
             return .dedication
-        case .allExerciseTypes, .memoryMaster:
+        case .memoryMaster:
             return .mastery
         }
     }
@@ -357,10 +341,7 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .brainScore900: return "Reach a brain score of 900"
 
         // Exercise Types
-        case .firstSpacedRep: return "Complete a spaced repetition exercise"
         case .firstDualNBack: return "Complete a dual n-back exercise"
-        case .firstActiveRecall: return "Complete an active recall exercise"
-        case .firstDailyChallenge: return "Complete a daily challenge"
 
         // Speed
         case .lightningReaction: return "Achieve sub-200ms average reaction time"
@@ -374,7 +355,6 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .weekendWarrior: return "Train every day for a full week (Mon-Sun)"
 
         // Mastery
-        case .allExerciseTypes: return "Complete all 3 exercise types in one day"
         case .memoryMaster: return "Score 95%+ on 5 different exercises"
         }
     }
@@ -400,11 +380,10 @@ enum AchievementType: String, CaseIterable, Codable, Identifiable {
         case .brainScore500: return 500
         case .brainScore700: return 700
         case .brainScore900: return 900
-        case .firstSpacedRep, .firstDualNBack, .firstActiveRecall, .firstDailyChallenge: return 1
+        case .firstDualNBack: return 1
         case .lightningReaction: return 1
         case .firstShare: return 1
         case .earlyBird, .nightOwl, .weekendWarrior: return 1
-        case .allExerciseTypes: return 3
         case .memoryMaster: return 5
         }
     }

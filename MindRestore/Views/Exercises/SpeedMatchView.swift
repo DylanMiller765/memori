@@ -231,16 +231,17 @@ struct SpeedMatchView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the setup screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = SpeedMatchViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
     @State private var showingInfo = false
     @State private var isNewPersonalBest = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -262,28 +263,12 @@ struct SpeedMatchView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .finished)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase == .setup)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.leaderboardScore,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Speed Match")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .setup {
+                Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
+                viewModel.startGame()
             }
         }
         .onDisappear {
@@ -630,12 +615,6 @@ struct SpeedMatchView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .speedMatch,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.leaderboardScore,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Speed Match",
             gameIcon: "bolt.square.fill",
@@ -654,12 +633,6 @@ struct SpeedMatchView: View {
             personalBest: PersonalBestTracker.shared.best(for: .speedMatch),
             exerciseType: .speedMatch,
             leaderboardScore: viewModel.leaderboardScore,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.speedMatch.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.reset()

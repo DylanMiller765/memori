@@ -160,7 +160,7 @@ struct XPGainedToast: View {
                     ShareLink(
                         item: Image(uiImage: shareImage),
                         preview: SharePreview(
-                            "Level \(lvl) on Memori!",
+                            "Level \(lvl) on Memo!",
                             image: Image(uiImage: shareImage)
                         )
                     ) {

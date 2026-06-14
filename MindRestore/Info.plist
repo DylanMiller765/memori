@@ -13,5 +13,13 @@
 			<string>com.dylanmiller.mindrestore</string>
 		</dict>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>BricolageGrotesque-Regular.ttf</string>
+		<string>BricolageGrotesque-Medium.ttf</string>
+		<string>BricolageGrotesque-SemiBold.ttf</string>
+		<string>BricolageGrotesque-Bold.ttf</string>
+		<string>BricolageGrotesque-ExtraBold.ttf</string>
+	</array>
 </dict>
 </plist>

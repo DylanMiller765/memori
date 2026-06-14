@@ -8,7 +8,27 @@ enum ReviewPromptService {
         let lastPrompt = defaults.double(forKey: "lastReviewPromptDate")
         let daysSincePrompt = (Date.now.timeIntervalSince1970 - lastPrompt) / 86400
 
-        guard totalExercises >= 10, streak >= 3, daysSincePrompt > 30 else { return }
+        guard totalExercises >= 5, streak >= 2, daysSincePrompt > 90 else { return }
+
+        defaults.set(Date.now.timeIntervalSince1970, forKey: "lastReviewPromptDate")
+
+        if let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            AppStore.requestReview(in: scene)
+        }
+    }
+
+    /// Prompt for a star rating after a successful first-time paywall purchase.
+    /// Skips the engagement gates (exercises/streak) — the user just paid, that
+    /// IS the positive interaction. Still respects the 90-day cooldown shared
+    /// with `requestIfAppropriate` so a user who subscribes, churns, then
+    /// re-subscribes within 90 days does not get double-prompted.
+    @MainActor
+    static func requestForNewSubscriber() {
+        let defaults = UserDefaults.standard
+        let lastPrompt = defaults.double(forKey: "lastReviewPromptDate")
+        let daysSincePrompt = (Date.now.timeIntervalSince1970 - lastPrompt) / 86400
+        guard daysSincePrompt > 90 else { return }
 
         defaults.set(Date.now.timeIntervalSince1970, forKey: "lastReviewPromptDate")
 

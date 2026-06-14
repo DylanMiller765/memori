@@ -32,15 +32,26 @@
 		711F761C2F620B8B005ABF8A /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761B2F620B8B005ABF8A /* AnalyticsService.swift */; };
 		711F761E2F63246F005ABF8A /* BrainScoreExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */; };
 		71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 71A50A1C2F86EB9500C6CDC3 /* PostHog */; };
-		71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
-		71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
-		71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
-		7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
+		71A70B912F959CC3009C563D /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70B902F959CC3009C563D /* DeviceActivity.framework */; };
+		71A70B992F959CC3009C563D /* Memori.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A70B8F2F959CC3009C563D /* Memori.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70BA42F959CFE009C563D /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70BA32F959CFE009C563D /* ManagedSettings.framework */; };
+		71A70BAC2F959CFE009C563D /* MemoriShieldAction.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A70BA22F959CFE009C563D /* MemoriShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70BB62F959D10009C563D /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70BA32F959CFE009C563D /* ManagedSettings.framework */; };
+		71A70BB82F959D10009C563D /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */; };
+		71A70BC02F959D10009C563D /* MemoriShieldConfig.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70D442F9C2F0F009C563D /* FocusUnlocksReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71A70D552F9C30C7009C563D /* FocusOnboardingPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */; };
+		71A70DFF2F9DA39C009C563D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 71A70DFE2F9DA39C009C563D /* RevenueCat */; };
+			71D9D0C22F87CC5B001C0433 /* RiveMascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */; };
+			71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */ = {isa = PBXBuildFile; fileRef = 71D9D0C32F87CD4C001C0433 /* memori (1).riv */; };
+			71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 71D9D0C52F87CDFF001C0433 /* RiveRuntime */; };
+			720000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000000 /* PrivacyInfo.xcprivacy */; };
+			720000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000002 /* PrivacyInfo.xcprivacy */; };
+			7B5660014E8A312A918FDE85 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB27F7C6F96E795347504A /* ContentView.swift */; };
 		7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E6128F7FC21A20BA275241 /* HeatmapCalendar.swift */; };
 		7F8C53A7E7E7DFABEB6CBD9E /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940190D18EAB3567FB46D745 /* DesignSystem.swift */; };
 		84708C2B0EA60D9FFF749210 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECDC3DB774658A5C4D15A9D /* SettingsView.swift */; };
 		8574E446C920D58FEE0C30CF /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02E7BAD4ADED91F69A38C14 /* NotificationService.swift */; };
-		8ED3241E521BC34D514C4623 /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = D8DB75C7343DFB9C66001701 /* Configuration.storekit */; };
 		90F6C841495047F91C0A60C2 /* DailyChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAED08649D48D8892E649EC /* DailyChallengeView.swift */; };
 		95D37AFEE22F63192D4DD339 /* ActiveRecallContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4028B827231FBAD8F46A06 /* ActiveRecallContent.swift */; };
 		9D6CE991CC7E9F424AAB8463 /* SpacedRepetitionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 333B57315792C0E9850E9B12 /* SpacedRepetitionViewModel.swift */; };
@@ -61,8 +72,15 @@
 		B2B156597E1FCA3F78F1370F /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C3D9CA0F1A5DBB16A4EFBA /* Extensions.swift */; };
 		B2E3E111462D2A09175693A4 /* EducationFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D1091C68DA4412E2434189 /* EducationFeedView.swift */; };
 		B3F968849D522B021E3CDA52 /* DualNBackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A528342D2AA6A038D27D39 /* DualNBackViewModel.swift */; };
+		B91CFF010000000000000001 /* BricolageGrotesque-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */; };
+		B91CFF020000000000000001 /* BricolageGrotesque-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */; };
+		B91CFF030000000000000001 /* BricolageGrotesque-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */; };
+		B91CFF040000000000000001 /* BricolageGrotesque-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */; };
+		B91CFF050000000000000001 /* BricolageGrotesque-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */; };
 		BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB01 /* PaywallTriggerService.swift */; };
 		BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB02 /* OnboardingAssessmentView.swift */; };
+		BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB03 /* QuickAssessmentView.swift */; };
+		BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000BB04 /* OnboardingPaywallView.swift */; };
 		BSCARD00000000000002 /* BrainScoreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSCARD00000000000001 /* BrainScoreCard.swift */; };
 		BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSM00002000000000000BSM1 /* BrainScoreMilestoneView.swift */; };
 		C328BD9E09277AA155562115 /* DualNBackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB3B88316FAD4493693973A /* DualNBackView.swift */; };
@@ -79,6 +97,8 @@
 		CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHMP0002000000000000CH01 /* ChimpTestView.swift */; };
 		CL00000001CL00000001CL01 /* ChallengeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL00000001CL00000001CL00 /* ChallengeLink.swift */; };
 		CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = CONFETTI00000003 /* ConfettiSwiftUI */; };
+		D300020000000000D3000001 /* onboarding_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D300010000000000D3000001 /* onboarding_demo.mp4 */; };
+		D300040000000000D3000001 /* iphone17pro.png in Resources */ = {isa = PBXBuildFile; fileRef = D300030000000000D3000001 /* iphone17pro.png */; };
 		D98EDEB5FF388731B9AD7C87 /* ActiveRecallEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1035C1ADD998D36131E2C530 /* ActiveRecallEngine.swift */; };
 		DD000001000000000000DD01 /* AdaptiveDifficultyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */; };
 		DD000001000000000000DD02 /* StrategyTipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD02 /* StrategyTipService.swift */; };
@@ -107,6 +127,11 @@
 		FF00000100000000000000A4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A5 /* WidgetKit.framework */; };
 		FF00000100000000000000A6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A7 /* SwiftUI.framework */; };
 		FF00000100000000000000A8 /* MemoriWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A9 /* MemoriWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMCD0002000000000000FC01 /* FocusModeCard.swift */; };
+		FMST0001000000000000FS01 /* FocusModeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMST0002000000000000FS01 /* FocusModeSettingsView.swift */; };
+		FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSU0002000000000000FS01 /* FocusModeSetupView.swift */; };
+		FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FMSV0002000000000000FM01 /* FocusModeService.swift */; };
+		FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FPOP0002000000000000FP01 /* FreePlayPopup.swift */; };
 		GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = GCNT0002000000000000GC01 /* GameCountdown.swift */; };
 		GG000001000000000000GG01 /* BrainScoreChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = GG000002000000000000GG01 /* BrainScoreChart.swift */; };
 		GRSV0001000000000000GR01 /* GameResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRSV0002000000000000GR01 /* GameResultView.swift */; };
@@ -117,16 +142,27 @@
 		II000001000000000000II03 /* StreakCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = II000002000000000000II03 /* StreakCelebrationView.swift */; };
 		MASCOT0STATE0002 /* MascotStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MASCOT0STATE0001 /* MascotStateView.swift */; };
 		MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MCHN0002000000000000MC01 /* MemoryChainView.swift */; };
+		MKEY0001000000000000MK01 /* MonoKeypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = MKEY0002000000000000MK01 /* MonoKeypad.swift */; };
+		ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */; };
+		PBCO0001000000000000PB01 /* PlanBuildBeatContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBCO0002000000000000PB01 /* PlanBuildBeatContent.swift */; };
+		PBCT0001000000000000PB01 /* PlanBuildBeatContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBCT0002000000000000PB01 /* PlanBuildBeatContentTests.swift */; };
+		MEMB0001000000000000MV01 /* memo-building.mov in Resources */ = {isa = PBXBuildFile; fileRef = MEMB0002000000000000MV01 /* memo-building.mov */; };
+		MEMP0001000000000000MV01 /* memo-presenting.mov in Resources */ = {isa = PBXBuildFile; fileRef = MEMP0002000000000000MV01 /* memo-presenting.mov */; };
+		MEMD0001000000000000MP01 /* mascot-dealer.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = MEMD0002000000000000MP01 /* mascot-dealer.mp4 */; };
+		ONBD0001000000000000MP01 /* onboarding_demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = ONBD0002000000000000MP01 /* onboarding_demo.mp4 */; };
+		PROF0001000000000000PF01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROF0002000000000000PF01 /* ProfileView.swift */; };
+		QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = QGVW0002000000000000QG01 /* QuickGameView.swift */; };
 		RFRRL0000000000000001 /* ReferralService.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000002 /* ReferralService.swift */; };
 		RFRRL0000000000000003 /* ReferralBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000004 /* ReferralBannerView.swift */; };
 		RFRRL0000000000000005 /* ReferralServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RFRRL0000000000000006 /* ReferralServiceTests.swift */; };
+		RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = RIRL0002000000000000RI01 /* ReferralInlineRow.swift */; };
 		SEED0001000000000000SE01 /* SeededGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SEED0001000000000000SE00 /* SeededGenerator.swift */; };
 		SS000001000000000000SS01 /* ScreenshotDataGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */; };
 		TEST0002000000000000TS00 /* ChallengeLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS00 /* ChallengeLinkTests.swift */; };
 		TEST0002000000000000TS01 /* SeededGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS01 /* SeededGeneratorTests.swift */; };
 		TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */; };
-		V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V15T0001000000000000TS00 /* V1_5FeatureTests.swift */; };
 		TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = TWRT0002000000000000TW01 /* TypewriterText.swift */; };
+		V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V15T0001000000000000TS00 /* V1_5FeatureTests.swift */; };
 		VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = VRBM0002000000000000VB01 /* VerbalMemoryView.swift */; };
 		WK000001000000000000WK01 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK01 /* WorkoutEngine.swift */; };
 		WK000001000000000000WK02 /* WorkoutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WK000002000000000000WK02 /* WorkoutCard.swift */; };
@@ -137,6 +173,34 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		71A70B972F959CC3009C563D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71A70B8E2F959CC3009C563D;
+			remoteInfo = Memori;
+		};
+		71A70BAA2F959CFE009C563D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71A70BA12F959CFE009C563D;
+			remoteInfo = MemoriShieldAction;
+		};
+		71A70BBE2F959D10009C563D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71A70BB42F959D10009C563D;
+			remoteInfo = MemoriShieldConfig;
+		};
+		71A70D422F9C2F0F009C563D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71A70D372F9C2F0F009C563D;
+			remoteInfo = FocusUnlocksReport;
+		};
 		FF00000300000000000000B1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E507471DEAA0B178D76BA954 /* Project object */;
@@ -154,13 +218,27 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		71A70D452F9C2F0F009C563D /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				71A70D442F9C2F0F009C563D /* FocusUnlocksReport.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FF00000300000000000000E1 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				71A70BC02F959D10009C563D /* MemoriShieldConfig.appex in Embed App Extensions */,
+				71A70BAC2F959CFE009C563D /* MemoriShieldAction.appex in Embed App Extensions */,
 				FF00000100000000000000A8 /* MemoriWidgetExtension.appex in Embed App Extensions */,
+				71A70B992F959CC3009C563D /* Memori.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -195,6 +273,14 @@
 		711F761B2F620B8B005ABF8A /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		711F761D2F63246F005ABF8A /* BrainScoreExplainerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreExplainerSheet.swift; sourceTree = "<group>"; };
 		717597B12F5ABD18000007CD /* MemoriWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MemoriWidgetExtension.entitlements; sourceTree = "<group>"; };
+		71A70B8F2F959CC3009C563D /* Memori.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Memori.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A70B902F959CC3009C563D /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
+		71A70BA22F959CFE009C563D /* MemoriShieldAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriShieldAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A70BA32F959CFE009C563D /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
+		71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriShieldConfig.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettingsUI.framework; path = System/Library/Frameworks/ManagedSettingsUI.framework; sourceTree = SDKROOT; };
+		71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = FocusUnlocksReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusOnboardingPages.swift; sourceTree = "<group>"; };
 		71D9D0C12F87CC5B001C0433 /* RiveMascotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiveMascotView.swift; sourceTree = "<group>"; };
 		71D9D0C32F87CD4C001C0433 /* memori (1).riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = "memori (1).riv"; sourceTree = "<group>"; };
 		73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -221,8 +307,15 @@
 		ACBF181734EEB2DE916FE0ED /* EducationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EducationDetailView.swift; sourceTree = "<group>"; };
 		B0EF9610B969A47D9CF45857 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
 		B7BB27F7C6F96E795347504A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Regular.ttf"; path = "Resources/Fonts/BricolageGrotesque-Regular.ttf"; sourceTree = "<group>"; };
+		B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Medium.ttf"; path = "Resources/Fonts/BricolageGrotesque-Medium.ttf"; sourceTree = "<group>"; };
+		B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-SemiBold.ttf"; path = "Resources/Fonts/BricolageGrotesque-SemiBold.ttf"; sourceTree = "<group>"; };
+		B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Bold.ttf"; path = "Resources/Fonts/BricolageGrotesque-Bold.ttf"; sourceTree = "<group>"; };
+		B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-ExtraBold.ttf"; path = "Resources/Fonts/BricolageGrotesque-ExtraBold.ttf"; sourceTree = "<group>"; };
 		BB000002000000000000BB01 /* PaywallTriggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallTriggerService.swift; sourceTree = "<group>"; };
 		BB000002000000000000BB02 /* OnboardingAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAssessmentView.swift; sourceTree = "<group>"; };
+		BB000002000000000000BB03 /* QuickAssessmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAssessmentView.swift; sourceTree = "<group>"; };
+		BB000002000000000000BB04 /* OnboardingPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallView.swift; sourceTree = "<group>"; };
 		BDEBAF6E440D4C7786A2F247 /* SequentialMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequentialMemoryView.swift; sourceTree = "<group>"; };
 		BF0401367C5556D5623C0A0B /* BrainAssessmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainAssessmentViewModel.swift; sourceTree = "<group>"; };
 		BSCARD00000000000001 /* BrainScoreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreCard.swift; sourceTree = "<group>"; };
@@ -237,8 +330,12 @@
 		CC000002000000000000CC05 /* ChallengeResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeResultView.swift; sourceTree = "<group>"; };
 		CF431E834FD3C64DFB333D8E /* DailyChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeViewModel.swift; sourceTree = "<group>"; };
 		CHMP0002000000000000CH01 /* ChimpTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimpTestView.swift; sourceTree = "<group>"; };
-		CL00000001CL00000001CL00 /* ChallengeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLink.swift; sourceTree = "<group>"; };
-		D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
+			CL00000001CL00000001CL00 /* ChallengeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLink.swift; sourceTree = "<group>"; };
+			D300010000000000D3000001 /* onboarding_demo.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = onboarding_demo.mp4; path = Resources/onboarding_demo.mp4; sourceTree = "<group>"; };
+			D300030000000000D3000001 /* iphone17pro.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = iphone17pro.png; path = Resources/iphone17pro.png; sourceTree = "<group>"; };
+			720000000000000000000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+			720000000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+			D50EFACDD30017932D713E7A /* ColorMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMatchView.swift; sourceTree = "<group>"; };
 		D8DB75C7343DFB9C66001701 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveDifficultyEngine.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD02 /* StrategyTipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyTipService.swift; sourceTree = "<group>"; };
@@ -269,6 +366,11 @@
 		FF00000200000000000000A7 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		FF00000200000000000000A9 /* MemoriWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoriWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF00000200000000000000AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FMCD0002000000000000FC01 /* FocusModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeCard.swift; sourceTree = "<group>"; };
+		FMST0002000000000000FS01 /* FocusModeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSettingsView.swift; sourceTree = "<group>"; };
+		FMSU0002000000000000FS01 /* FocusModeSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeSetupView.swift; sourceTree = "<group>"; };
+		FMSV0002000000000000FM01 /* FocusModeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeService.swift; sourceTree = "<group>"; };
+		FPOP0002000000000000FP01 /* FreePlayPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePlayPopup.swift; sourceTree = "<group>"; };
 		GCNT0002000000000000GC01 /* GameCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCountdown.swift; sourceTree = "<group>"; };
 		GG000002000000000000GG01 /* BrainScoreChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainScoreChart.swift; sourceTree = "<group>"; };
 		GRSV0002000000000000GR01 /* GameResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultView.swift; sourceTree = "<group>"; };
@@ -279,17 +381,28 @@
 		II000002000000000000II03 /* StreakCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCelebrationView.swift; sourceTree = "<group>"; };
 		MASCOT0STATE0001 /* MascotStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotStateView.swift; sourceTree = "<group>"; };
 		MCHN0002000000000000MC01 /* MemoryChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryChainView.swift; sourceTree = "<group>"; };
+		MKEY0002000000000000MK01 /* MonoKeypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoKeypad.swift; sourceTree = "<group>"; };
+		ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNewScreens.swift; sourceTree = "<group>"; };
+		PBCO0002000000000000PB01 /* PlanBuildBeatContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanBuildBeatContent.swift; sourceTree = "<group>"; };
+		PBCT0002000000000000PB01 /* PlanBuildBeatContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanBuildBeatContentTests.swift; sourceTree = "<group>"; };
+		MEMB0002000000000000MV01 /* memo-building.mov */ = {isa = PBXFileReference; lastKnownFileType = file; name = "memo-building.mov"; path = "Resources/memo-building.mov"; sourceTree = "<group>"; };
+		MEMP0002000000000000MV01 /* memo-presenting.mov */ = {isa = PBXFileReference; lastKnownFileType = file; name = "memo-presenting.mov"; path = "Resources/memo-presenting.mov"; sourceTree = "<group>"; };
+		MEMD0002000000000000MP01 /* mascot-dealer.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "mascot-dealer.mp4"; path = "Resources/mascot-dealer.mp4"; sourceTree = "<group>"; };
+		ONBD0002000000000000MP01 /* onboarding_demo.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "onboarding_demo.mp4"; path = "Resources/onboarding_demo.mp4"; sourceTree = "<group>"; };
+		PROF0002000000000000PF01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		QGVW0002000000000000QG01 /* QuickGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickGameView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000002 /* ReferralService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralService.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000004 /* ReferralBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralBannerView.swift; sourceTree = "<group>"; };
 		RFRRL0000000000000006 /* ReferralServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralServiceTests.swift; sourceTree = "<group>"; };
+		RIRL0002000000000000RI01 /* ReferralInlineRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralInlineRow.swift; sourceTree = "<group>"; };
 		SEED0001000000000000SE00 /* SeededGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGenerator.swift; sourceTree = "<group>"; };
 		SS000002000000000000SS01 /* ScreenshotDataGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDataGenerator.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS00 /* ChallengeLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS01 /* SeededGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeededGeneratorTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
-		V15T0001000000000000TS00 /* V1_5FeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V1_5FeatureTests.swift; sourceTree = "<group>"; };
 		TEST0001000000000000TS03 /* MindRestoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindRestoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		TWRT0002000000000000TW01 /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
+		V15T0001000000000000TS00 /* V1_5FeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V1_5FeatureTests.swift; sourceTree = "<group>"; };
 		VRBM0002000000000000VB01 /* VerbalMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbalMemoryView.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK01 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
 		WK000002000000000000WK02 /* WorkoutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCard.swift; sourceTree = "<group>"; };
@@ -299,11 +412,110 @@
 		WSCR0002000000000000WS01 /* WordScrambleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordScrambleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		71A70B9C2F959CC3009C563D /* Exceptions for "Memori" folder in "Memori" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A70B8E2F959CC3009C563D /* Memori */;
+		};
+		71A70BAD2F959CFE009C563D /* Exceptions for "MemoriShieldAction" folder in "MemoriShieldAction" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A70BA12F959CFE009C563D /* MemoriShieldAction */;
+		};
+		71A70BC12F959D10009C563D /* Exceptions for "MemoriShieldConfig" folder in "MemoriShieldConfig" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A70BB42F959D10009C563D /* MemoriShieldConfig */;
+		};
+		71FCR00000000000FEED0001 /* Exceptions for "FocusUnlocksReport" folder in "FocusUnlocksReport" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A70D372F9C2F0F009C563D /* FocusUnlocksReport */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		71A70B922F959CC3009C563D /* Memori */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71A70B9C2F959CC3009C563D /* Exceptions for "Memori" folder in "Memori" target */,
+			);
+			path = Memori;
+			sourceTree = "<group>";
+		};
+		71A70BA52F959CFE009C563D /* MemoriShieldAction */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71A70BAD2F959CFE009C563D /* Exceptions for "MemoriShieldAction" folder in "MemoriShieldAction" target */,
+			);
+			path = MemoriShieldAction;
+			sourceTree = "<group>";
+		};
+		71A70BB92F959D10009C563D /* MemoriShieldConfig */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71A70BC12F959D10009C563D /* Exceptions for "MemoriShieldConfig" folder in "MemoriShieldConfig" target */,
+			);
+			path = MemoriShieldConfig;
+			sourceTree = "<group>";
+		};
+		71A70D392F9C2F0F009C563D /* FocusUnlocksReport */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71FCR00000000000FEED0001 /* Exceptions for "FocusUnlocksReport" folder in "FocusUnlocksReport" target */,
+			);
+			path = FocusUnlocksReport;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		71A70B8C2F959CC3009C563D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71A70B912F959CC3009C563D /* DeviceActivity.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70B9F2F959CFE009C563D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71A70BA42F959CFE009C563D /* ManagedSettings.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70BB22F959D10009C563D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71A70BB62F959D10009C563D /* ManagedSettings.framework in Frameworks */,
+				71A70BB82F959D10009C563D /* ManagedSettingsUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70D352F9C2F0F009C563D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CONFETTI00000006 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71A70DFF2F9DA39C009C563D /* RevenueCat in Frameworks */,
 				CONFETTI00000005 /* ConfettiSwiftUI in Frameworks */,
 				71A50A1D2F86EB9500C6CDC3 /* PostHog in Frameworks */,
 				71D9D0C62F87CDFF001C0433 /* RiveRuntime in Frameworks */,
@@ -333,11 +545,23 @@
 			isa = PBXGroup;
 			children = (
 				71D9D0C32F87CD4C001C0433 /* memori (1).riv */,
-				0C755FB45F2C7F2138DB6779 /* Assets.xcassets */,
-				D8DB75C7343DFB9C66001701 /* Configuration.storekit */,
-				B7BB27F7C6F96E795347504A /* ContentView.swift */,
+				D300010000000000D3000001 /* onboarding_demo.mp4 */,
+				MEMB0002000000000000MV01 /* memo-building.mov */,
+				MEMP0002000000000000MV01 /* memo-presenting.mov */,
+				MEMD0002000000000000MP01 /* mascot-dealer.mp4 */,
+				ONBD0002000000000000MP01 /* onboarding_demo.mp4 */,
+					D300030000000000D3000001 /* iphone17pro.png */,
+					0C755FB45F2C7F2138DB6779 /* Assets.xcassets */,
+					D8DB75C7343DFB9C66001701 /* Configuration.storekit */,
+					720000000000000000000000 /* PrivacyInfo.xcprivacy */,
+					B7BB27F7C6F96E795347504A /* ContentView.swift */,
 				3EDD34095382917612B530DD /* MindRestore.entitlements */,
 				EA2803E4C219B6D38BE3A296 /* MindRestoreApp.swift */,
+				B91CFF010000000000000000 /* BricolageGrotesque-Regular.ttf */,
+				B91CFF020000000000000000 /* BricolageGrotesque-Medium.ttf */,
+				B91CFF030000000000000000 /* BricolageGrotesque-SemiBold.ttf */,
+				B91CFF040000000000000000 /* BricolageGrotesque-Bold.ttf */,
+				B91CFF050000000000000000 /* BricolageGrotesque-ExtraBold.ttf */,
 				640CC68FC7209CBC86C6E003 /* Content */,
 				25E5FC4509952A03EF3B86CC /* Models */,
 				3FB21F1A039F009995EF6AC7 /* Services */,
@@ -362,9 +586,11 @@
 				AA000003000000000000AA02 /* Leaderboard */,
 				DAC9DD5A3195858D3E23B420 /* Onboarding */,
 				7C931884ACF860DD4B9838D8 /* Paywall */,
+				PROF0003000000000000PF01 /* Profile */,
 				DA1E588532939B18105271E6 /* Progress */,
 				247526B0BB2604045C8FA8E6 /* Settings */,
 				CC000003000000000000CC01 /* Social */,
+				QGVW0003000000000000QG01 /* FocusMode */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -385,6 +611,10 @@
 				0285AB95C99394B065850C8E /* MindRestore */,
 				TEST0003000000000000TS01 /* MindRestoreTests */,
 				FF00000300000000000000D1 /* MemoriWidget */,
+				71A70B922F959CC3009C563D /* Memori */,
+				71A70BA52F959CFE009C563D /* MemoriShieldAction */,
+				71A70BB92F959D10009C563D /* MemoriShieldConfig */,
+				71A70D392F9C2F0F009C563D /* FocusUnlocksReport */,
 				18FB5A40D6375556F647905B /* Products */,
 				FF00000300000000000000D2 /* Frameworks */,
 			);
@@ -396,6 +626,10 @@
 				A2AA6B711819E89512C58132 /* MindRestore.app */,
 				FF00000200000000000000A9 /* MemoriWidgetExtension.appex */,
 				TEST0001000000000000TS03 /* MindRestoreTests.xctest */,
+				71A70B8F2F959CC3009C563D /* Memori.appex */,
+				71A70BA22F959CFE009C563D /* MemoriShieldAction.appex */,
+				71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */,
+				71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -448,6 +682,7 @@
 				RFRRL0000000000000002 /* ReferralService.swift */,
 				DEEP0001000000000000DD01 /* DeepLinkRouter.swift */,
 				BB000002000000000000BB01 /* PaywallTriggerService.swift */,
+				FMSV0002000000000000FM01 /* FocusModeService.swift */,
 				DD000002000000000000DD01 /* AdaptiveDifficultyEngine.swift */,
 				49C97FAED906FB354A9F8A7E /* SpacedRepetitionEngine.swift */,
 				4ABD9792A0473A14E54F8F87 /* StoreService.swift */,
@@ -567,6 +802,9 @@
 				GCNT0002000000000000GC01 /* GameCountdown.swift */,
 				TWRT0002000000000000TW01 /* TypewriterText.swift */,
 				GRSV0002000000000000GR01 /* GameResultView.swift */,
+				FPOP0002000000000000FP01 /* FreePlayPopup.swift */,
+				RIRL0002000000000000RI01 /* ReferralInlineRow.swift */,
+				MKEY0002000000000000MK01 /* MonoKeypad.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -617,8 +855,13 @@
 		DAC9DD5A3195858D3E23B420 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				71A70D542F9C30C7009C563D /* FocusOnboardingPages.swift */,
 				BB000002000000000000BB02 /* OnboardingAssessmentView.swift */,
+				BB000002000000000000BB04 /* OnboardingPaywallView.swift */,
+				ONNS0002000000000000ON01 /* OnboardingNewScreens.swift */,
+				PBCO0002000000000000PB01 /* PlanBuildBeatContent.swift */,
 				73E344AE4BE93EF2BE7DAECB /* OnboardingView.swift */,
+				BB000002000000000000BB03 /* QuickAssessmentView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -636,10 +879,11 @@
 			isa = PBXGroup;
 			children = (
 				FF00000200000000000000A1 /* MemoriWidget.swift */,
-				FF00000200000000000000A2 /* MemoriWidgetBundle.swift */,
-				FF00000200000000000000A3 /* WidgetDataService.swift */,
-				FF00000200000000000000AB /* Info.plist */,
-			);
+					FF00000200000000000000A2 /* MemoriWidgetBundle.swift */,
+					FF00000200000000000000A3 /* WidgetDataService.swift */,
+					FF00000200000000000000AB /* Info.plist */,
+					720000000000000000000002 /* PrivacyInfo.xcprivacy */,
+				);
 			path = MemoriWidget;
 			sourceTree = "<group>";
 		};
@@ -648,8 +892,30 @@
 			children = (
 				FF00000200000000000000A5 /* WidgetKit.framework */,
 				FF00000200000000000000A7 /* SwiftUI.framework */,
+				71A70B902F959CC3009C563D /* DeviceActivity.framework */,
+				71A70BA32F959CFE009C563D /* ManagedSettings.framework */,
+				71A70BB72F959D10009C563D /* ManagedSettingsUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		PROF0003000000000000PF01 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				PROF0002000000000000PF01 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		QGVW0003000000000000QG01 /* FocusMode */ = {
+			isa = PBXGroup;
+			children = (
+				FMCD0002000000000000FC01 /* FocusModeCard.swift */,
+				FMSU0002000000000000FS01 /* FocusModeSetupView.swift */,
+				FMST0002000000000000FS01 /* FocusModeSettingsView.swift */,
+				QGVW0002000000000000QG01 /* QuickGameView.swift */,
+			);
+			path = FocusMode;
 			sourceTree = "<group>";
 		};
 		TEST0003000000000000TS01 /* MindRestoreTests */ = {
@@ -660,6 +926,7 @@
 				TEST0001000000000000TS02 /* DeepLinkRouterTests.swift */,
 				RFRRL0000000000000006 /* ReferralServiceTests.swift */,
 				V15T0001000000000000TS00 /* V1_5FeatureTests.swift */,
+				PBCT0002000000000000PB01 /* PlanBuildBeatContentTests.swift */,
 			);
 			path = MindRestoreTests;
 			sourceTree = "<group>";
@@ -667,6 +934,94 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		71A70B8E2F959CC3009C563D /* Memori */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A70B9D2F959CC3009C563D /* Build configuration list for PBXNativeTarget "Memori" */;
+			buildPhases = (
+				71A70B8B2F959CC3009C563D /* Sources */,
+				71A70B8C2F959CC3009C563D /* Frameworks */,
+				71A70B8D2F959CC3009C563D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				71A70B922F959CC3009C563D /* Memori */,
+			);
+			name = Memori;
+			packageProductDependencies = (
+			);
+			productName = Memori;
+			productReference = 71A70B8F2F959CC3009C563D /* Memori.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		71A70BA12F959CFE009C563D /* MemoriShieldAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A70BAE2F959CFE009C563D /* Build configuration list for PBXNativeTarget "MemoriShieldAction" */;
+			buildPhases = (
+				71A70B9E2F959CFE009C563D /* Sources */,
+				71A70B9F2F959CFE009C563D /* Frameworks */,
+				71A70BA02F959CFE009C563D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				71A70BA52F959CFE009C563D /* MemoriShieldAction */,
+			);
+			name = MemoriShieldAction;
+			packageProductDependencies = (
+			);
+			productName = MemoriShieldAction;
+			productReference = 71A70BA22F959CFE009C563D /* MemoriShieldAction.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		71A70BB42F959D10009C563D /* MemoriShieldConfig */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A70BC22F959D10009C563D /* Build configuration list for PBXNativeTarget "MemoriShieldConfig" */;
+			buildPhases = (
+				71A70BB12F959D10009C563D /* Sources */,
+				71A70BB22F959D10009C563D /* Frameworks */,
+				71A70BB32F959D10009C563D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				71A70BB92F959D10009C563D /* MemoriShieldConfig */,
+			);
+			name = MemoriShieldConfig;
+			packageProductDependencies = (
+			);
+			productName = MemoriShieldConfig;
+			productReference = 71A70BB52F959D10009C563D /* MemoriShieldConfig.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		71A70D372F9C2F0F009C563D /* FocusUnlocksReport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A70D492F9C2F0F009C563D /* Build configuration list for PBXNativeTarget "FocusUnlocksReport" */;
+			buildPhases = (
+				71A70D342F9C2F0F009C563D /* Sources */,
+				71A70D352F9C2F0F009C563D /* Frameworks */,
+				71A70D362F9C2F0F009C563D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				71A70D392F9C2F0F009C563D /* FocusUnlocksReport */,
+			);
+			name = FocusUnlocksReport;
+			packageProductDependencies = (
+			);
+			productName = FocusUnlocksReport;
+			productReference = 71A70D382F9C2F0F009C563D /* FocusUnlocksReport.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
 		CBA069A4B0E4D5A961D22D8A /* MindRestore */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BD5915D680DF867C4B823659 /* Build configuration list for PBXNativeTarget "MindRestore" */;
@@ -675,17 +1030,23 @@
 				CONFETTI00000006 /* Frameworks */,
 				C5A609DAF904C16BF286F79A /* Resources */,
 				FF00000300000000000000E1 /* Embed App Extensions */,
+				71A70D452F9C2F0F009C563D /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				FF00000300000000000000B2 /* PBXTargetDependency */,
+				71A70B982F959CC3009C563D /* PBXTargetDependency */,
+				71A70BAB2F959CFE009C563D /* PBXTargetDependency */,
+				71A70BBF2F959D10009C563D /* PBXTargetDependency */,
+				71A70D432F9C2F0F009C563D /* PBXTargetDependency */,
 			);
 			name = MindRestore;
 			packageProductDependencies = (
 				CONFETTI00000003 /* ConfettiSwiftUI */,
 				71A50A1C2F86EB9500C6CDC3 /* PostHog */,
 				71D9D0C52F87CDFF001C0433 /* RiveRuntime */,
+				71A70DFE2F9DA39C009C563D /* RevenueCat */,
 			);
 			productName = MindRestore;
 			productReference = A2AA6B711819E89512C58132 /* MindRestore.app */;
@@ -732,7 +1093,22 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					71A70B8E2F959CC3009C563D = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					71A70BA12F959CFE009C563D = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					71A70BB42F959D10009C563D = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					71A70D372F9C2F0F009C563D = {
+						CreatedOnToolsVersion = 26.3;
+					};
+				};
 			};
 			buildConfigurationList = 5C24BE129DCDBEAF169030CD /* Build configuration list for PBXProject "MindRestore" */;
 			developmentRegion = en;
@@ -747,6 +1123,7 @@
 				CONFETTI00000001 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 				71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */,
 				71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 18FB5A40D6375556F647905B /* Products */;
@@ -756,26 +1133,70 @@
 				CBA069A4B0E4D5A961D22D8A /* MindRestore */,
 				FF00000300000000000000C1 /* MemoriWidgetExtension */,
 				TEST0005000000000000TS01 /* MindRestoreTests */,
+				71A70B8E2F959CC3009C563D /* Memori */,
+				71A70BA12F959CFE009C563D /* MemoriShieldAction */,
+				71A70BB42F959D10009C563D /* MemoriShieldConfig */,
+				71A70D372F9C2F0F009C563D /* FocusUnlocksReport */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		71A70B8D2F959CC3009C563D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70BA02F959CFE009C563D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70BB32F959D10009C563D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70D362F9C2F0F009C563D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C5A609DAF904C16BF286F79A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				71D9D0C42F87CD4C001C0433 /* memori (1).riv in Resources */,
-				098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */,
-				8ED3241E521BC34D514C4623 /* Configuration.storekit in Resources */,
+					D300020000000000D3000001 /* onboarding_demo.mp4 in Resources */,
+					MEMB0001000000000000MV01 /* memo-building.mov in Resources */,
+					MEMP0001000000000000MV01 /* memo-presenting.mov in Resources */,
+					MEMD0001000000000000MP01 /* mascot-dealer.mp4 in Resources */,
+					ONBD0001000000000000MP01 /* onboarding_demo.mp4 in Resources */,
+					D300040000000000D3000001 /* iphone17pro.png in Resources */,
+					098E2511FF7DBAEEE39E8706 /* Assets.xcassets in Resources */,
+					720000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
+					B91CFF010000000000000001 /* BricolageGrotesque-Regular.ttf in Resources */,
+				B91CFF020000000000000001 /* BricolageGrotesque-Medium.ttf in Resources */,
+				B91CFF030000000000000001 /* BricolageGrotesque-SemiBold.ttf in Resources */,
+				B91CFF040000000000000001 /* BricolageGrotesque-Bold.ttf in Resources */,
+				B91CFF050000000000000001 /* BricolageGrotesque-ExtraBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		FF00000300000000000000C4 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
+			FF00000300000000000000C4 /* Resources */ = {
+				isa = PBXResourcesBuildPhase;
+				buildActionMask = 2147483647;
+				files = (
+					720000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -838,7 +1259,10 @@
 				DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */,
 				GCNT0001000000000000GC01 /* GameCountdown.swift in Sources */,
 				TWRT0001000000000000TW01 /* TypewriterText.swift in Sources */,
+				MKEY0001000000000000MK01 /* MonoKeypad.swift in Sources */,
 				GRSV0001000000000000GR01 /* GameResultView.swift in Sources */,
+				FPOP0001000000000000FP01 /* FreePlayPopup.swift in Sources */,
+				RIRL0001000000000000RI01 /* ReferralInlineRow.swift in Sources */,
 				HH000001000000000000HH01 /* LeaderboardRankCard.swift in Sources */,
 				HH000001000000000000HH02 /* ExerciseResultView.swift in Sources */,
 				II000001000000000000II03 /* StreakCelebrationView.swift in Sources */,
@@ -852,10 +1276,17 @@
 				FA8567C797B41B4B41197836 /* MindRestoreApp.swift in Sources */,
 				8574E446C920D58FEE0C30CF /* NotificationService.swift in Sources */,
 				BB000001000000000000BB02 /* OnboardingAssessmentView.swift in Sources */,
+				BB000001000000000000BB04 /* OnboardingPaywallView.swift in Sources */,
+				ONNS0001000000000000ON01 /* OnboardingNewScreens.swift in Sources */,
+				PBCO0001000000000000PB01 /* PlanBuildBeatContent.swift in Sources */,
 				E587B0216B084B91A6DE8CD6 /* OnboardingView.swift in Sources */,
+				BB000001000000000000BB03 /* QuickAssessmentView.swift in Sources */,
 				BB000001000000000000BB01 /* PaywallTriggerService.swift in Sources */,
+				FMSV0001000000000000FM01 /* FocusModeService.swift in Sources */,
+				71A70D552F9C30C7009C563D /* FocusOnboardingPages.swift in Sources */,
 				DEEP0002000000000000DD01 /* DeepLinkRouter.swift in Sources */,
 				A6BB59590520057ADCAF7847 /* PaywallView.swift in Sources */,
+				PROF0001000000000000PF01 /* ProfileView.swift in Sources */,
 				CFCCD0671D224CBDDF84E15C /* ProgressDashboardView.swift in Sources */,
 				15446FA296EDA6025F1B64EF /* ProgressRing.swift in Sources */,
 				FC65303B02F0B4EA9D897243 /* ProgressViewModel.swift in Sources */,
@@ -895,6 +1326,38 @@
 				MCHN0001000000000000MC01 /* MemoryChainView.swift in Sources */,
 				VRBM0001000000000000VB01 /* VerbalMemoryView.swift in Sources */,
 				CHMP0001000000000000CH01 /* ChimpTestView.swift in Sources */,
+				QGVW0001000000000000QG01 /* QuickGameView.swift in Sources */,
+				FMCD0001000000000000FC01 /* FocusModeCard.swift in Sources */,
+				FMSU0001000000000000FS01 /* FocusModeSetupView.swift in Sources */,
+				FMST0001000000000000FS01 /* FocusModeSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70B8B2F959CC3009C563D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70B9E2F959CFE009C563D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70BB12F959D10009C563D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A70D342F9C2F0F009C563D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -917,12 +1380,33 @@
 				TEST0002000000000000TS02 /* DeepLinkRouterTests.swift in Sources */,
 				RFRRL0000000000000005 /* ReferralServiceTests.swift in Sources */,
 				V15T0002000000000000TS00 /* V1_5FeatureTests.swift in Sources */,
+				PBCT0001000000000000PB01 /* PlanBuildBeatContentTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		71A70B982F959CC3009C563D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71A70B8E2F959CC3009C563D /* Memori */;
+			targetProxy = 71A70B972F959CC3009C563D /* PBXContainerItemProxy */;
+		};
+		71A70BAB2F959CFE009C563D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71A70BA12F959CFE009C563D /* MemoriShieldAction */;
+			targetProxy = 71A70BAA2F959CFE009C563D /* PBXContainerItemProxy */;
+		};
+		71A70BBF2F959D10009C563D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71A70BB42F959D10009C563D /* MemoriShieldConfig */;
+			targetProxy = 71A70BBE2F959D10009C563D /* PBXContainerItemProxy */;
+		};
+		71A70D432F9C2F0F009C563D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71A70D372F9C2F0F009C563D /* FocusUnlocksReport */;
+			targetProxy = 71A70D422F9C2F0F009C563D /* PBXContainerItemProxy */;
+		};
 		FF00000300000000000000B2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = FF00000300000000000000C1 /* MemoriWidgetExtension */;
@@ -998,7 +1482,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1010,12 +1494,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Memori;
+				INFOPLIST_KEY_CFBundleDisplayName = Memo;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 2.1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1027,13 +1511,12 @@
 			};
 			name = Release;
 		};
-		2D6F5FA967F16BD57365ECE1 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MindRestore/MindRestore.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+			2D6F5FA967F16BD57365ECE1 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+					CODE_SIGN_ENTITLEMENTS = MindRestore/MindRestore.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 73668242TN;
 				ENABLE_PREVIEWS = YES;
@@ -1089,7 +1572,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1107,12 +1590,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Memori;
+				INFOPLIST_KEY_CFBundleDisplayName = Memo;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 2.1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1125,12 +1608,320 @@
 			};
 			name = Debug;
 		};
+		71A70B9A2F959CC3009C563D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = Memori/Memori.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Memori/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Memo;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.Memori;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		71A70B9B2F959CC3009C563D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = Memori/Memori.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Memori/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Memo;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.Memori;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		71A70BAF2F959CFE009C563D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = MemoriShieldAction/MemoriShieldAction.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MemoriShieldAction/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MemoriShieldAction;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldAction;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		71A70BB02F959CFE009C563D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = MemoriShieldAction/MemoriShieldAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MemoriShieldAction/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MemoriShieldAction;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldAction;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		71A70BC32F959D10009C563D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = MemoriShieldConfig/MemoriShieldConfig.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MemoriShieldConfig/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MemoriShieldConfig;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldConfig;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		71A70BC42F959D10009C563D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = MemoriShieldConfig/MemoriShieldConfig.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MemoriShieldConfig/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MemoriShieldConfig;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.MemoriShieldConfig;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		71A70D462F9C2F0F009C563D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = FocusUnlocksReport/FocusUnlocksReport.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusUnlocksReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusUnlocksReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.FocusUnlocksReport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		71A70D472F9C2F0F009C563D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = FocusUnlocksReport/FocusUnlocksReport.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = 73668242TN;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusUnlocksReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusUnlocksReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.FocusUnlocksReport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		FF00000300000000000000F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoriWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 73668242TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MemoriWidget/Info.plist;
@@ -1141,7 +1932,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 2.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -1156,8 +1947,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoriWidgetExtension.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 73668242TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MemoriWidget/Info.plist;
@@ -1168,7 +1958,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 2.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dylanmiller.mindrestore.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -1225,6 +2015,42 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		71A70B9D2F959CC3009C563D /* Build configuration list for PBXNativeTarget "Memori" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A70B9A2F959CC3009C563D /* Debug */,
+				71A70B9B2F959CC3009C563D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		71A70BAE2F959CFE009C563D /* Build configuration list for PBXNativeTarget "MemoriShieldAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A70BAF2F959CFE009C563D /* Debug */,
+				71A70BB02F959CFE009C563D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		71A70BC22F959D10009C563D /* Build configuration list for PBXNativeTarget "MemoriShieldConfig" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A70BC32F959D10009C563D /* Debug */,
+				71A70BC42F959D10009C563D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		71A70D492F9C2F0F009C563D /* Build configuration list for PBXNativeTarget "FocusUnlocksReport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A70D462F9C2F0F009C563D /* Debug */,
+				71A70D472F9C2F0F009C563D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		BD5915D680DF867C4B823659 /* Build configuration list for PBXNativeTarget "MindRestore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1263,6 +2089,14 @@
 				minimumVersion = 3.50.0;
 			};
 		};
+		71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.69.0;
+			};
+		};
 		71C70C622F79E943006712A7 /* XCRemoteSwiftPackageReference "rive-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rive-app/rive-ios";
@@ -1286,6 +2120,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 71A50A1B2F86EB9500C6CDC3 /* XCRemoteSwiftPackageReference "posthog-ios" */;
 			productName = PostHog;
+		};
+		71A70DFE2F9DA39C009C563D /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71A70DFD2F9D98D2009C563D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
 		};
 		71D9D0C52F87CDFF001C0433 /* RiveRuntime */ = {
 			isa = XCSwiftPackageProductDependency;

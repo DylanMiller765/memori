@@ -1,4 +1,6 @@
 import SwiftUI
+import SwiftData
+import UIKit
 
 // MARK: - App Theme
 
@@ -63,11 +65,21 @@ enum AppColors {
     static let teal = Color(red: 0.20, green: 0.60, blue: 0.56)             // sage teal
     static let indigo = Color(red: 0.38, green: 0.36, blue: 0.70)           // muted indigo
     static let coral = Color(red: 0.85, green: 0.40, blue: 0.35)            // dusty coral
+    static let coralDeep = Color(red: 0.78, green: 0.22, blue: 0.20)        // danger-escalation red — pairs with coral as a "things got worse" signal
     static let violet = Color(red: 0.55, green: 0.38, blue: 0.75)           // dusty violet
     static let sky = Color(red: 0.35, green: 0.58, blue: 0.82)              // slate blue
     static let mint = Color(red: 0.25, green: 0.68, blue: 0.55)             // sage green
     static let rose = Color(red: 0.78, green: 0.35, blue: 0.48)             // dusty rose
     static let amber = Color(red: 0.85, green: 0.65, blue: 0.25)            // warm amber
+    static let periwinkle = Color(red: 0.49, green: 0.55, blue: 1.00)       // Memo chart periwinkle
+    static let electricViolet = Color(red: 0.65, green: 0.42, blue: 1.00)   // Memo chart violet
+
+    // Focus unlock slot picker
+    static let focusSlotBackground = Color(red: 0.0, green: 0.0, blue: 0.0)       // #000000
+    static let focusSlotSurface = Color(red: 0.078, green: 0.078, blue: 0.102)    // #14141A
+    static let focusSlotReelSurface = Color(red: 0.063, green: 0.063, blue: 0.086) // #101016
+    static let focusSlotTileSurface = Color(red: 0.118, green: 0.118, blue: 0.165) // #1E1E2A
+    static let focusSlotSuccess = mint                                       // #40AD8C
 
     // Reaction time phase colors
     static let reactionWait = Color(red: 0.8, green: 0.15, blue: 0.15)
@@ -96,6 +108,129 @@ enum AppColors {
         endPoint: .trailing
     )
 }
+
+// MARK: - Main Screen Titles
+
+struct MainScreenTitle: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .mainScreenTitleStyle()
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension Text {
+    func mainScreenTitleStyle(
+        size: CGFloat = 38,
+        lineLimit: Int = 1,
+        minimumScaleFactor: CGFloat = 0.82
+    ) -> some View {
+        self
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .foregroundStyle(AppColors.textPrimary)
+            .lineLimit(lineLimit)
+            .minimumScaleFactor(minimumScaleFactor)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+#if DEBUG
+@MainActor
+struct MainScreenPreview<Content: View>: View {
+    private let content: Content
+    private let modelContainer: ModelContainer
+
+    @State private var storeService = StoreService(loadProductsOnInit: false)
+    @State private var achievementService = AchievementService()
+    @State private var paywallTrigger = PaywallTriggerService()
+    @State private var trainingManager = TrainingSessionManager()
+    @State private var gameCenterService = GameCenterService()
+    @State private var deepLinkRouter = DeepLinkRouter()
+    @State private var focusModeService = FocusModeService()
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.modelContainer = Self.makeModelContainer()
+    }
+
+    var body: some View {
+        content
+            .environment(storeService)
+            .environment(achievementService)
+            .environment(paywallTrigger)
+            .environment(trainingManager)
+            .environment(gameCenterService)
+            .environment(deepLinkRouter)
+            .environment(focusModeService)
+            .modelContainer(modelContainer)
+            .preferredColorScheme(.dark)
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(
+            for: User.self, Exercise.self, SpacedRepetitionCard.self,
+            DailySession.self, BrainScoreResult.self, Achievement.self,
+            configurations: configuration
+        )
+        seed(container.mainContext)
+        return container
+    }
+
+    private static func seed(_ context: ModelContext) {
+        let user = User()
+        user.hasCompletedOnboarding = true
+        user.username = "Dylan"
+        user.level = 6
+        user.totalXP = 840
+        user.currentStreak = 5
+        user.longestStreak = 12
+        user.totalExercises = 38
+        user.lastSessionDate = .now
+        context.insert(user)
+
+        let exerciseTypes: [ExerciseType] = [.reactionTime, .visualMemory, .mathSpeed, .dualNBack]
+        for (index, type) in exerciseTypes.enumerated() {
+            let exercise = Exercise(
+                type: type,
+                difficulty: 2 + index,
+                score: 0.72 + Double(index) * 0.06,
+                durationSeconds: 80 + index * 22
+            )
+            exercise.completedAt = Calendar.current.date(byAdding: .day, value: -index, to: .now) ?? .now
+            context.insert(exercise)
+        }
+
+        for dayOffset in 0..<7 {
+            let session = DailySession()
+            session.date = Calendar.current.date(byAdding: .day, value: -dayOffset, to: .now) ?? .now
+            session.totalScore = 0.70 + Double(dayOffset % 3) * 0.07
+            session.durationSeconds = 540 + dayOffset * 65
+            context.insert(session)
+        }
+
+        let brainScore = BrainScoreResult()
+        brainScore.brainScore = 742
+        brainScore.brainAge = 22
+        brainScore.percentile = 86
+        brainScore.digitSpanScore = 78
+        brainScore.reactionTimeScore = 84
+        brainScore.visualMemoryScore = 73
+        brainScore.digitSpanMax = 8
+        brainScore.reactionTimeAvgMs = 221
+        brainScore.visualMemoryMax = 6
+        context.insert(brainScore)
+
+        for type in [AchievementType.firstExercise, .streak3, .brainScore700] {
+            let achievement = Achievement(type: type)
+            achievement.isNew = false
+            context.insert(achievement)
+        }
+    }
+}
+#endif
 
 // MARK: - App Card Modifier (white card, subtle shadow, 14pt radius)
 
@@ -569,3 +704,53 @@ struct ShakeEffect: GeometryEffect {
     }
 }
 
+// MARK: - Brand Font (Bricolage Grotesque)
+//
+// Bundled in Resources/Fonts. Use `.brand(size:weight:)` instead of
+// `.system(size:weight:design:.rounded)` for headlines and UI text.
+// Numerals should still use `.monospaced` design (system) for the
+// JetBrains-Mono-ish numeric look on count-ups and stats.
+
+extension Font {
+    /// Memo brand font (Bricolage Grotesque).
+    /// Weights map: regular/medium/semibold/bold/heavy → Regular/Medium/SemiBold/Bold/ExtraBold.
+    /// `.black` and any unsupported weight fall back to ExtraBold.
+    static func brand(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        let postScriptName: String
+        switch weight {
+        case .ultraLight, .thin, .light, .regular:
+            postScriptName = "BricolageGrotesque-Regular"
+        case .medium:
+            postScriptName = "BricolageGrotesque-Medium"
+        case .semibold:
+            postScriptName = "BricolageGrotesque-SemiBold"
+        case .bold:
+            postScriptName = "BricolageGrotesque-Bold"
+        case .heavy, .black:
+            postScriptName = "BricolageGrotesque-ExtraBold"
+        default:
+            postScriptName = "BricolageGrotesque-Regular"
+        }
+        return .custom(postScriptName, size: size)
+    }
+}
+
+extension Color {
+    /// Linearly interpolates between this color and another by `t` ∈ [0, 1].
+    /// Routes through UIColor to extract RGBA components since SwiftUI's
+    /// Color doesn't expose them directly. Used by the plan reveal page to
+    /// blend coral → coralDeep as the projected number climbs.
+    func interpolated(with other: Color, by t: Double) -> Color {
+        let clamped = CGFloat(max(0.0, min(1.0, t)))
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        UIColor(self).getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        UIColor(other).getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        return Color(
+            red: Double(r1 + (r2 - r1) * clamped),
+            green: Double(g1 + (g2 - g1) * clamped),
+            blue: Double(b1 + (b2 - b1) * clamped),
+            opacity: Double(a1 + (a2 - a1) * clamped)
+        )
+    }
+}

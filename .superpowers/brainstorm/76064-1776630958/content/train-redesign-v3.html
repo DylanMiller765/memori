@@ -1,0 +1,128 @@
+<h2>Train Tab v3: With Mascots</h2>
+<p class="subtitle">Glass pills + Memo mascot in each one — no more bland</p>
+
+<div class="cards">
+  <!-- Full train tab -->
+  <div class="card" data-choice="layout" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #0d0d1a;">
+
+      <div style="background: #0a0a0f; border-radius: 16px; padding: 16px; font-family: -apple-system, system-ui, sans-serif; max-width: 320px; margin: 0 auto;">
+        <div style="font-size: 22px; font-weight: 800; color: white; margin-bottom: 14px;">Train</div>
+
+        <!-- Daily limit bar (unchanged) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(229,85,85,0.08); border: 1px solid rgba(229,85,85,0.15); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; gap: 4px;">
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+              <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(74,127,229,0.2);"></div>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: #ddd;">Daily limit reached</div>
+              <div style="font-size: 10px; color: #888;">Go Pro for unlimited</div>
+            </div>
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: white; background: #4A7FE5; padding: 5px 12px; border-radius: 20px;">Go Pro</div>
+        </div>
+
+        <!-- Daily Challenge + Referral pills WITH mascots -->
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <!-- Daily Challenge -->
+          <div style="flex: 1; position: relative; overflow: hidden; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+            <!-- Mascot peeking from corner -->
+            <div style="position: absolute; top: -4px; right: -2px; font-size: 32px; transform: rotate(12deg); opacity: 0.9;">🔥</div>
+            <div style="font-size: 13px; font-weight: 700; color: white; margin-bottom: 2px;">Daily Challenge</div>
+            <div style="font-size: 10px; color: #22cc00; font-weight: 600;">⭐ Play now</div>
+          </div>
+
+          <!-- Referral -->
+          <div style="flex: 1; position: relative; overflow: hidden; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+            <div style="position: absolute; top: -4px; right: -2px; font-size: 32px; transform: rotate(-8deg); opacity: 0.9;">👋</div>
+            <div style="font-size: 13px; font-weight: 700; color: white; margin-bottom: 2px;">Invite friends</div>
+            <div style="font-size: 10px; color: #8B5CF6; font-weight: 600;">🎁 1 week Pro each</div>
+          </div>
+        </div>
+
+        <!-- Games -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #8B5CF6; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Memory</span>
+        </div>
+        <div style="display: flex; gap: 8px; overflow: hidden;">
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Number</div>
+            <div style="font-size: 8px; font-weight: 800; color: white; background: #22cc00; border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;">NEW</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Visual</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Chunking</div>
+            <div style="font-size: 8px; color: #888; margin-top: 2px;">Today</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 22px; height: 22px; background: #E05555; border-radius: 6px;"></div>
+          <span style="font-size: 14px; font-weight: 800; color: white;">Speed</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Reaction</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Math</div>
+          </div>
+          <div style="min-width: 76px; background: #1a1a2e; border-radius: 10px; padding: 7px; text-align: center;">
+            <div style="height: 38px; background: #2a2a4e; border-radius: 6px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: white;">Color</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Train Tab — Mascot Pills</h3>
+      <p>Each pill has a mascot image peeking from the top-right corner (mascot-streak-fire for daily challenge, mascot-wave for referral). The mascots are small (~32pt) and partially overflow the pill, giving it personality without bloating the layout. In real code these would be the actual Memo images, not emoji placeholders.</p>
+    </div>
+  </div>
+
+  <!-- Popup with better mascot integration -->
+  <div class="card" data-choice="popup" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #0d0d1a; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 270px; position: relative;">
+        <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; opacity: 0.15; height: 280px;"></div>
+
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 260px; border-radius: 28px; text-align: center; background: rgba(25, 25, 45, 0.9); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 24px 48px rgba(0,0,0,0.5); overflow: visible;">
+
+          <!-- Mascot popping OUT of the card top -->
+          <div style="margin-top: -50px; margin-bottom: 4px;">
+            <div style="width: 100px; height: 100px; margin: 0 auto; background: linear-gradient(135deg, #4A7FE5, #8B5CF6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 56px; border: 3px solid rgba(25, 25, 45, 0.9);">🥳</div>
+          </div>
+
+          <div style="padding: 4px 24px 28px;">
+            <div style="font-size: 21px; font-weight: 800; color: white; line-height: 1.3; margin-bottom: 8px;">Every game is free<br>to try!</div>
+            <div style="font-size: 13px; color: #999; line-height: 1.6; margin-bottom: 20px;">Your first play of each game<br>doesn't count toward your limit.<br>Go explore!</div>
+
+            <div style="background: linear-gradient(135deg, #4A7FE5, #6366F1); color: white; font-size: 15px; font-weight: 700; padding: 13px 32px; border-radius: 16px; display: inline-block; width: 80%; box-sizing: border-box;">Let's go!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Popup — Mascot Breaks the Frame</h3>
+      <p>Mascot-celebrate image overflows the top of the card, breaking out of the frame for visual interest. Glass background. Clean copy, no "MEMO SAYS" label (felt forced). The mascot IS the visual — it doesn't need a label.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 16px; padding: 14px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+  <p style="color: #aaa; font-size: 13px; margin: 0;">
+    <strong>Note:</strong> Emoji placeholders (🔥 👋 🥳) represent actual Memo mascot images in the real build. The mascots would be <code>mascot-streak-fire</code>, <code>mascot-wave</code>, and <code>mascot-celebrate</code> respectively.
+  </p>
+</div>

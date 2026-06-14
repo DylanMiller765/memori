@@ -34,10 +34,15 @@ enum ScreenshotDataGenerator {
         user.streakFreezes = 2
         user.subscriptionStatusRaw = "subscribed"
         user.hasCompletedOnboarding = true
+        generateFocusModeDemoData()
 
-        // 3. Generate brain score history (5 assessments over past 3 weeks)
+        // 3. Generate dense brain score history (21 points across last 30 days)
+        // Daily-ish data in the last week makes the Week chart view look great.
         let brainScores: [(daysAgo: Int, score: Int)] = [
-            (21, 520), (14, 590), (10, 645), (5, 710), (0, 748)
+            (30, 508), (28, 522), (26, 545), (24, 552), (22, 575),
+            (20, 583), (18, 598), (16, 602), (14, 622), (12, 638),
+            (10, 658), (9, 672), (8, 681), (7, 689), (6, 702),
+            (5, 711), (4, 720), (3, 723), (2, 736), (1, 740), (0, 748)
         ]
         for entry in brainScores {
             let result = BrainScoreResult()
@@ -128,7 +133,7 @@ enum ScreenshotDataGenerator {
             .streak3, .streak7, .streak14,
             .firstPerfect, .fivePerfects,
             .brainScore500, .brainScore700,
-            .firstDualNBack, .firstActiveRecall, .firstDailyChallenge,
+            .firstDualNBack,
             .lightningReaction, .firstShare,
             .earlyBird, .weekendWarrior
         ]
@@ -142,6 +147,24 @@ enum ScreenshotDataGenerator {
         }
 
         try? modelContext.save()
+    }
+
+    /// Populate Focus Mode defaults used by screenshot/debug Insights surfaces.
+    private static func generateFocusModeDemoData() {
+        let defaults = UserDefaults(suiteName: "group.com.memori.shared") ?? .standard
+        defaults.set(true, forKey: "focus_demo_data_enabled")
+        defaults.set(4 * 3600 + 14 * 60, forKey: "focus_demo_screen_time_seconds")
+        defaults.set(33, forKey: "focus_demo_pickups")
+        defaults.set([6.2, 5.7, 4.9, 5.1, 4.4, 3.8, 4.23], forKey: "focus_demo_weekly_screen_time_hours")
+        defaults.set(614, forKey: "focus_demo_protected_minutes")
+        defaults.set(3, forKey: "focus_demo_unlock_reps")
+        defaults.set(3, forKey: "focus_demo_blocked_attempts")
+        defaults.set(1, forKey: "focus_demo_target_count")
+        defaults.set(15, forKey: "focus_demo_pass_minutes")
+        defaults.set([], forKey: "focus_demo_offender_names")
+        defaults.set([], forKey: "focus_demo_offender_seconds")
+        defaults.set([], forKey: "focus_demo_offender_opens")
+        defaults.set([], forKey: "focus_demo_offender_icon_assets")
     }
 
     // MARK: - Helpers

@@ -28,7 +28,7 @@ struct WorkoutShareCard: View {
                     Image(systemName: "brain.fill")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(AppColors.accent)
-                    Text("Memori")
+                    Text("Memo")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
                 }
@@ -130,7 +130,7 @@ struct WorkoutShareCard: View {
             Spacer().frame(height: 32)
 
             // CTA
-            Text("Train your brain free \u{2014} Memori")
+            Text("Block apps. Train your brain. \u{2014} Memo")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.4))
         }

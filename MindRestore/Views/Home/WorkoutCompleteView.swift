@@ -54,7 +54,7 @@ struct WorkoutCompleteView: View {
                             .foregroundStyle(AppColors.teal)
 
                         ShareLink(
-                            item: "My Brain Age is \(newBrainAge) — that's \(userAge - newBrainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memori"
+                            item: "My Brain Age is \(newBrainAge) — that's \(userAge - newBrainAge) years younger than my real age! \u{1F9E0}\u{1F525}\n\nTest yours with Memo"
                         ) {
                             HStack(spacing: 6) {
                                 Image(systemName: "square.and.arrow.up")

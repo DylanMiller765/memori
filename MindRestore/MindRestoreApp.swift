@@ -1,13 +1,22 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UserNotifications
+import RevenueCat
 
 @main
 struct MindRestoreApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
 
     init() {
         Analytics.configure()
+        Purchases.logLevel = .info
+        Purchases.configure(
+            with: Configuration.Builder(withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC")
+                .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
+                .build()
+        )
         configureTabBarAppearance()
     }
 
@@ -53,5 +62,45 @@ struct MindRestoreApp: App {
                 configurations: ModelConfiguration(cloudKitDatabase: .none)
             )
         )
+    }
+}
+
+// MARK: - AppDelegate (notification handling)
+
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    /// Handle notification tap — convert deep link in userInfo to URL open
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        if let deepLink = userInfo["deepLink"] as? String,
+           let url = URL(string: deepLink) {
+            let notificationType = response.notification.request.content.categoryIdentifier.isEmpty
+                ? response.notification.request.identifier.components(separatedBy: "_").first ?? "unknown"
+                : response.notification.request.content.categoryIdentifier
+            Analytics.appOpenedFromNotification(notificationType: notificationType)
+            // Route directly instead of UIApplication.shared.open(url): opening
+            // our own custom scheme back into the same app drops the link on
+            // cold launch and lands on home. PendingDeepLink posts to a live
+            // listener and stashes for cold-launch drain.
+            PendingDeepLink.route(url)
+        }
+        completionHandler()
+    }
+
+    /// Show notification even when app is in foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

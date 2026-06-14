@@ -3,16 +3,13 @@ import XCTest
 
 @MainActor
 final class DeepLinkRouterTests: XCTestCase {
-
-    // MARK: - Existing Routes
-
     func testHomeRoute() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://home")!)
+        router.handle(URL(string: "memo://home")!)
         XCTAssertEqual(router.pendingDestination, .home)
     }
 
-    func testTrainRoute() {
+    func testLegacyMemoriSchemeStillRoutesCoreTabs() {
         let router = DeepLinkRouter()
         router.handle(URL(string: "memori://train")!)
         XCTAssertEqual(router.pendingDestination, .train)
@@ -20,58 +17,33 @@ final class DeepLinkRouterTests: XCTestCase {
 
     func testCompeteRoute() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://compete")!)
+        router.handle(URL(string: "memo://compete")!)
         XCTAssertEqual(router.pendingDestination, .compete)
     }
 
     func testGameRoute() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://game/reactionTime")!)
+        router.handle(URL(string: "memo://game/reactionTime")!)
         XCTAssertEqual(router.pendingDestination, .game(.reactionTime))
     }
 
-    func testDailyChallengeRoute() {
+    func testRemovedChallengeRouteFallsBackHome() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://challenge")!)
-        XCTAssertEqual(router.pendingDestination, .dailyChallenge)
+        router.handle(URL(string: "memo://challenge")!)
+        XCTAssertEqual(router.pendingDestination, .home)
     }
 
-    // MARK: - Challenge/Duel Routes
-
-    func testDuelRouteParsesChallengeLink() {
+    func testRemovedDuelRouteFallsBackHome() {
         let router = DeepLinkRouter()
         router.handle(URL(string: "memori://duel?game=reactionTime&seed=12345&score=288&name=Dylan")!)
-
-        XCTAssertNotNil(router.pendingChallenge)
-        XCTAssertEqual(router.pendingChallenge?.game, .reactionTime)
-        XCTAssertEqual(router.pendingChallenge?.seed, 12345)
-        XCTAssertEqual(router.pendingChallenge?.score, 288)
-        XCTAssertEqual(router.pendingChallenge?.challengerName, "Dylan")
-
-        if case .challenge(let link) = router.pendingDestination {
-            XCTAssertEqual(link.game, .reactionTime)
-        } else {
-            XCTFail("Expected .challenge destination")
-        }
+        XCTAssertEqual(router.pendingDestination, .home)
     }
 
-    func testDuelRouteWithInvalidParamsFallsBackToTrain() {
+    func testRemovedReferralRouteFallsBackHome() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://duel?game=invalidGame")!)
-
-        XCTAssertNil(router.pendingChallenge)
-        XCTAssertEqual(router.pendingDestination, .train)
+        router.handle(URL(string: "memo://refer?code=ABC123")!)
+        XCTAssertEqual(router.pendingDestination, .home)
     }
-
-    func testDuelRouteWithMissingParamsFallsBackToTrain() {
-        let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://duel")!)
-
-        XCTAssertNil(router.pendingChallenge)
-        XCTAssertEqual(router.pendingDestination, .train)
-    }
-
-    // MARK: - Invalid URLs
 
     func testWrongSchemeIgnored() {
         let router = DeepLinkRouter()
@@ -81,7 +53,7 @@ final class DeepLinkRouterTests: XCTestCase {
 
     func testUnknownHostGoesToHome() {
         let router = DeepLinkRouter()
-        router.handle(URL(string: "memori://unknown")!)
+        router.handle(URL(string: "memo://unknown")!)
         XCTAssertEqual(router.pendingDestination, .home)
     }
 }

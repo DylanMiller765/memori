@@ -234,15 +234,16 @@ struct ChunkingTrainingView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Query private var users: [User]
 
+    /// Skip the intro screen on appear when entering from a Focus unlock.
+    var autoStart: Bool = false
+
     @State private var viewModel = ChunkingViewModel()
     @State private var showingPaywall = false
     @State private var shareImage: UIImage?
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var shakeAmount: CGFloat = 0
     @State private var showingInfo = false
     @State private var isNewPersonalBest = false
-    // @State private var showingChallengeResult = false
 
     private var user: User? { users.first }
     private var isProUser: Bool { storeService.isProUser }
@@ -270,28 +271,12 @@ struct ChunkingTrainingView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.correctDigits,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Chunking Training")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+            if autoStart && viewModel.phase == .intro {
+                Analytics.exerciseStarted(game: ExerciseType.chunkingTraining.rawValue)
+                viewModel.startFromIntro()
             }
         }
         .onDisappear {
@@ -369,7 +354,7 @@ struct ChunkingTrainingView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "lightbulb.fill")
                         .foregroundStyle(AppColors.amber)
-                    Text("Pro Tip")
+                    Text("Training Tip")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColors.amber)
                 }
@@ -547,52 +532,34 @@ struct ChunkingTrainingView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                TextField("Enter digits...", text: $viewModel.userInput)
-                    .font(.system(size: 28, weight: .semibold, design: .monospaced))
-                    .tracking(3)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppColors.cardSurface)
-                    )
-                    .padding(.horizontal, 24)
+                MonoKeypadSlots(
+                    input: viewModel.userInput,
+                    length: viewModel.totalDigits
+                )
+                .padding(.bottom, 4)
 
-                let entered = viewModel.userInput.filter(\.isNumber).count
-                Text("\(entered) / \(viewModel.totalDigits) digits entered")
-                    .font(.caption)
-                    .foregroundStyle(entered == viewModel.totalDigits ? AppColors.teal : .secondary)
-                    .contentTransition(.numericText())
+                MonoKeypad(
+                    input: Binding(
+                        get: { viewModel.userInput },
+                        set: { viewModel.userInput = $0 }
+                    ),
+                    maxLength: viewModel.totalDigits,
+                    onSubmit: {
+                        viewModel.submitRecall()
+                    }
+                )
+                .padding(.horizontal, 28)
             }
 
             Spacer()
         }
         .padding(.vertical, 24)
         .modifier(ShakeEffect(animatableData: shakeAmount))
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.submitRecall()
-            } label: {
-                Text("Submit")
-                    .accentButton(color: AppColors.teal)
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 16)
-            .background(AppColors.pageBg)
-        }
     }
 
     // MARK: - Results
 
     private var resultsView: some View {
-        let challengeLink = ChallengeLink(
-            game: .chunkingTraining,
-            seed: ChallengeLink.randomSeed(),
-            score: viewModel.correctDigits,
-            challengerName: user?.username.isEmpty == false ? user!.username : "Someone"
-        )
         return GameResultView(
             gameTitle: "Chunking",
             gameIcon: "rectangle.split.3x1.fill",
@@ -610,12 +577,6 @@ struct ChunkingTrainingView: View {
             personalBest: PersonalBestTracker.shared.best(for: .chunkingTraining),
             exerciseType: .chunkingTraining,
             leaderboardScore: viewModel.correctDigits,
-            activeChallenge: activeChallenge,
-            challengeLink: challengeLink,
-            onShare: {
-                Analytics.shareTapped(game: ExerciseType.chunkingTraining.rawValue)
-                generateShareCard()
-            },
             onPlayAgain: {
                 exerciseSaved = false
                 viewModel.startChallenge()

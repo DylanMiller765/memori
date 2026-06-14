@@ -1,0 +1,86 @@
+<h2>Free Play Popup: Mascot Options</h2>
+<p class="subtitle">One-time popup on first Train tab visit. Which tone?</p>
+
+<div class="cards">
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a2e; display: flex; align-items: center; justify-content: center;">
+      <!-- Simulated popup over dimmed screen -->
+      <div style="width: 280px; position: relative;">
+        <!-- Dimmed background -->
+        <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; opacity: 0.3;">
+          <div style="font-size: 18px; font-weight: 800; color: white;">Train</div>
+          <div style="height: 30px; background: #1a1a2e; border-radius: 8px; margin-top: 10px;"></div>
+          <div style="height: 50px; background: #1a1a2e; border-radius: 8px; margin-top: 8px;"></div>
+        </div>
+
+        <!-- Popup overlay -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; background: #1e1e30; border-radius: 20px; padding: 24px 20px; text-align: center; border: 1px solid rgba(74,127,229,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+          <!-- Mascot placeholder -->
+          <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4A7FE5, #8B5CF6); border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 36px;">🎉</div>
+
+          <div style="font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px;">Every game is free<br>to try!</div>
+          <div style="font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 18px;">Your first play of each game doesn't count toward your daily limit. Go explore!</div>
+
+          <div style="background: #4A7FE5; color: white; font-size: 14px; font-weight: 700; padding: 10px 24px; border-radius: 12px; display: inline-block;">Let's go!</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: Excited & Encouraging</h3>
+      <p>"Every game is free to try!" + "Go explore!" — energetic, matches the brand. Uses mascot-celebrate.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a2e; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 280px; position: relative;">
+        <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; opacity: 0.3;">
+          <div style="font-size: 18px; font-weight: 800; color: white;">Train</div>
+          <div style="height: 30px; background: #1a1a2e; border-radius: 8px; margin-top: 10px;"></div>
+          <div style="height: 50px; background: #1a1a2e; border-radius: 8px; margin-top: 8px;"></div>
+        </div>
+
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; background: #1e1e30; border-radius: 20px; padding: 24px 20px; text-align: center; border: 1px solid rgba(74,127,229,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+          <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4A7FE5, #8B5CF6); border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 36px;">🧠</div>
+
+          <div style="font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px;">Memo here!</div>
+          <div style="font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 18px;">Each game gets <span style="color: #4A7FE5; font-weight: 600;">one free play</span> so you can find your favorites. Games marked <span style="color: #22cc00; font-weight: 700;">NEW</span> are still free!</div>
+
+          <div style="background: #4A7FE5; color: white; font-size: 14px; font-weight: 700; padding: 10px 24px; border-radius: 12px; display: inline-block;">Got it!</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: Memo Explains It</h3>
+      <p>"Memo here!" — the mascot introduces the mechanic. Connects NEW badge to the free play. More informative, still friendly.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a2e; display: flex; align-items: center; justify-content: center;">
+      <div style="width: 280px; position: relative;">
+        <div style="background: #0a0a0f; border-radius: 12px; padding: 16px; opacity: 0.3;">
+          <div style="font-size: 18px; font-weight: 800; color: white;">Train</div>
+          <div style="height: 30px; background: #1a1a2e; border-radius: 8px; margin-top: 10px;"></div>
+          <div style="height: 50px; background: #1a1a2e; border-radius: 8px; margin-top: 8px;"></div>
+        </div>
+
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; background: #1e1e30; border-radius: 20px; padding: 24px 20px; text-align: center; border: 1px solid rgba(74,127,229,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+          <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #D4A040, #C06040); border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 36px;">🎮</div>
+
+          <div style="font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px;">10 games.<br>All free to try.</div>
+          <div style="font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 18px;">We won't count your first play of any game. Take your time and find what you love.</div>
+
+          <div style="background: #4A7FE5; color: white; font-size: 14px; font-weight: 700; padding: 10px 24px; border-radius: 12px; display: inline-block;">Start exploring</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C: Calm & Confident</h3>
+      <p>"10 games. All free to try." — no exclamation marks, relaxed tone. "Take your time." Less hype, more trust.</p>
+    </div>
+  </div>
+</div>

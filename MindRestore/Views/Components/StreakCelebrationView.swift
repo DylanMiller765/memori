@@ -22,9 +22,9 @@ struct StreakCelebrationView: View {
         switch streak {
         case 7: return "You've outlasted 97% of starters. Most quit by day 3."
         case 14: return "Two weeks strong. Your brain is measurably sharper."
-        case 30: return "A full month of training. You're in the top 5% of Memori players."
+        case 30: return "A full month of training. You're in the top 5% of Memo players."
         case 60: return "60 days of dedication. Your neural pathways have literally rewired."
-        case 100: return "Triple digits. You're one of the rarest players on Memori."
+        case 100: return "Triple digits. You're one of the rarest players on Memo."
         default: return "Incredible consistency. Keep training!"
         }
     }
@@ -116,8 +116,8 @@ struct StreakCelebrationView: View {
                 // Buttons
                 VStack(spacing: 12) {
                     ShareLink(
-                        item: "I just hit a \(streak)-day streak on Memori! My brain is getting sharper every day 🧠🔥",
-                        preview: SharePreview("Memori Streak: \(streak) days")
+                        item: "I just hit a \(streak)-day streak on Memo! My brain is getting sharper every day 🧠🔥",
+                        preview: SharePreview("Memo Streak: \(streak) days")
                     ) {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")

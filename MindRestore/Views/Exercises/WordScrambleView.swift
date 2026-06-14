@@ -317,11 +317,9 @@ struct WordScrambleView: View {
     @State private var shareImage: UIImage?
     @State private var isNewPersonalBest = false
     @State private var exerciseSaved = false
-    @State private var activeChallenge: ChallengeLink?
     @State private var resultsAppeared = false
     @State private var shakeAmount: CGFloat = 0
     @State private var correctPulse = false
-    // @State private var showingChallengeResult = false
     @Namespace private var tileNamespace
 
     private var user: User? { users.first }
@@ -343,28 +341,13 @@ struct WordScrambleView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
         .sheet(isPresented: $showingPaywall) { PaywallView(isHighIntent: true) }
-        /*
-        .sheet(isPresented: $showingChallengeResult) {
-            if let challenge = activeChallenge {
-                FriendChallengeResultView(
-                    challenge: challenge,
-                    playerScore: viewModel.leaderboardScore,
-                    onShareResult: { showingChallengeResult = false },
-                    onChallengeAnother: { showingChallengeResult = false },
-                    onDone: {
-                        showingChallengeResult = false
-                        deepLinkRouter.pendingChallenge = nil
-                    }
-                )
-            }
-        }
-        */
         .navigationTitle("Word Scramble")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let challenge = deepLinkRouter.pendingChallenge {
-                viewModel.challengeSeed = challenge.seed
-                activeChallenge = challenge
+        }
+        .onDisappear {
+            if viewModel.phase != .setup && viewModel.phase != .finished {
+                Analytics.exerciseAbandoned(game: ExerciseType.wordScramble.rawValue, roundReached: viewModel.currentRound)
             }
         }
         .onChange(of: viewModel.phase) { _, newPhase in
@@ -730,37 +713,6 @@ struct WordScrambleView: View {
                         }
                         .simultaneousGesture(TapGesture().onEnded { Analytics.shareTapped(game: ExerciseType.wordScramble.rawValue) })
                     }
-
-                    /*
-                    if let challengeURL = ChallengeLink(
-                        game: .wordScramble,
-                        seed: viewModel.challengeSeed ?? ChallengeLink.randomSeed(),
-                        score: viewModel.leaderboardScore,
-                        challengerName: GKLocalPlayer.local.displayName
-                    ).url {
-                        ShareLink(item: challengeURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("Challenge a Friend")
-                            }
-                            .gradientButton()
-                        }
-                    }
-                    */
-
-                    /*
-                    if let challenge = activeChallenge {
-                        Button {
-                            showingChallengeResult = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                Text("See Challenge Result")
-                            }
-                            .accentButton()
-                        }
-                    }
-                    */
 
                     Button {
                         resultsAppeared = false
