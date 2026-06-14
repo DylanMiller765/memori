@@ -46,6 +46,8 @@ struct FocusModeCard: View {
     @State private var showingSettings = false
     @State private var showingAppPicker = false
     @State private var showingProPaywall = false
+    @State private var showingDeblockConfirm = false
+    @State private var pendingLoweredSelection: FamilyActivitySelection?
 
     private enum CardState { case notSetUp, idle, active, cooldown, unlocked, scheduled }
     private enum TargetListMode { case empty, locked, unlocked }
@@ -99,6 +101,23 @@ struct FocusModeCard: View {
         ))
         .sheet(isPresented: $showingProPaywall) {
             PaywallView(triggerSource: "focus_mode_add_apps")
+        }
+        .sheet(isPresented: $showingDeblockConfirm) {
+            DeblockConfirmSheet(
+                onKeepGuard: {
+                    pendingLoweredSelection = nil
+                    showingDeblockConfirm = false
+                },
+                onLowerAnyway: {
+                    if let sel = pendingLoweredSelection {
+                        focusModeService.updateActivitySelection(sel)
+                    }
+                    pendingLoweredSelection = nil
+                    showingDeblockConfirm = false
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationBackground(OB.bg)
         }
     }
 
@@ -696,6 +715,10 @@ struct FocusModeCard: View {
 
         if !storeService.isProUser && exceedsFreeLimit {
             showingProPaywall = true
+        } else if focusModeService.isEnabled && focusModeService.selectionLowersGuard(newSelection) {
+            // Removing protection — make Memo sad before it applies.
+            pendingLoweredSelection = newSelection
+            showingDeblockConfirm = true
         } else {
             focusModeService.updateActivitySelection(newSelection)
         }

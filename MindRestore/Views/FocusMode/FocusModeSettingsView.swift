@@ -6,6 +6,8 @@ struct FocusModeSettingsView: View {
     @Environment(StoreService.self) private var storeService
     @Environment(\.dismiss) private var dismiss
     @State private var showingAppPicker = false
+    @State private var showingDeblockConfirm = false
+    @State private var pendingLoweredSelection: FamilyActivitySelection?
     @State private var showingProPaywall = false
 
     private var currentSelectionExceedsFreeLimit: Bool {
@@ -185,6 +187,9 @@ struct FocusModeSettingsView: View {
                         !newSelection.webDomainTokens.isEmpty
                     if !storeService.isProUser && exceedsLimit {
                         showingProPaywall = true
+                    } else if focusModeService.isEnabled && focusModeService.selectionLowersGuard(newSelection) {
+                        pendingLoweredSelection = newSelection
+                        showingDeblockConfirm = true
                     } else {
                         focusModeService.updateActivitySelection(newSelection)
                     }
@@ -192,6 +197,23 @@ struct FocusModeSettingsView: View {
             ))
             .sheet(isPresented: $showingProPaywall) {
                 PaywallView(triggerSource: "focus_mode_limit")
+            }
+            .sheet(isPresented: $showingDeblockConfirm) {
+                DeblockConfirmSheet(
+                    onKeepGuard: {
+                        pendingLoweredSelection = nil
+                        showingDeblockConfirm = false
+                    },
+                    onLowerAnyway: {
+                        if let sel = pendingLoweredSelection {
+                            focusModeService.updateActivitySelection(sel)
+                        }
+                        pendingLoweredSelection = nil
+                        showingDeblockConfirm = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationBackground(OB.bg)
             }
         }
     }

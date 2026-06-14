@@ -145,6 +145,61 @@ enum FocusUnlockSlotMode {
     case demo
 }
 
+/// Guilt-friction confirm shown when a user tries to remove an app from
+/// their block list. Emotional friction, not mechanical — catches the
+/// impulse without a failure state or cooldown.
+struct DeblockConfirmSheet: View {
+    let onKeepGuard: () -> Void
+    let onLowerAnyway: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 18)
+
+            Image("mascot-locked-sad")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 150, height: 150)
+                .shadow(color: OB.coral.opacity(0.22), radius: 20, y: 10)
+
+            Text("You sure?\nThis hurts Memo.")
+                .font(.system(size: 28, weight: .black, design: .rounded))
+                .foregroundStyle(OB.fg)
+                .multilineTextAlignment(.center)
+                .padding(.top, 14)
+
+            Text("You set this up to protect yourself. Lower your guard and the feed wins.")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(OB.fg2)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .padding(.horizontal, 36)
+                .padding(.top, 8)
+
+            Spacer(minLength: 22)
+
+            VStack(spacing: 12) {
+                Button(action: onKeepGuard) {
+                    Text("Keep my guard up")
+                        .gradientButton()
+                }
+
+                Button(action: onLowerAnyway) {
+                    Text("Let the feed win")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(OB.fg3)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 20)
+        }
+        .frame(maxWidth: .infinity)
+        .background(OB.bg)
+        .preferredColorScheme(.dark)
+    }
+}
+
 // MARK: - The machine (mascot + reel + spin) — shared by the fullscreen
 // unlock view and the onboarding demo.
 

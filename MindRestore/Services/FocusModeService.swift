@@ -190,6 +190,16 @@ final class FocusModeService {
 
     // MARK: - Activity Selection
 
+    /// True if `selection` drops any app/category/web the user currently
+    /// blocks — i.e. it lowers their guard. Adding or reorganizing returns
+    /// false. Used to gate removals behind the "this hurts Memo" confirm.
+    func selectionLowersGuard(_ selection: FamilyActivitySelection) -> Bool {
+        let lostApps = !activitySelection.applicationTokens.isSubset(of: selection.applicationTokens)
+        let lostCategories = !activitySelection.categoryTokens.isSubset(of: selection.categoryTokens)
+        let lostWeb = !activitySelection.webDomainTokens.isSubset(of: selection.webDomainTokens)
+        return lostApps || lostCategories || lostWeb
+    }
+
     /// Persist a new FamilyActivitySelection chosen by the picker.
     func updateActivitySelection(_ selection: FamilyActivitySelection) {
         activitySelection = selection

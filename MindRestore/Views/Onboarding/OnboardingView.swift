@@ -745,6 +745,13 @@ struct OnboardingView: View {
     /// The visual transition CURVE itself is defined by `.transition(...)` on
     /// the page container — this `withAnimation` only schedules SwiftUI's
     /// re-render block.
+    /// No back arrow once the user has cleared the paywall — pages from
+    /// focusMode onward are post-conversion setup, and stepping back would
+    /// drop them into the plan-beat / paywall funnel they already passed.
+    private var canGoBack: Bool {
+        currentPage > 0 && currentPage < OnboardingPage.focusMode.rawValue
+    }
+
     private func goToPage(_ page: Int) {
         guard (0..<totalPages).contains(page) else { return }
         withAnimation(.easeInOut(duration: 0.40)) {
@@ -795,16 +802,16 @@ struct OnboardingView: View {
             .frame(height: 34)
 
             Button {
-                guard currentPage > 0 else { return }
+                guard canGoBack else { return }
                 goToPage(max(0, currentPage - 1))
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(currentPage > 0 ? AppColors.textSecondary : .clear)
+                    .foregroundStyle(canGoBack ? AppColors.textSecondary : .clear)
                     .frame(width: 34, height: 34)
                     .contentShape(Rectangle())
             }
-            .disabled(currentPage == 0)
+            .disabled(!canGoBack)
             .accessibilityLabel("Back")
             .frame(maxWidth: .infinity, alignment: .leading)
         }
