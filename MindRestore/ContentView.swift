@@ -192,10 +192,9 @@ struct ContentView: View {
             #endif
             scheduleStreakRiskIfNeeded()
             scheduleComebackIfNeeded()
-            // Daily notifications
+            // Daily notifications — one weekly deadline nudge; streak-risk (8pm) is
+            // the primary evening push so we don't stack multiple banners per day.
             if user?.notificationsEnabled == true {
-                NotificationService.shared.scheduleDailyBrainFact()
-                NotificationService.shared.scheduleSocialProof()
                 NotificationService.shared.scheduleWeeklyLeaderboardReset()
             }
             // Sync widget data on app launch (off the main thread)
@@ -622,12 +621,7 @@ extension ContentView {
 
         achievementService.checkAchievements(context: modelContext, user: user)
 
-        if leveledUp {
-            NotificationService.shared.scheduleLevelUpNotification(
-                level: user.level,
-                levelName: user.levelName
-            )
-        }
+        // Level-ups are celebrated in-app; no redundant push banner.
 
         // Update widget data centrally after every exercise completion
         let exercisesToday: Int = {

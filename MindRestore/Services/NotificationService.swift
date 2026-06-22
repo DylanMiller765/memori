@@ -114,7 +114,13 @@ final class NotificationService: Sendable {
         content.sound = .default
         content.userInfo = ["deepLink": "memo://train"]
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        // Fire as a next-morning re-engagement, not a banner stacked on top of the
+        // in-app celebration the user just saw the moment they hit the milestone.
+        let calendar = Calendar.current
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: Date.now),
+              let fireDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: tomorrow) else { return }
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, fireDate.timeIntervalSinceNow), repeats: false)
         let request = UNNotificationRequest(identifier: "milestone_\(streak)", content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request)
@@ -164,21 +170,6 @@ final class NotificationService: Sendable {
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
         let request = UNNotificationRequest(identifier: "achievement_nudge", content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    // MARK: - Level Up
-
-    func scheduleLevelUpNotification(level: Int, levelName: String) {
-        let content = UNMutableNotificationContent()
-        content.title = "Level \(level): \(levelName)"
-        content.body = "Memo logged the upgrade. Train again when the feed asks for another pass."
-        content.sound = .default
-        content.userInfo = ["deepLink": "memo://train"]
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        let request = UNNotificationRequest(identifier: "level_up", content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request)
     }
@@ -253,14 +244,6 @@ final class NotificationService: Sendable {
                 0,
                 "Your Memo trial ends in 2 days",
                 "Keep Memo guarding the feed, or cancel anytime in App Store."
-            ),
-            (
-                "trial_reminder_last_day",
-                -1,
-                9,
-                0,
-                "Trial ends tomorrow",
-                "Your $49.99/year plan starts tomorrow unless you cancel in App Store."
             )
         ]
 
@@ -308,77 +291,7 @@ final class NotificationService: Sendable {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["streak_risk"])
     }
 
-    // MARK: - Competitive Nudge
-
-    func scheduleSocialProof(currentRank: Int? = nil, brainScore: Int? = nil) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["social_proof"])
-
-        let content = UNMutableNotificationContent()
-        if let currentRank {
-            content.title = "Rank #\(currentRank) is not parked"
-            content.body = "Train once before the week moves without you."
-        } else if let brainScore, brainScore > 0 {
-            content.title = "Defend Brain Score \(brainScore)"
-            content.body = "One short workout keeps your score from going stale."
-        } else {
-            content.title = "The leaderboard is open"
-            content.body = "Train once, check your rank, then get off the app."
-        }
-        content.sound = .default
-        content.userInfo = ["deepLink": "memo://compete"]
-
-        // Fire at 7pm
-        var dateComponents = DateComponents()
-        dateComponents.hour = 19
-        dateComponents.minute = 0
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-
-        let request = UNNotificationRequest(identifier: "social_proof", content: content, trigger: trigger)
-        center.add(request)
-    }
-
-    func cancelSocialProof() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["social_proof"])
-    }
-
-    // MARK: - Training Tip
-
-    private static let brainFacts: [(title: String, body: String)] = [
-        ("Attention rep", "Color Match makes your brain ignore the obvious trap. Useful against the feed."),
-        ("Memory rep", "Visual Memory trains the same muscle the scroll tries to numb."),
-        ("Speed rep", "Reaction Time is a quick reset before you hand the phone back to Big Social."),
-        ("Pattern rep", "Speed Match forces fast decisions without opening another feed."),
-        ("Focus rep", "Dual N-Back is hard on purpose. The feed is easy on purpose."),
-        ("Unlock rep", "Train first, unlock second. That is the Memo contract."),
-        ("Feed patrol tip", "Pick the app you open automatically. Memo works best against the reflex."),
-        ("Short session wins", "One focused round beats ten minutes of pretending to be productive."),
-        ("Protect the next hour", "Train now, then close Memo before it becomes another place to hide."),
-        ("Brain before feed", "Give your attention one rep before the algorithm gets a turn."),
-    ]
-
-    func scheduleDailyBrainFact() {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["brain_fact"])
-
-        let fact = Self.brainFacts.randomElement()!
-        let content = UNMutableNotificationContent()
-        content.title = fact.title
-        content.body = fact.body
-        content.sound = .default
-        content.userInfo = ["deepLink": "memo://train"]
-
-        // Fire at a random time between 9am and 8pm
-        var dateComponents = DateComponents()
-        dateComponents.hour = Int.random(in: 9...20)
-        dateComponents.minute = Int.random(in: 0...59)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-
-        let request = UNNotificationRequest(identifier: "brain_fact", content: content, trigger: trigger)
-        center.add(request)
-    }
-
-    // MARK: - Weekly Leaderboard Reset Warning (Sunday 8pm — 4h before midnight reset)
+    // MARK: - Weekly Leaderboard Reset Warning (Sunday 6pm — spaced off the 8pm streak-risk slot)
 
     func scheduleWeeklyLeaderboardReset() {
         let center = UNUserNotificationCenter.current()
@@ -397,10 +310,11 @@ final class NotificationService: Sendable {
         content.sound = .default
         content.userInfo = ["deepLink": "memo://compete"]
 
-        // Sunday at 8pm, repeats weekly
+        // Sunday at 6pm, repeats weekly — kept off the 8pm streak-risk slot so the
+        // two never fire back-to-back on Sunday evenings.
         var dateComponents = DateComponents()
         dateComponents.weekday = 1 // Sunday (Calendar.current's Sunday = 1)
-        dateComponents.hour = 20
+        dateComponents.hour = 18
         dateComponents.minute = 0
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
