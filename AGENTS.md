@@ -1,114 +1,63 @@
-# Memori — Brain Training App
+# Memo / MindRestore Repository Guide
 
-## UI/Design Guidelines
+Last audited: 2026-08-25. Verify fast-moving facts in the code before relying on them.
 
-Before coding anything, describe exactly what this will look like — colors (with hex values), layout, icon choices, and what each visual element represents. I'll approve before you implement.
+## Product identity
 
-## Bug Prevention
+- Memo is the current user-facing product/marketing name.
+- `MindRestore` is the main Xcode target, bundle identifier family, and legacy repository name.
+- `Memori` names internal Screen Time extensions and related targets; do not rename them casually.
+- Core loop must remain truthful: block an app → slot/random selection → complete a brain game → receive a temporary unlock. Say “play,” “finish,” or “complete,” never “win.”
 
-After implementing interactive features (buttons, gestures, detection logic), mentally trace the full user flow from trigger to completion and verify each state transition works. Pay special attention to features that depend on app lifecycle state (e.g., skip buttons during active phases, alarm re-firing).
+## Current project state
 
-## Project Context
+- SwiftUI + SwiftData, iOS 17+, iPhone-only (`TARGETED_DEVICE_FAMILY = 1`).
+- Project version audited at `2.1.2`; confirm `MARKETING_VERSION` before describing a release.
+- Main target: `MindRestore`; tests: `MindRestoreTests`; extensions include Memori shield/configuration and widget targets.
+- Exercise views live in `MindRestore/Views/Exercises/`; tests live in `MindRestoreTests/`.
+- StoreKit product IDs are defined in `MindRestore/Services/StoreService.swift`; analytics is PostHog in `AnalyticsService.swift`.
 
-This is an iOS app project using Swift/SwiftUI. Codex cannot modify `.xcodeproj` files or add SPM packages directly. Flag these manual steps clearly for the user with step-by-step Xcode UI instructions. Don't attempt CLI workarounds for Xcode-specific tasks.
+## Before implementation
 
-## Verify Changes (REQUIRED)
+- Questions, ideas, and planning are discussion—not authorization to edit.
+- For approved UI work, describe layout, colors, icons, states, and semantic meaning before coding.
+- Codex may edit `.xcodeproj` settings when the user explicitly approves the change, including release version/build metadata. Keep edits narrowly scoped, inspect the resulting diff, and verify with `xcodebuild`. Structural target changes and package additions still require advance discussion and explicit approval.
+- Preserve unrelated dirty-worktree changes. Never expose keys, tokens, or private analytics data.
 
-After **every** code change, run the `/verify-changes` skill: build via Xcode MCP, render a preview screenshot if available, show it to the user, and explain what changed. Never skip this step.
+## Architecture anchors
 
-## QA Before Every Commit
-
-Before committing any changes, run a full QA cycle:
-1. Build with `xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Debug -destination 'id=00008130-000A214E11E2001C' -allowProvisioningUpdates` — fix any compiler errors iteratively until it succeeds.
-2. Install on device with `xcrun devicectl device install app --device 00008130-000A214E11E2001C` + the build output path.
-3. For each modified view, verify it handles both light and dark mode by checking color assets and conditional styling.
-4. Check for common iOS issues: retain cycles, force unwraps, main-thread UI violations.
-5. Only after build succeeds and is installed on device, commit and push.
+- `MindRestoreApp.swift`: app entry, SwiftData container, services, analytics initialization.
+- `ContentView.swift`: root tabs, training flow, exercise navigation, XP awarding.
+- `DesignSystem.swift`: `AppColors`, shared styles, `CognitiveDomain`.
+- `StoreService.swift` / `Views/Paywall/PaywallView.swift`: StoreKit products and purchase flow.
+- `AnalyticsService.swift`: PostHog event names and funnel properties.
+- `Services/FocusModeService.swift` and `Services/DeepLinkRouter.swift`: Screen Time/unlock and deep-link state.
 
 ## Commands
 
 ```bash
-# Build for device
-xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Debug -destination 'id=00008130-000A214E11E2001C' -allowProvisioningUpdates -derivedDataPath build
-
-# Build for simulator
 xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -derivedDataPath build
-
-# Run tests
 xcodebuild test -project MindRestore.xcodeproj -scheme MindRestoreTests -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -derivedDataPath build
-
-# Install on device
-xcrun devicectl device install app --device 00008130-000A214E11E2001C build/Build/Products/Debug-iphoneos/MindRestore.app
-
-# Archive for App Store
-xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Release -destination 'generic/platform=iOS' -archivePath build/MindRestore.xcarchive archive -allowProvisioningUpdates
-
-# Upload to App Store Connect
-xcodebuild -exportArchive -archivePath build/MindRestore.xcarchive -exportPath build/export -exportOptionsPlist /tmp/ExportOptions.plist -allowProvisioningUpdates
+xcodebuild -project MindRestore.xcodeproj -scheme MindRestore -configuration Debug -destination 'id=00008130-000A214E11E2001C' -allowProvisioningUpdates -derivedDataPath build
 ```
 
-## Gotchas
+## Verification and QA
 
-- **SourceKit false positives**: "Cannot find X in scope" errors are WRONG. Only trust `xcodebuild` output. IGNORE all SourceKit diagnostics.
-- **ExportOptions.plist**: Must create at `/tmp/ExportOptions.plist` with teamID `73668242TN`, method `app-store`, destination `upload` before uploading.
-- **Device family**: MUST be `TARGETED_DEVICE_FAMILY = 1` (iPhone only). Never set to "1,2".
-- **`build/` directory**: Gitignored. Safe to delete for clean builds.
-- **`#if DEBUG` wrapping**: `ScreenshotDataGenerator` must be wrapped in `#if DEBUG` or archive builds fail.
+- After Swift/UI/behavior changes, run the `verify-changes` workflow: build, inspect the relevant screen in light/dark mode, and verify the changed interaction end to end.
+- Trust `xcodebuild` diagnostics over SourceKit-only errors.
+- Before a commit, run relevant tests and a clean Debug build; install on a physical device when the change depends on Screen Time, notifications, StoreKit, or lifecycle behavior.
+- Check state transitions, retain cycles, force unwraps, main-thread UI, accessibility, and both color schemes.
 
-## Architecture
+## StoreKit and analytics rules
 
-- **SwiftUI + SwiftData**, iOS 17+, iPhone only
-- `ContentView.swift` — Root TabView (Home, Train, Compete, Insights, Profile) + TrainingView + TrainingTile (large file, ~900 lines)
-- `DesignSystem.swift` — AppColors, button/card modifiers, CognitiveDomain enum
-- Environment objects: StoreService, AchievementService, PaywallTriggerService, TrainingSessionManager, GameCenterService, DeepLinkRouter
-- Models: User, Exercise, DailySession, BrainScoreResult, Achievement (all SwiftData @Model)
-- Games are in `Views/Exercises/`, each file has both ViewModel and View
+- Product IDs are compatibility-sensitive; changing an App Store product requires an explicit release plan.
+- Local StoreKit configuration is not proof of real commerce. Validate restore, trial, renewal, and purchase behavior in Xcode StoreKit or ASC sandbox/TestFlight.
+- Use PostHog events—not assumptions—for onboarding, paywall, purchase, unlock, and retention decisions.
 
-## Key Files
+## Git and debugging
 
-- `MindRestoreApp.swift` — App entry, SwiftData container, analytics init
-- `ContentView.swift` — Tabs, TrainingView, awardXP(), exercise navigation
-- `Services/GameCenterService.swift` — Leaderboard IDs, score reporting, NO mock data
-- `Services/NotificationService.swift` — All 8 notification types
-- `Services/DeepLinkRouter.swift` — URL scheme handling, challenge deep links
-- `Models/ChallengeLink.swift` — URL-encoded friend challenge data
-- `Views/Onboarding/OnboardingAssessmentView.swift` — Brain Age assessment in onboarding
-
-## Branching
-
-- `main` = App Store (current live version)
-- `test` = next version in development (v1.2 with new games + async challenges)
-- Always commit and push after changes
-
-## App Store Connect API
-
-- Key ID: `9GRLL5VKUX`, Issuer: `ab66930d-a8da-451a-81e7-1cdd5f229aaf`
-- P8 key: `/Users/dylanmiller/Downloads/AuthKey_9GRLL5VKUX.p8`
-- App ID: `6760178716`
-- Use PyJWT + ES256 for JWT generation (see memory/reference_asc_api.md)
-
-## Design & UI
-
-- When designing color schemes or visual systems, always ask clarifying questions about the semantic meaning of colors BEFORE implementing. E.g., do colors represent categories, progress levels, or states?
-- Front-load design intent: confirm understanding of visual/UX intent before writing code
-
-## Debugging
-
-- For bug fixes, verify the root cause before implementing a fix. Read the relevant code thoroughly and check for type/overflow issues (e.g., UInt64 vs Int). Don't assume the first hypothesis is correct.
-- Explain the root cause to the user BEFORE writing any fix
-- Search for similar patterns elsewhere in the codebase after fixing
-
-## Code Style
-
-- Use `AppColors` constants, never raw `Color` values
-- Games: setup → playing → results flow pattern
-- Every game has share cards via `ExerciseShareCard`
-- PersonalBestTracker for high scores, AdaptiveDifficultyEngine for difficulty
-- Composite leaderboard scores for capped games: `primaryScore * 1000 + max(0, 999 - durationSeconds)`
-
-## Current State (v1.1.4 live, v1.2 on test)
-
-- 8 games live: Reaction Time, Color Match, Speed Match, Visual Memory, Number Memory, Math Speed, Dual N-Back, Chunking
-- v1.2 adds: Word Scramble, Memory Chain, async friend challenges, daily challenge leaderboard
-- Spaced repetition, memory palace, active recall, prospective memory, mixed training: REMOVED (user finds boring)
+- Work on the requested branch; do not create or switch branches without direction.
+- Commit only when requested or when an explicitly approved shipping workflow requires it; never push without authorization.
+- For bugs, reproduce and verify the root cause, inspect sibling callers/patterns, then explain the fix before editing.
+- `build/` and derived-data directories are generated artifacts and may be cleaned when safe.
 - If using XcodeBuildMCP, use the installed XcodeBuildMCP skill before calling XcodeBuildMCP tools.

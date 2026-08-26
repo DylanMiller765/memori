@@ -39,8 +39,8 @@ final class PlanBuildBeatContentTests: XCTestCase {
             isEstimate: false
         )
 
-        XCTAssertEqual(c.bubble, "Sharper scores. That's the mission.")
-        XCTAssertEqual(c.newLine?.value, "sharper scores")
+        XCTAssertEqual(c.bubble, "A sharper brain. That's the mission.")
+        XCTAssertEqual(c.newLine?.value, "a sharper brain")
     }
 
     func test_memoPlanPhrase_usesFirstSelectedGoalWhenMultipleGoalsWerePicked() {
@@ -49,7 +49,7 @@ final class PlanBuildBeatContentTests: XCTestCase {
             selectedGoalOrder: [.getSharper, .screenTimeFrying]
         )
 
-        XCTAssertEqual(phrase, "score climbing")
+        XCTAssertEqual(phrase, "brain getting sharper")
     }
 
     func test_ageBeat_interpolatesYearsAhead() {
@@ -161,14 +161,14 @@ final class PaywallPersonalizationContentTests: XCTestCase {
         XCTAssertEqual(content.feedTimingIcon, "bell.badge.fill")
     }
 
-    func test_planCardLayoutKeepsFullSizeCardsAndCorrectsOpticalCenter() {
+    func test_planCardLayoutKeepsFullSizeCardsCentered() {
         let layout = PaywallPlanCardLayout(containerWidth: 349, compact: false)
 
         XCTAssertEqual(layout.spacing, 12)
         XCTAssertEqual(layout.cardWidth, 168, accuracy: 0.001)
         XCTAssertEqual(layout.groupWidth, 348, accuracy: 0.001)
         XCTAssertEqual(layout.sideInset, 0.5, accuracy: 0.001)
-        XCTAssertEqual(layout.groupOffsetX, -16, accuracy: 0.001)
+        XCTAssertEqual(layout.groupOffsetX, 0, accuracy: 0.001)
     }
 
     func test_planCardLayoutUsesFullScreenshotRowWidth() {
@@ -177,7 +177,7 @@ final class PaywallPersonalizationContentTests: XCTestCase {
         XCTAssertEqual(layout.cardWidth, 156, accuracy: 0.001)
         XCTAssertEqual(layout.groupWidth, 324, accuracy: 0.001)
         XCTAssertEqual(layout.sideInset, 0, accuracy: 0.001)
-        XCTAssertEqual(layout.groupOffsetX, -16, accuracy: 0.001)
+        XCTAssertEqual(layout.groupOffsetX, 0, accuracy: 0.001)
     }
 
     func test_planCardLayoutCapsWidthOnWiderScreens() {
@@ -186,13 +186,7 @@ final class PaywallPersonalizationContentTests: XCTestCase {
         XCTAssertEqual(layout.cardWidth, 168, accuracy: 0.001)
         XCTAssertEqual(layout.groupWidth, 348, accuracy: 0.001)
         XCTAssertEqual(layout.sideInset, 19, accuracy: 0.001)
-        XCTAssertEqual(layout.groupOffsetX, -16, accuracy: 0.001)
+        XCTAssertEqual(layout.groupOffsetX, 0, accuracy: 0.001)
     }
 
-    func test_readySealUsesUnlockedPlanSymbol() {
-        let content = PaywallReadySealContent()
-
-        XCTAssertEqual(content.systemImageName, "lock.open.fill")
-        XCTAssertEqual(content.accessibilityLabel, "Plan unlocked")
-    }
 }

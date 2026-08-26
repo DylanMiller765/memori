@@ -38,11 +38,6 @@ struct PaywallPersonalizationContent: Equatable {
     }
 }
 
-struct PaywallReadySealContent: Equatable {
-    let systemImageName = "lock.open.fill"
-    let accessibilityLabel = "Plan unlocked"
-}
-
 struct PaywallPlanCardLayout: Equatable {
     let spacing: CGFloat
     let cardWidth: CGFloat
@@ -135,10 +130,10 @@ struct PaywallView: View {
     @State private var showHardFounderCue = false
     @AppStorage("exitOfferShownCount") private var exitOfferShownCount: Int = 0
     private let maxExitOffers = 1
-    private let exitOfferDisplayedPriceFallback = 29.99
-    private let exitOfferRegularPriceFallback = 39.99
-    private let exitOfferDisplayedPriceTextFallback = "$29.99"
-    private let exitOfferRegularPriceTextFallback = "$39.99"
+    private let exitOfferDisplayedPriceFallback = 19.99
+    private let exitOfferRegularPriceFallback = 29.99
+    private let exitOfferDisplayedPriceTextFallback = "$19.99"
+    private let exitOfferRegularPriceTextFallback = "$29.99"
     private let exitOfferDiscountLabel = "founder_forever_offer"
     private var canShowExitOffer: Bool {
         storeService.products.contains { $0.id == StoreService.annualUltraExitOfferProductID }
@@ -343,8 +338,7 @@ struct PaywallView: View {
         return VStack(spacing: 0) {
             Color.clear.frame(height: max(14, safeTop + (compact ? 8 : 16)))
 
-            readySeal(compact: compact)
-                .padding(.bottom, compact ? 8 : 10)
+            Color.clear.frame(height: compact ? 34 : 42)
 
             readyHeadline(compact: compact)
                 .padding(.bottom, compact ? 8 : 10)
@@ -424,7 +418,7 @@ struct PaywallView: View {
     }
 
     private var weeklyDisplayPriceText: String {
-        productDisplayPrice(for: StoreService.weeklyUltraProductID, fallback: "$4.99")
+        productDisplayPrice(for: StoreService.weeklyUltraProductID, fallback: "$1.99")
     }
 
     private func selectPlan(_ plan: PaywallPlan) {
@@ -438,22 +432,6 @@ struct PaywallView: View {
         }
         selectedPlan = plan
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
-
-    private func readySeal(compact: Bool) -> some View {
-        let content = PaywallReadySealContent()
-
-        return ZStack {
-            Circle()
-                .fill(.white)
-                .frame(width: compact ? 46 : 54, height: compact ? 46 : 54)
-                .shadow(color: PW.mint.opacity(0.24), radius: 18, y: 8)
-
-            Image(systemName: content.systemImageName)
-                .font(.system(size: compact ? 20 : 23, weight: .black))
-                .foregroundStyle(PW.mint)
-        }
-        .accessibilityLabel(content.accessibilityLabel)
     }
 
     private func readyHeadline(compact: Bool) -> some View {
@@ -1799,8 +1777,7 @@ struct MemoCutePaywallPreviewView: View {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: min(max(50, proxy.safeAreaInsets.top + 8), 80))
 
-                    readySeal(compact: compact)
-                        .padding(.bottom, compact ? 12 : 14)
+                    Color.clear.frame(height: compact ? 34 : 42)
 
                     readyHeadline(compact: compact)
                         .padding(.bottom, compact ? 9 : 11)
@@ -1866,20 +1843,6 @@ struct MemoCutePaywallPreviewView: View {
             .ignoresSafeArea()
         }
         .allowsHitTesting(false)
-    }
-
-    private func readySeal(compact: Bool) -> some View {
-        ZStack {
-            Circle()
-                .fill(PW.fg)
-                .frame(width: compact ? 46 : 54, height: compact ? 46 : 54)
-                .shadow(color: PW.mint.opacity(0.24), radius: 18, y: 8)
-
-            Image(systemName: "checkmark")
-                .font(.system(size: compact ? 20 : 23, weight: .black))
-                .foregroundStyle(PW.mint)
-        }
-        .accessibilityLabel("Plan ready")
     }
 
     private func readyHeadline(compact: Bool) -> some View {
@@ -2102,8 +2065,8 @@ struct MemoCutePaywallPreviewView: View {
                     plan: .annual,
                     badge: "BEST VALUE",
                     title: "Yearly",
-                    price: "$39.99/year",
-                    detail: "$0.77/wk billed yearly",
+                    price: "$29.99/year",
+                    detail: "$0.58/wk billed yearly",
                     compact: compact
                 )
                 .frame(width: cardWidth)
@@ -2112,7 +2075,7 @@ struct MemoCutePaywallPreviewView: View {
                     plan: .weekly,
                     badge: nil,
                     title: "Weekly",
-                    price: "$4.99/wk",
+                    price: "$1.99/wk",
                     detail: "Billed weekly",
                     compact: compact
                 )

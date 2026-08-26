@@ -155,7 +155,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "1.99",
           "familyShareable" : false,
           "groupNumber" : 6,
           "internalID" : "ultra_weekly_001",
@@ -203,7 +203,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "39.99",
+          "displayPrice" : "29.99",
           "familyShareable" : false,
           "groupNumber" : 4,
           "internalID" : "ultra_annual_001",
@@ -217,6 +217,30 @@
           "productID" : "com.memori.ultra.annual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Ultra Annual",
+          "subscriptionGroupID" : "memori_pro",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 7,
+          "internalID" : "ultra_annual_founder_001",
+          "localizations" : [
+            {
+              "description" : "Unlimited games + block distracting apps",
+              "displayName" : "Founder Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memori.ultra.annual.firstyear",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Founder Annual",
           "subscriptionGroupID" : "memori_pro",
           "type" : "RecurringSubscription"
         }
