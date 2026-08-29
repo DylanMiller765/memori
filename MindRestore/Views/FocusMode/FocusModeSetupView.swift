@@ -112,7 +112,10 @@ struct FocusModeSetupView: View {
                     .multilineTextAlignment(.leading)
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.86)
+                    .minimumScaleFactor(0.72)
+                    // Without this the height-squeezed parent collapses the
+                    // headline to one line and drops "Memo bounces." entirely.
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text("Put your worst apps behind the rope.")
                     .font(.brand(size: 18, weight: .semibold))
@@ -447,56 +450,88 @@ struct FocusModeSetupView: View {
     }
 
     private var selectedTargetTokensStrip: some View {
-        let appTokens = Array(focusModeService.activitySelection.applicationTokens)
-        let categoryTokens = Array(focusModeService.activitySelection.categoryTokens)
-        let webCount = focusModeService.activitySelection.webDomainTokens.count
-        // Cap at 3 icons + a "+N" badge so the strip never crowds the
-        // header/body text column into an ellipsis.
-        let visibleAppTokens = Array(appTokens.prefix(3))
-        let categorySlots = max(0, 3 - visibleAppTokens.count)
-        let visibleCategoryTokens = Array(categoryTokens.prefix(categorySlots))
-        let visibleCount = visibleAppTokens.count + visibleCategoryTokens.count
-        let hiddenCount = max(0, appTokens.count + categoryTokens.count + webCount - visibleCount)
-        let tokenSlots = visibleCount + (hiddenCount > 0 ? 1 : 0)
-        let stripWidth = tokenSlots > 0 ? CGFloat(tokenSlots * 40 - max(0, tokenSlots - 1) * 8) : 0
-
-        return HStack(spacing: -8) {
-            ForEach(Array(visibleAppTokens.enumerated()), id: \.element) { index, token in
-                Label(token)
-                    .labelStyle(.iconOnly)
-                    .scaleEffect(1.04)
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .rotationEffect(.degrees([-6, 4, -3, 5][min(index, 3)]))
-                    .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
-            }
-
-            ForEach(Array(visibleCategoryTokens.enumerated()), id: \.element) { index, token in
-                Label(token)
-                    .labelStyle(.iconOnly)
-                    .scaleEffect(1.04)
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .rotationEffect(.degrees([5, -5, 3, -3][min(index, 3)]))
-                    .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
-            }
-
-            if hiddenCount > 0 {
-                Text("+\(hiddenCount)")
-                    .font(.system(size: 14, weight: .black, design: .monospaced))
-                    .foregroundStyle(AppColors.textPrimary)
-                    .frame(width: 38, height: 38)
-                    .background(AppColors.accent.opacity(0.22), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(AppColors.accent.opacity(0.42), lineWidth: 1)
-                    }
-                    .rotationEffect(.degrees(5))
-            }
+        HStack(spacing: -8) {
+            selectedApplicationTokenIcons
+            selectedCategoryTokenIcons
+            hiddenTargetBadge
         }
-        .frame(width: stripWidth, height: 44, alignment: .leading)
-        .opacity(visibleCount + hiddenCount > 0 ? 1 : 0)
-        .accessibilityHidden(visibleCount + hiddenCount == 0)
+        .frame(width: targetStripWidth, height: 44, alignment: .leading)
+        .opacity(totalVisibleAndHiddenTargets > 0 ? 1 : 0)
+        .accessibilityHidden(totalVisibleAndHiddenTargets == 0)
+    }
+
+    private var visibleApplicationTokenCount: Int {
+        min(3, focusModeService.activitySelection.applicationTokens.count)
+    }
+
+    private var visibleCategoryTokenCount: Int {
+        let remainingSlots = max(0, 3 - visibleApplicationTokenCount)
+        return min(remainingSlots, focusModeService.activitySelection.categoryTokens.count)
+    }
+
+    private var hiddenTargetCount: Int {
+        let selection = focusModeService.activitySelection
+        let total = selection.applicationTokens.count
+            + selection.categoryTokens.count
+            + selection.webDomainTokens.count
+        return max(0, total - visibleApplicationTokenCount - visibleCategoryTokenCount)
+    }
+
+    private var totalVisibleAndHiddenTargets: Int {
+        visibleApplicationTokenCount + visibleCategoryTokenCount + hiddenTargetCount
+    }
+
+    private var targetStripWidth: CGFloat {
+        let badgeCount = hiddenTargetCount > 0 ? 1 : 0
+        let slots = visibleApplicationTokenCount + visibleCategoryTokenCount + badgeCount
+        return slots == 0 ? 0 : CGFloat(slots * 32 + 8)
+    }
+
+    private var selectedApplicationTokenIcons: some View {
+        let tokens = Array(focusModeService.activitySelection.applicationTokens.prefix(3))
+        let angles: [Double] = [-6, 4, -3]
+
+        return ForEach(Array(tokens.enumerated()), id: \.element) { index, token in
+            Label(token)
+                .labelStyle(.iconOnly)
+                .scaleEffect(1.04)
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .rotationEffect(.degrees(angles[index]))
+                .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
+        }
+    }
+
+    private var selectedCategoryTokenIcons: some View {
+        let slots = max(0, 3 - visibleApplicationTokenCount)
+        let tokens = Array(focusModeService.activitySelection.categoryTokens.prefix(slots))
+        let angles: [Double] = [5, -5, 3]
+
+        return ForEach(Array(tokens.enumerated()), id: \.element) { index, token in
+            Label(token)
+                .labelStyle(.iconOnly)
+                .scaleEffect(1.04)
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .rotationEffect(.degrees(angles[index]))
+                .shadow(color: AppColors.pageBg.opacity(0.55), radius: 7, y: 4)
+        }
+    }
+
+    @ViewBuilder
+    private var hiddenTargetBadge: some View {
+        if hiddenTargetCount > 0 {
+            Text("+\(hiddenTargetCount)")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundStyle(AppColors.textPrimary)
+                .frame(width: 38, height: 38)
+                .background(AppColors.accent.opacity(0.22), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(AppColors.accent.opacity(0.42), lineWidth: 1)
+                }
+                .rotationEffect(.degrees(5))
+        }
     }
 
     private var shiftChoiceList: some View {

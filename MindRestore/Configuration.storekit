@@ -1,254 +1,227 @@
 {
-  "identifier" : "E7F5B8A2-1234-4567-8901-ABCDEF012345",
-  "nonRenewingSubscriptions" : [
-
-  ],
-  "products" : [
-
-  ],
-  "settings" : {
-    "_applicationInternalID" : "1234567890",
-    "_developerTeamID" : "XXXXXXXXXX",
-    "_failTransactionsEnabled" : false,
-    "_lastVerificationError" : "",
-    "_locale" : "en_US",
-    "_storefront" : "USA",
-    "_storeKitErrors" : [
+  "identifier": "E7F5B8A2-1234-4567-8901-ABCDEF012345",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "1234567890",
+    "_developerTeamID": "XXXXXXXXXX",
+    "_failTransactionsEnabled": false,
+    "_lastVerificationError": "",
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": [
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Load Products"
+        "current": null,
+        "enabled": false,
+        "name": "Load Products"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Purchase"
+        "current": null,
+        "enabled": false,
+        "name": "Purchase"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Verification"
+        "current": null,
+        "enabled": false,
+        "name": "Verification"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "App Store Sync"
+        "current": null,
+        "enabled": false,
+        "name": "App Store Sync"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Subscription Status"
+        "current": null,
+        "enabled": false,
+        "name": "Subscription Status"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "App Transaction"
+        "current": null,
+        "enabled": false,
+        "name": "App Transaction"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Manage Subscriptions Sheet"
+        "current": null,
+        "enabled": false,
+        "name": "Manage Subscriptions Sheet"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Offer Code Redeem Sheet"
+        "current": null,
+        "enabled": false,
+        "name": "Offer Code Redeem Sheet"
       },
       {
-        "current" : null,
-        "enabled" : false,
-        "name" : "Transaction Listener"
+        "current": null,
+        "enabled": false,
+        "name": "Transaction Listener"
       }
     ]
   },
-  "subscriptionGroups" : [
+  "subscriptionGroups": [
     {
-      "id" : "memori_pro",
-      "localizations" : [
-
-      ],
-      "name" : "Memori Pro",
-      "subscriptions" : [
+      "id": "memori_pro",
+      "localizations": [],
+      "name": "Memori Pro",
+      "subscriptions": [
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "1.99",
-          "familyShareable" : false,
-          "groupNumber" : 3,
-          "internalID" : "weekly_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "weekly_001",
+          "localizations": [
             {
-              "description" : "Full access to all exercises and analytics",
-              "displayName" : "Weekly Pro",
-              "locale" : "en_US"
+              "description": "Full access to all exercises and analytics",
+              "displayName": "Weekly Pro",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.pro.weekly",
-          "recurringSubscriptionPeriod" : "P1W",
-          "referenceName" : "Weekly Pro",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.pro.weekly",
+          "recurringSubscriptionPeriod": "P1W",
+          "referenceName": "Weekly Pro",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "3.99",
-          "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "monthly_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "3.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "monthly_001",
+          "localizations": [
             {
-              "description" : "Full access to all exercises and analytics",
-              "displayName" : "Monthly Pro",
-              "locale" : "en_US"
+              "description": "Full access to all exercises and analytics",
+              "displayName": "Monthly Pro",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.pro.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Monthly Pro",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Monthly Pro",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "19.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "annual_001",
-          "introductoryOffer" : {
-            "displayPrice" : "0",
-            "internalID" : "free_trial_annual",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "19.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "annual_001",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "free_trial_annual",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P3D"
           },
-          "localizations" : [
+          "localizations": [
             {
-              "description" : "Full access to all exercises and analytics",
-              "displayName" : "Annual Pro",
-              "locale" : "en_US"
+              "description": "Full access to all exercises and analytics",
+              "displayName": "Annual Pro",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.pro.annual",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Annual Pro",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.pro.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Annual Pro",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "1.99",
-          "familyShareable" : false,
-          "groupNumber" : 6,
-          "internalID" : "ultra_weekly_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 6,
+          "internalID": "ultra_weekly_001",
+          "localizations": [
             {
-              "description" : "Unlimited games + block distracting apps",
-              "displayName" : "Ultra Weekly",
-              "locale" : "en_US"
+              "description": "Unlimited games + block distracting apps",
+              "displayName": "Memo Pro Weekly",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.ultra.weekly",
-          "recurringSubscriptionPeriod" : "P1W",
-          "referenceName" : "Ultra Weekly",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.ultra.weekly",
+          "recurringSubscriptionPeriod": "P1W",
+          "referenceName": "Memo Pro Weekly",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "6.99",
-          "familyShareable" : false,
-          "groupNumber" : 5,
-          "internalID" : "ultra_monthly_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "6.99",
+          "familyShareable": false,
+          "groupNumber": 5,
+          "internalID": "ultra_monthly_001",
+          "localizations": [
             {
-              "description" : "Unlimited games + block distracting apps",
-              "displayName" : "Ultra Monthly",
-              "locale" : "en_US"
+              "description": "Unlimited games + block distracting apps",
+              "displayName": "Memo Pro Monthly",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.ultra.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Ultra Monthly",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.ultra.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Memo Pro Monthly",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "29.99",
-          "familyShareable" : false,
-          "groupNumber" : 4,
-          "internalID" : "ultra_annual_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "29.99",
+          "familyShareable": false,
+          "groupNumber": 4,
+          "internalID": "ultra_annual_001",
+          "localizations": [
             {
-              "description" : "Unlimited games + block distracting apps",
-              "displayName" : "Ultra Annual",
-              "locale" : "en_US"
+              "description": "Unlimited games + block distracting apps",
+              "displayName": "Memo Pro Annual",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.ultra.annual",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Ultra Annual",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.ultra.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Memo Pro Annual",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "ultra_annual_free_trial",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          }
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "19.99",
-          "familyShareable" : false,
-          "groupNumber" : 7,
-          "internalID" : "ultra_annual_founder_001",
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "19.99",
+          "familyShareable": false,
+          "groupNumber": 7,
+          "internalID": "ultra_annual_founder_001",
+          "localizations": [
             {
-              "description" : "Unlimited games + block distracting apps",
-              "displayName" : "Founder Annual",
-              "locale" : "en_US"
+              "description": "Unlimited games + block distracting apps",
+              "displayName": "Memo Pro Limited-Time Annual",
+              "locale": "en_US"
             }
           ],
-          "productID" : "com.memori.ultra.annual.firstyear",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Founder Annual",
-          "subscriptionGroupID" : "memori_pro",
-          "type" : "RecurringSubscription"
+          "productID": "com.memori.ultra.annual.firstyear",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Memo Pro Limited-Time Annual",
+          "subscriptionGroupID": "memori_pro",
+          "type": "RecurringSubscription"
         }
       ]
     }
   ],
-  "version" : {
-    "major" : 3,
-    "minor" : 0
+  "version": {
+    "major": 3,
+    "minor": 0
   }
 }

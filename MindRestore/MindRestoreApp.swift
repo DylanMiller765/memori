@@ -2,21 +2,13 @@ import SwiftUI
 import SwiftData
 import UIKit
 import UserNotifications
-import RevenueCat
 
 @main
 struct MindRestoreApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
 
     init() {
         Analytics.configure()
-        Purchases.logLevel = .info
-        Purchases.configure(
-            with: Configuration.Builder(withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC")
-                .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
-                .build()
-        )
         configureTabBarAppearance()
     }
 
@@ -46,14 +38,10 @@ struct MindRestoreApp: App {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 
-    private var colorScheme: ColorScheme? {
-        AppTheme(rawValue: appTheme)?.colorScheme
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(colorScheme)
+                .preferredColorScheme(.dark)
         }
         .modelContainer(
             try! ModelContainer(

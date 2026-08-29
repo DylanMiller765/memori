@@ -291,7 +291,8 @@ final class FocusUnlockSlotTests: XCTestCase {
     func testFocusUnlockSlotCopyStaysShortAndNative() {
         XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "MEMO'S BOOTH")
         XCTAssertEqual(FocusUnlockSlotCopy.headline, "NO FEED TIL YOU TRAIN")
-        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "win the rep, win the window.")
+        // "win" is banned for the core loop (AGENTS.md) — play / finish / complete.
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "finish the rep. earn the window.")
         XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap when you're ready")
         XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "MEMO'S PICKING")
         XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: nil), "LOCKED IN")

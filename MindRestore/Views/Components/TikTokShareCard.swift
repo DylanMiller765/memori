@@ -405,155 +405,156 @@ struct ExerciseShareCard: View {
 
     var body: some View {
         ZStack {
-            // -- Full-bleed background with accent radial glow --
             exerciseCardBackground
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 36)
-
-                // -- Memo branding --
                 exerciseCardBrandingHeader
-
                 Spacer().frame(height: 32)
-
-                // -- Game icon badge --
-                ZStack {
-                    Circle()
-                        .fill(accentColor.opacity(isDark ? 0.18 : 0.12))
-                        .frame(width: 56, height: 56)
-                    Circle()
-                        .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
-                        .frame(width: 56, height: 56)
-                    Image(systemName: exerciseIcon)
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(accentColor)
-                }
-
-                Spacer().frame(height: 8)
-
-                // -- Game name --
-                Text(exerciseName.uppercased())
-                    .font(.system(size: 13, weight: .heavy))
-                    .tracking(4)
-                    .foregroundStyle(accentColor)
-
+                exerciseIdentity
                 Spacer().frame(height: 28)
-
-                // -- Hero score with radial glow bloom --
-                ZStack {
-                    // Glow bloom behind the number
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    accentColor.opacity(isDark ? 0.30 : 0.15),
-                                    accentColor.opacity(isDark ? 0.08 : 0.03),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 20,
-                                endRadius: 120
-                            )
-                        )
-                        .frame(width: 240, height: 240)
-
-                    VStack(spacing: 4) {
-                        Text(mainValue)
-                            .font(.system(size: 88, weight: .bold, design: .rounded))
-                            .foregroundStyle(isDark ? .white : Color(red: 0.12, green: 0.12, blue: 0.15))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.4)
-
-                        Text(mainLabel.uppercased())
-                            .font(.system(size: 12, weight: .heavy))
-                            .tracking(3)
-                            .foregroundStyle(isDark ? Color.white.opacity(0.45) : Color(red: 0.45, green: 0.43, blue: 0.40))
-                    }
-                }
-                .frame(height: 140)
-
+                exerciseHeroScore
                 Spacer().frame(height: 16)
-
-                // -- Rating pill --
-                HStack(spacing: 6) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 11, weight: .bold))
-                    Text(ratingText.uppercased())
-                        .font(.system(size: 13, weight: .bold))
-                        .tracking(1)
-                }
-                .foregroundStyle(accentColor)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(accentColor.opacity(isDark ? 0.15 : 0.10))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(accentColor.opacity(0.2), lineWidth: 1)
-                )
-
+                exerciseRatingPill
                 Spacer().frame(height: 28)
-
-                // -- Stats row (horizontal, compact) --
-                if !stats.isEmpty {
-                    HStack(spacing: 0) {
-                        ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
-                            if index > 0 {
-                                Rectangle()
-                                    .fill(isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08))
-                                    .frame(width: 1, height: 32)
-                            }
-
-                            VStack(spacing: 3) {
-                                Text(stat.value)
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundStyle(isDark ? .white : Color(red: 0.12, green: 0.12, blue: 0.15))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
-                                Text(stat.label.uppercased())
-                                    .font(.system(size: 9, weight: .heavy))
-                                    .tracking(1.5)
-                                    .foregroundStyle(isDark ? Color.white.opacity(0.40) : Color(red: 0.50, green: 0.48, blue: 0.46))
-                                    .lineLimit(1)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.03))
-                    )
-                    .padding(.horizontal, 24)
-                }
-
+                exerciseStatsRow
                 Spacer()
-
-                // -- CTA button --
-                Text(ctaText)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 13)
-                    .background(
-                        Capsule()
-                            .fill(accentColor)
-                    )
-                    .shadow(color: accentColor.opacity(0.4), radius: 12, y: 4)
-
+                exerciseCTA
                 Spacer().frame(height: 16)
-
-                // -- Footer branding --
                 exerciseCardBrandingFooter
-
                 Spacer().frame(height: 28)
             }
         }
         .frame(width: 360, height: 640)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var cardPrimaryText: Color {
+        isDark ? .white : Color(red: 0.12, green: 0.12, blue: 0.15)
+    }
+
+    private var cardSecondaryText: Color {
+        isDark ? Color.white.opacity(0.40) : Color(red: 0.50, green: 0.48, blue: 0.46)
+    }
+
+    private var exerciseIdentity: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(isDark ? 0.18 : 0.12))
+                    .frame(width: 56, height: 56)
+                Circle()
+                    .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
+                    .frame(width: 56, height: 56)
+                Image(systemName: exerciseIcon)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(accentColor)
+            }
+
+            Text(exerciseName.uppercased())
+                .font(.system(size: 13, weight: .heavy))
+                .tracking(4)
+                .foregroundStyle(accentColor)
+        }
+    }
+
+    private var exerciseHeroScore: some View {
+        ZStack {
+            Circle()
+                .fill(heroGlow)
+                .frame(width: 240, height: 240)
+
+            VStack(spacing: 4) {
+                Text(mainValue)
+                    .font(.system(size: 88, weight: .bold, design: .rounded))
+                    .foregroundStyle(cardPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+
+                Text(mainLabel.uppercased())
+                    .font(.system(size: 12, weight: .heavy))
+                    .tracking(3)
+                    .foregroundStyle(cardSecondaryText)
+            }
+        }
+        .frame(height: 140)
+    }
+
+    private var heroGlow: RadialGradient {
+        RadialGradient(
+            colors: [
+                accentColor.opacity(isDark ? 0.30 : 0.15),
+                accentColor.opacity(isDark ? 0.08 : 0.03),
+                .clear
+            ],
+            center: .center,
+            startRadius: 20,
+            endRadius: 120
+        )
+    }
+
+    private var exerciseRatingPill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 11, weight: .bold))
+            Text(ratingText.uppercased())
+                .font(.system(size: 13, weight: .bold))
+                .tracking(1)
+        }
+        .foregroundStyle(accentColor)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Capsule().fill(accentColor.opacity(isDark ? 0.15 : 0.10)))
+        .overlay(Capsule().stroke(accentColor.opacity(0.2), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var exerciseStatsRow: some View {
+        if !stats.isEmpty {
+            HStack(spacing: 0) {
+                ForEach(stats.indices, id: \.self) { index in
+                    if index > 0 {
+                        Rectangle()
+                            .fill(isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08))
+                            .frame(width: 1, height: 32)
+                    }
+                    exerciseStat(stats[index])
+                }
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.03))
+            )
+            .padding(.horizontal, 24)
+        }
+    }
+
+    private func exerciseStat(_ stat: (label: String, value: String)) -> some View {
+        VStack(spacing: 3) {
+            Text(stat.value)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(cardPrimaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(stat.label.uppercased())
+                .font(.system(size: 9, weight: .heavy))
+                .tracking(1.5)
+                .foregroundStyle(cardSecondaryText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var exerciseCTA: some View {
+        Text(ctaText)
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 32)
+            .padding(.vertical, 13)
+            .background(Capsule().fill(accentColor))
+            .shadow(color: accentColor.opacity(0.4), radius: 12, y: 4)
     }
 
     // MARK: - Sub-views

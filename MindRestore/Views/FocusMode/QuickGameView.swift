@@ -118,7 +118,7 @@ enum FocusUnlockCompletionGate {
 enum FocusUnlockSlotCopy {
     static let eyebrow = "MEMO'S BOOTH"
     static let headline = "NO FEED TIL YOU TRAIN"
-    static let subhead = "win the rep, win the window."
+    static let subhead = "finish the rep. earn the window."
     static let idleStatus = "tap when you're ready"
     static let spinningStatus = "MEMO'S PICKING"
 
@@ -406,19 +406,12 @@ struct FocusUnlockSlotMachine: View {
     }
 
     private var statusLine: some View {
-        Text(statusText)
-            .font(.system(size: phase == .landed ? 13 : 11, weight: .heavy, design: .monospaced))
-            .tracking(phase == .landed ? 0.4 : 1.0)
-            .textCase(.uppercase)
-            .foregroundStyle(phase == .landed ? windowTint : OB.fg3)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-            .contentTransition(.opacity)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.black.opacity(0.32), in: Capsule())
-            .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
-            .animation(.easeInOut(duration: 0.22), value: statusText)
+        let isLanded = phase == .landed
+        return FocusUnlockStatusPill(
+            text: statusText,
+            isLanded: isLanded,
+            landedColor: windowTint
+        )
     }
 
     private var spinButton: some View {
@@ -692,10 +685,12 @@ struct FocusUnlockSlotView: View {
                         .minimumScaleFactor(0.78)
                         .accessibilityAddTraits(.isHeader)
 
-                    Text(FocusUnlockSlotCopy.subhead)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(OB.fg2)
-                        .lineLimit(1)
+                    Image("booth-handwritten-subhead")
+                        .resizable()
+                        .scaledToFit()
+                        .blendMode(.screen)
+                        .frame(maxWidth: 306, maxHeight: 31)
+                        .accessibilityLabel(FocusUnlockSlotCopy.subhead)
                 }
 
                 Spacer(minLength: 16)
@@ -717,6 +712,31 @@ struct FocusUnlockSlotView: View {
 }
 
 // MARK: - Reel tile
+
+private struct FocusUnlockStatusPill: View {
+    let text: String
+    let isLanded: Bool
+    let landedColor: Color
+
+    var body: some View {
+        styledText
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.black.opacity(0.32), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
+            .animation(.easeInOut(duration: 0.22), value: text)
+    }
+
+    private var styledText: some View {
+        Text(text.uppercased())
+            .font(.system(size: isLanded ? 13 : 11, weight: .heavy, design: .monospaced))
+            .tracking(isLanded ? 0.4 : 1.0)
+            .foregroundStyle(isLanded ? landedColor : OB.fg3)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .contentTransition(.opacity)
+    }
+}
 
 private struct FocusUnlockReelTile: View {
     let game: TrainingGame

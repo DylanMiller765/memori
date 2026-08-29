@@ -10,7 +10,6 @@ struct SettingsView: View {
     @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
 
-    @AppStorage("appTheme") private var appTheme: String = AppTheme.light.rawValue
     @State private var showingPaywall = false
     @State private var showingResetConfirmation = false
     @State private var showingScreenshotDataConfirmation = false
@@ -405,18 +404,6 @@ struct SettingsView: View {
                     .tint(AppColors.accent)
                     .labelsHidden()
                 }
-            }
-            Divider().padding(.leading, 44)
-
-            // Appearance
-            settingsRow(icon: "circle.lefthalf.filled", color: AppColors.violet, title: "Appearance") {
-                Picker("", selection: $appTheme) {
-                    ForEach(AppTheme.allCases, id: \.rawValue) { theme in
-                        Text(theme.displayName).tag(theme.rawValue)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
             }
             Divider().padding(.leading, 44)
 

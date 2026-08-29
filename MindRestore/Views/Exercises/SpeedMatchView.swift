@@ -307,94 +307,132 @@ struct SpeedMatchView: View {
 
     private var setupView: some View {
         ScrollView {
-        VStack(spacing: 24) {
-            TrainingTileMiniPreview(type: .speedMatch, color: AppColors.sky, scale: 2.0)
-                .frame(width: 200, height: 140)
-
-            VStack(spacing: 8) {
-                Text("Speed Match")
-                    .font(.title.weight(.bold))
-                Text("How fast can you spot patterns?")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+            VStack(spacing: 24) {
+                speedMatchSetupHeader
+                difficultyPicker
+                howToPlayCard
+                startGameButton
             }
-
-            // Difficulty picker
-            VStack(spacing: 12) {
-                Text("Difficulty")
-                    .font(.headline)
-
-                HStack(spacing: 10) {
-                    ForEach(1...3, id: \.self) { level in
-                        Button {
-                            viewModel.difficulty = level
-                        } label: {
-                            VStack(spacing: 4) {
-                                Text(level == 1 ? "Easy" : level == 2 ? "Medium" : "Hard")
-                                    .font(.subheadline.weight(.bold))
-                                Text(level == 1 ? "6 symbols" : level == 2 ? "8 symbols" : "10 symbols")
-                                    .font(.caption2)
-                                    .foregroundStyle(viewModel.difficulty == level ? .white.opacity(0.7) : .secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(viewModel.difficulty == level ? AppColors.accentGradient : LinearGradient(colors: [AppColors.cardSurface], startPoint: .top, endPoint: .bottom))
-                            )
-                            .foregroundStyle(viewModel.difficulty == level ? .white : .primary)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(viewModel.difficulty == level ? Color.clear : Color(.separator).opacity(0.3), lineWidth: 1)
-                            )
-                        }
-                    }
-                }
-            }
-            .appCard()
-            .padding(.horizontal)
-
-            // How to play
-            VStack(alignment: .leading, spacing: 10) {
-                Text("HOW TO PLAY")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .tracking(1)
-
-                infoRow(icon: "eye", text: "Symbols appear one at a time")
-                infoRow(icon: "checkmark.circle", text: "Tap YES if it matches the previous symbol")
-                infoRow(icon: "xmark.circle", text: "Tap NO if it's different")
-                infoRow(icon: "timer", text: "30 rounds — be fast and accurate")
-            }
-            .appCard()
-            .padding(.horizontal)
-
-            Button {
-                Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
-                viewModel.startGame()
-            } label: {
-                Text("Start")
-                    .accentButton()
-            }
-            .pulsingWhenIdle()
-            .accessibilityHint("Starts the exercise")
-            .padding(.horizontal, 32)
-        }
-        .padding(.vertical, 24)
+            .padding(.vertical, 24)
         }
         .overlay(alignment: .topTrailing) {
-            Button { showingInfo = true } label: {
-                Image(systemName: "questionmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.white.opacity(0.3))
-            }
-            .padding(16)
+            setupInfoButton
         }
         .sheet(isPresented: $showingInfo) {
             ExerciseInfoSheet(type: .speedMatch)
                 .presentationDetents([.medium])
         }
+    }
+
+    private var speedMatchSetupHeader: some View {
+        VStack(spacing: 8) {
+            TrainingTileMiniPreview(type: .speedMatch, color: AppColors.sky, scale: 2.0)
+                .frame(width: 200, height: 140)
+            Text("Speed Match")
+                .font(.title.weight(.bold))
+            Text("How fast can you spot patterns?")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    private var difficultyPicker: some View {
+        VStack(spacing: 12) {
+            Text("Difficulty")
+                .font(.headline)
+            HStack(spacing: 10) {
+                ForEach(1...3, id: \.self) { level in
+                    difficultyButton(level: level)
+                }
+            }
+        }
+        .appCard()
+        .padding(.horizontal)
+    }
+
+    private func difficultyButton(level: Int) -> some View {
+        let isSelected = viewModel.difficulty == level
+
+        return Button {
+            viewModel.difficulty = level
+        } label: {
+            VStack(spacing: 4) {
+                Text(difficultyTitle(level))
+                    .font(.subheadline.weight(.bold))
+                Text(difficultySubtitle(level))
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.7) : Color.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(difficultyBackground(isSelected: isSelected))
+            )
+            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.clear : Color(.separator).opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
+
+    private func difficultyBackground(isSelected: Bool) -> AnyShapeStyle {
+        isSelected ? AnyShapeStyle(AppColors.accentGradient) : AnyShapeStyle(AppColors.cardSurface)
+    }
+
+    private func difficultyTitle(_ level: Int) -> String {
+        switch level {
+        case 1: return "Easy"
+        case 2: return "Medium"
+        default: return "Hard"
+        }
+    }
+
+    private func difficultySubtitle(_ level: Int) -> String {
+        switch level {
+        case 1: return "6 symbols"
+        case 2: return "8 symbols"
+        default: return "10 symbols"
+        }
+    }
+
+    private var howToPlayCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("HOW TO PLAY")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .tracking(1)
+            infoRow(icon: "eye", text: "Symbols appear one at a time")
+            infoRow(icon: "checkmark.circle", text: "Tap YES if it matches the previous symbol")
+            infoRow(icon: "xmark.circle", text: "Tap NO if it's different")
+            infoRow(icon: "timer", text: "30 rounds — be fast and accurate")
+        }
+        .appCard()
+        .padding(.horizontal)
+    }
+
+    private var startGameButton: some View {
+        Button {
+            Analytics.exerciseStarted(game: ExerciseType.speedMatch.rawValue)
+            viewModel.startGame()
+        } label: {
+            Text("Start")
+                .accentButton()
+        }
+        .pulsingWhenIdle()
+        .accessibilityHint("Starts the exercise")
+        .padding(.horizontal, 32)
+    }
+
+    private var setupInfoButton: some View {
+        Button { showingInfo = true } label: {
+            Image(systemName: "questionmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.white.opacity(0.3))
+        }
+        .padding(16)
     }
 
     private func infoRow(icon: String, text: String) -> some View {

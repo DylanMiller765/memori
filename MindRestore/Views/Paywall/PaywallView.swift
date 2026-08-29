@@ -85,6 +85,25 @@ private extension PlanBuildBeatContent.FeedWinMoment {
 
 // MARK: - Design tokens
 
+/// A single horizontal line, stroked dashed for the receipt perforation.
+/// Lets the exit sheet report its intrinsic height so the detent fits the
+/// content — `.medium` left a slab of dead black below the buttons.
+private struct ExitSheetHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct PWDashRule: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return path
+    }
+}
+
 private enum PW {
     static let bg = AppColors.pageBgDark
     static let accent = AppColors.accent
@@ -98,6 +117,103 @@ private enum PW {
     static let fg4 = Color.white.opacity(0.22)
     static let hairline = Color.white.opacity(0.06)
     static let closeFill = AppColors.pageBgDark.opacity(0.72)
+}
+
+private struct PaywallPlanOptionCard: View {
+    let badge: String?
+    let title: String
+    let price: String
+    let detail: String
+    let compact: Bool
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var titleColor: Color {
+        isSelected ? PW.bg.opacity(0.62) : Color.white.opacity(0.74)
+    }
+
+    private var primaryColor: Color {
+        isSelected ? PW.bg : .white
+    }
+
+    private var detailColor: Color {
+        isSelected ? PW.bg.opacity(0.54) : Color.white.opacity(0.54)
+    }
+
+    var body: some View {
+        Button(action: action) {
+            cardContent
+                .background(cardBackground)
+                .overlay(cardBorder)
+                .overlay(alignment: .topLeading) { badgeView }
+                .shadow(
+                    color: isSelected ? PW.bg.opacity(0.24) : PW.bg.opacity(0.12),
+                    radius: isSelected ? 16 : 8,
+                    y: isSelected ? 10 : 5
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: compact ? 5 : 6) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .foregroundStyle(titleColor)
+                Spacer(minLength: 4)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(PW.mint)
+                }
+            }
+
+            Text(price)
+                .font(.system(size: compact ? 19 : 21, weight: .black, design: .rounded))
+                .foregroundStyle(primaryColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+
+            Text(detail)
+                .font(.system(size: compact ? 10 : 11, weight: .bold, design: .rounded))
+                .foregroundStyle(detailColor)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: compact ? 92 : 104, alignment: .leading)
+        .padding(.horizontal, compact ? 13 : 14)
+        .padding(.vertical, compact ? 13 : 14)
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(isSelected ? Color.white : Color.white.opacity(0.22))
+    }
+
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .stroke(
+                isSelected ? PW.accent.opacity(0.68) : Color.white.opacity(0.22),
+                lineWidth: isSelected ? 2 : 1
+            )
+    }
+
+    @ViewBuilder
+    private var badgeView: some View {
+        if let badge {
+            Text(badge)
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .foregroundStyle(PW.bg)
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(PW.amber))
+                .offset(x: 12, y: -12)
+        }
+    }
 }
 
 // MARK: - PaywallView
@@ -119,17 +235,11 @@ struct PaywallView: View {
     var onConversionComplete: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var backgroundedAtPaywall = false
     @Environment(StoreService.self) private var storeService
 
     @State private var selectedPlan: PaywallPlan = .annual
     @State private var showExitOffer = false
-    @State private var hasSeenExitOffer = false
-    @State private var hardFounderCueQueued = false
-    @State private var showHardFounderCue = false
-    @AppStorage("exitOfferShownCount") private var exitOfferShownCount: Int = 0
-    private let maxExitOffers = 1
+    @State private var exitSheetHeight: CGFloat = 420
     private let exitOfferDisplayedPriceFallback = 19.99
     private let exitOfferRegularPriceFallback = 29.99
     private let exitOfferDisplayedPriceTextFallback = "$19.99"
@@ -140,16 +250,24 @@ struct PaywallView: View {
     }
 
     private var shouldShowCloseButton: Bool {
-        // Hard paywall: the X never dismisses — it opens the founder offer.
-        // It must actually render for that path to exist.
+        // The X always opens the limited-time offer sheet.
         true
+    }
+
+    /// e.g. "7 days", or nil when no usable trial exists. Resolved from
+    /// StoreKit, so a returning subscriber who already consumed the trial is
+    /// never promised "$0.00" and then handed a full-price sheet.
+    private var trialLabel: String? { storeService.annualFreeTrialLabel }
+
+    /// Replaces the hardcoded `PaywallPlan.hasTrial`, which asserted a trial on
+    /// the annual plan regardless of what StoreKit would actually grant.
+    private var selectedPlanHasTrial: Bool {
+        selectedPlan == .annual && trialLabel != nil
     }
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .top) {
-                PW.bg.ignoresSafeArea()
-                atmosphere
                 content(
                     safeTop: proxy.safeAreaInsets.top,
                     safeBottom: proxy.safeAreaInsets.bottom,
@@ -163,6 +281,17 @@ struct PaywallView: View {
                 #endif
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
+            // The hill image is scaledToFill, so as a ZStack sibling it reported
+            // a width wider than the screen and dragged the whole content column
+            // off-centre — badly on tall devices. As a background it can still
+            // bleed visually but can no longer affect layout.
+            .background {
+                ZStack {
+                    PW.bg
+                    atmosphere
+                }
+                .ignoresSafeArea()
+            }
         }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(isHardPaywall)
@@ -171,7 +300,7 @@ struct PaywallView: View {
                 regularPriceText: regularAnnualPriceText,
                 founderPriceText: founderPriceText,
                 founderWeeklyText: founderWeeklyText,
-                secondaryActionTitle: isHardPaywall ? "Keep regular trial" : "Not today"
+                secondaryActionTitle: isHardPaywall ? "Keep 7-day trial" : "Not today"
             ) {
                 showExitOffer = false
                 Task { await purchaseExitOffer() }
@@ -186,7 +315,10 @@ struct PaywallView: View {
                     dismiss()
                 }
             }
-            .presentationDetents([.medium])
+            .onPreferenceChange(ExitSheetHeightKey.self) { height in
+                if height > 0 { exitSheetHeight = height }
+            }
+            .presentationDetents([.height(exitSheetHeight)])
             .presentationDragIndicator(.visible)
             .presentationBackground(PW.bg)
         }
@@ -208,31 +340,16 @@ struct PaywallView: View {
             // error and re-request so the paywall is never dead on arrival.
             if storeService.products.isEmpty {
                 storeService.purchaseError = nil
-                Task { await storeService.loadProducts() }
+                Task {
+                    await storeService.startIfNeeded()
+                    await storeService.loadProducts()
+                }
             }
             Analytics.paywallShown(
                 trigger: triggerSource,
                 isHighIntent: isHighIntent,
                 selectedPlan: selectedPlan.analyticsName
             )
-            scheduleHardFounderCueIfNeeded()
-        }
-        // Abandon-and-return: backgrounding the app IS the exit gesture on a
-        // hard paywall — greet the return with the founder offer (once ever,
-        // same caps as the decline path).
-        .onChange(of: scenePhase) { _, phase in
-            guard isHardPaywall, !storeService.isProUser else { return }
-            if phase == .background {
-                backgroundedAtPaywall = true
-            } else if phase == .active && backgroundedAtPaywall {
-                backgroundedAtPaywall = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    presentFounderOffer(trigger: "paywall_background_return")
-                }
-            }
-        }
-        .onChange(of: storeService.products.count) {
-            scheduleHardFounderCueIfNeeded()
         }
     }
 
@@ -333,12 +450,10 @@ struct PaywallView: View {
         safeBottom: CGFloat,
         compact: Bool
     ) -> some View {
-        let visualCenterCorrectionX: CGFloat = -15
-
         return VStack(spacing: 0) {
             Color.clear.frame(height: max(14, safeTop + (compact ? 8 : 16)))
 
-            Color.clear.frame(height: compact ? 34 : 42)
+            Color.clear.frame(height: compact ? 14 : 30)
 
             readyHeadline(compact: compact)
                 .padding(.bottom, compact ? 8 : 10)
@@ -367,7 +482,6 @@ struct PaywallView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.horizontal, 22)
-        .offset(x: visualCenterCorrectionX)
     }
 
     private var screenTimeReceiptValue: String {
@@ -444,7 +558,7 @@ struct PaywallView: View {
                 .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(selectedPlan.hasTrial ? "Get unlimited access to Memo Pro." : "Start weekly access to Memo Pro.")
+            Text(selectedPlanHasTrial ? "Get unlimited access to Memo Pro." : "Start weekly access to Memo Pro.")
                 .font(.system(size: compact ? 13 : 15, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
                 .multilineTextAlignment(.center)
@@ -455,42 +569,22 @@ struct PaywallView: View {
     }
 
     private func cutePlanHero(compact: Bool) -> some View {
-        let personalization = personalizationContent
-
-        return ZStack {
-            miniPlanCard(angle: -11, x: compact ? -90 : -106, y: compact ? 12 : 16, scale: 0.82, compact: compact) {
-                planCardMiniContent(
-                    title: "Screen Time",
-                    value: screenTimeReceiptValue,
-                    icon: "chart.bar.fill",
-                    color: PW.coral,
-                    compact: compact
-                )
-            }
-
-            miniPlanCard(angle: 11, x: compact ? 90 : 106, y: compact ? 13 : 17, scale: 0.82, compact: compact) {
-                planCardMiniContent(
-                    title: personalization.protectTitle,
-                    value: personalization.protectValue,
-                    icon: personalization.protectIcon,
-                    color: PW.accent,
-                    compact: compact
-                )
-            }
-
+        // Was three fanned cards. At 375pt there wasn't room, so the two
+        // flanking cards were sliced mid-word ("Scree…", "4h/0…") — and the
+        // right one duplicated a row already inside the main card.
+        ZStack(alignment: .top) {
             mainPlanCard(compact: compact)
 
             Image("mascot-unlocked")
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
-                .frame(width: compact ? 104 : 124, height: compact ? 104 : 124)
-                .offset(y: compact ? -54 : -66)
+                .frame(width: compact ? 84 : 100, height: compact ? 84 : 100)
+                .offset(y: compact ? -40 : -48)
                 .shadow(color: PW.accent.opacity(0.20), radius: 18, y: 8)
                 .accessibilityHidden(true)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: compact ? 176 : 212)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func miniPlanCard<Content: View>(
@@ -519,43 +613,106 @@ struct PaywallView: View {
     }
 
     private func mainPlanCard(compact: Bool) -> some View {
-        let personalization = personalizationContent
-
-        return VStack(alignment: .leading, spacing: compact ? 8 : 10) {
+        // An itemized receipt, not a feature card. Memo's whole funnel is built
+        // on receipts — "Private Screen Time receipt", the life receipt, the
+        // ledger rows on the trial bridge — so the plan reads as one too:
+        // labels left, values right, perforated rules, and a total line.
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("MEMO PLAN")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
-                    .tracking(1.2)
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(1.3)
                     .foregroundStyle(PW.accent)
 
-                Spacer()
+                Spacer(minLength: 8)
 
-                Text(selectedPlan.hasTrial ? "7 DAYS FREE" : "WEEKLY")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                Text(trialLabel.map { "\($0.uppercased()) FREE" } ?? "FULL ACCESS")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
                     .tracking(0.9)
-                    .foregroundStyle(selectedPlan.hasTrial ? PW.mint : PW.amber)
+                    .foregroundStyle(selectedPlanHasTrial ? PW.mint : PW.amber)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
+            .padding(.bottom, compact ? 11 : 13)
 
-            planHeroRow(icon: "brain.head.profile", title: "Brain Training", value: "10 games", color: PW.mint, compact: compact)
-            planHeroRow(icon: personalization.protectIcon, title: personalization.protectTitle, value: personalization.protectValue, color: PW.accent, compact: compact)
-            planHeroRow(icon: personalization.feedTimingIcon, title: personalization.feedTimingTitle, value: personalization.feedTimingValue, color: PW.amber, compact: compact)
+            receiptPerforation
+
+            // The user's own Screen Time figure leads — it's the number the
+            // whole funnel was built to earn.
+            receiptLine("Your screen time", screenTimeReceiptValue, compact: compact)
+            receiptLine("Brain training", "10 games", compact: compact)
+            receiptLine("Protecting", protectTarget?.title ?? "Your time", compact: compact)
+            receiptLine("Weakest moment", feedWinMoment?.title ?? "All day", compact: compact)
+
+            receiptPerforation
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("DUE TODAY")
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(PW.bg.opacity(0.52))
+
+                Spacer(minLength: 8)
+
+                Text(dueTodayText)
+                    .font(.brand(size: compact ? 25 : 29, weight: .heavy))
+                    .foregroundStyle(selectedPlanHasTrial ? PW.mint : PW.bg)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .padding(.top, compact ? 10 : 12)
         }
-        .padding(.horizontal, compact ? 13 : 15)
-        .padding(.top, compact ? 38 : 44)
-        .padding(.bottom, compact ? 12 : 14)
-        .frame(width: compact ? 186 : 214, height: compact ? 154 : 178)
+        .padding(.horizontal, compact ? 18 : 20)
+        .padding(.top, compact ? 34 : 40)
+        .padding(.bottom, compact ? 15 : 17)
+        .frame(maxWidth: compact ? 300 : 320)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.white)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(PW.accent.opacity(0.16), lineWidth: 1)
         )
         .shadow(color: PW.bg.opacity(0.22), radius: 18, y: 12)
-        .offset(y: compact ? 22 : 26)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, compact ? 26 : 32)
         .accessibilityElement(children: .combine)
+    }
+
+    /// What the card charges right now — "$0.00" is the whole pitch when a
+    /// trial is live, and the honest price when it isn't.
+    private var dueTodayText: String {
+        if selectedPlanHasTrial { return "$0.00" }
+        return selectedPlan == .annual ? regularAnnualPriceText : weeklyDisplayPriceText
+    }
+
+    private var receiptPerforation: some View {
+        PWDashRule()
+            .stroke(style: StrokeStyle(lineWidth: 1, dash: [2, 4]))
+            .foregroundStyle(PW.bg.opacity(0.20))
+            .frame(height: 1)
+    }
+
+    private func receiptLine(_ label: String, _ value: String, compact: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(label)
+                .font(.brand(size: compact ? 13 : 14, weight: .medium))
+                .foregroundStyle(PW.bg.opacity(0.5))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 6)
+
+            Text(value)
+                .font(.brand(size: compact ? 14 : 15, weight: .heavy))
+                .foregroundStyle(PW.bg)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.vertical, compact ? 5 : 6)
     }
 
     private func planCardMiniContent(
@@ -596,25 +753,27 @@ struct PaywallView: View {
         color: Color,
         compact: Bool
     ) -> some View {
-        HStack(spacing: compact ? 7 : 8) {
+        // Was 8pt/11pt with a 0.72 floor — as small as 5.8pt, well under the
+        // 11pt HIG minimum, on the one card that states what you're buying.
+        HStack(spacing: compact ? 9 : 10) {
             Image(systemName: icon)
-                .font(.system(size: compact ? 10 : 11, weight: .black))
+                .font(.system(size: compact ? 12 : 13, weight: .black))
                 .foregroundStyle(color)
-                .frame(width: compact ? 20 : 22, height: compact ? 20 : 22)
+                .frame(width: compact ? 26 : 28, height: compact ? 26 : 28)
                 .background(Circle().fill(color.opacity(0.12)))
 
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: compact ? 8 : 9, weight: .black, design: .rounded))
-                    .foregroundStyle(PW.bg.opacity(0.44))
+                    .font(.system(size: compact ? 10 : 11, weight: .black, design: .rounded))
+                    .foregroundStyle(PW.bg.opacity(0.46))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+                    .minimumScaleFactor(0.9)
 
                 Text(value)
-                    .font(.system(size: compact ? 11 : 12, weight: .black, design: .rounded))
+                    .font(.system(size: compact ? 14 : 15, weight: .black, design: .rounded))
                     .foregroundStyle(PW.bg)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+                    .minimumScaleFactor(0.85)
             }
 
             Spacer(minLength: 0)
@@ -626,12 +785,16 @@ struct PaywallView: View {
             let layout = PaywallPlanCardLayout(containerWidth: proxy.size.width, compact: compact)
 
             HStack(spacing: layout.spacing) {
+                // The trial has to live on the card the user actually taps.
+                // It used to appear only on the hero card above, so the
+                // selected plan read as a flat "$29.99/year".
                 purchasePlanCard(
                     plan: .annual,
-                    badge: "BEST VALUE",
+                    badge: trialLabel.map { "\($0.uppercased()) FREE" } ?? "BEST VALUE",
                     title: "Yearly",
                     price: "\(regularAnnualPriceText)/year",
-                    detail: "\(annualWeeklyText) billed yearly",
+                    detail: trialLabel.map { "Free \($0), then \(annualWeeklyText)" }
+                        ?? "\(annualWeeklyText) billed yearly",
                     compact: compact
                 )
                 .frame(width: layout.cardWidth)
@@ -650,7 +813,7 @@ struct PaywallView: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .offset(x: layout.groupOffsetX)
         }
-        .frame(height: compact ? 130 : 142)
+        .frame(height: compact ? 116 : 138)
     }
 
     private func purchasePlanCard(
@@ -661,69 +824,15 @@ struct PaywallView: View {
         detail: String,
         compact: Bool
     ) -> some View {
-        let selected = selectedPlan == plan
-        let titleColor = selected ? PW.bg.opacity(0.62) : Color.white.opacity(0.74)
-        let primaryColor = selected ? PW.bg : Color.white
-        let detailColor = selected ? PW.bg.opacity(0.54) : Color.white.opacity(0.54)
-
-        return Button {
-            selectPlan(plan)
-        } label: {
-            VStack(alignment: .leading, spacing: compact ? 5 : 6) {
-                HStack {
-                    Text(title)
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundStyle(titleColor)
-
-                    Spacer(minLength: 4)
-
-                    if selected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(PW.mint)
-                    }
-                }
-
-                Text(price)
-                    .font(.system(size: compact ? 19 : 21, weight: .black, design: .rounded))
-                    .foregroundStyle(primaryColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.70)
-
-                Text(detail)
-                    .font(.system(size: compact ? 10 : 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(detailColor)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, minHeight: compact ? 92 : 104, alignment: .leading)
-            .padding(.horizontal, compact ? 13 : 14)
-            .padding(.vertical, compact ? 13 : 14)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(selected ? Color.white : Color.white.opacity(0.22))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(selected ? PW.accent.opacity(0.68) : Color.white.opacity(0.22), lineWidth: selected ? 2 : 1)
-            )
-            .overlay(alignment: .topLeading) {
-                if let badge {
-                    Text(badge)
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .foregroundStyle(PW.bg)
-                        .lineLimit(1)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(PW.amber))
-                        .offset(x: 12, y: -12)
-                }
-            }
-            .shadow(color: selected ? PW.bg.opacity(0.24) : PW.bg.opacity(0.12), radius: selected ? 16 : 8, y: selected ? 10 : 5)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        PaywallPlanOptionCard(
+            badge: badge,
+            title: title,
+            price: price,
+            detail: detail,
+            compact: compact,
+            isSelected: selectedPlan == plan,
+            action: { selectPlan(plan) }
+        )
     }
 
     private var cuteCTAButton: some View {
@@ -731,7 +840,7 @@ struct PaywallView: View {
             Task { await purchaseSelectedPlan() }
         } label: {
             HStack(spacing: 10) {
-                Text(storeService.isLoading ? "Opening…" : (selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access"))
+                Text(storeService.isLoading ? "Opening…" : (selectedPlanHasTrial ? "Start for $0.00" : "Start Weekly Access"))
                     .font(.system(size: 18, weight: .black, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -866,9 +975,9 @@ struct PaywallView: View {
 
                     Spacer()
 
-                    Text(selectedPlan.hasTrial ? "7 days $0.00" : "weekly access")
+                    Text(selectedPlanHasTrial ? "7 days $0.00" : "weekly access")
                         .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundStyle(selectedPlan.hasTrial ? PW.mint : PW.amber)
+                        .foregroundStyle(selectedPlanHasTrial ? PW.mint : PW.amber)
                         .lineLimit(1)
                 }
 
@@ -945,12 +1054,19 @@ struct PaywallView: View {
     }
 
     private func paywallReceipt(compact: Bool) -> some View {
-        VStack(spacing: 0) {
+        let memoCost: String
+        if selectedPlan == .annual {
+            memoCost = regularAnnualMonthlyText
+        } else {
+            memoCost = "\(weeklyDisplayPriceText)/week"
+        }
+
+        return VStack(spacing: 0) {
             receiptRow(label: "Your daily screen time", value: screenTimeReceiptValue, color: PW.coral, compact: compact)
             receiptDivider
             receiptRow(label: "Estimated ad value", value: "~$200/yr", color: PW.coral, compact: compact)
             receiptDivider
-            receiptRow(label: "Memo costs", value: selectedPlan == .annual ? regularAnnualMonthlyText : "\(weeklyDisplayPriceText)/week", color: PW.mint, compact: compact)
+            receiptRow(label: "Memo costs", value: memoCost, color: PW.mint, compact: compact)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, compact ? 10 : 12)
@@ -1075,7 +1191,7 @@ struct PaywallView: View {
     }
 
     private var headline: some View {
-        Text(selectedPlan.hasTrial ? "How your trial works" : "How your plan works")
+        Text(selectedPlanHasTrial ? "How your trial works" : "How your plan works")
             .font(.system(size: 30, weight: .heavy, design: .rounded))
             .foregroundStyle(PW.fg)
             .multilineTextAlignment(.center)
@@ -1085,7 +1201,7 @@ struct PaywallView: View {
     }
 
     private var trialTerms: some View {
-        Text(selectedPlan.hasTrial ? "First 7 days $0.00, then \(regularAnnualPriceText)/year" : "\(weeklyDisplayPriceText)/week. Cancel anytime.")
+        Text(selectedPlanHasTrial ? "First 7 days $0.00, then \(regularAnnualPriceText)/year" : "\(weeklyDisplayPriceText)/week. Cancel anytime.")
             .font(.system(size: 14, weight: .semibold, design: .rounded))
             .foregroundStyle(PW.fgMuted)
             .multilineTextAlignment(.center)
@@ -1192,16 +1308,16 @@ struct PaywallView: View {
                 compact: compact
             )
             trialStep(
-                icon: selectedPlan.hasTrial ? "bell.fill" : "xmark.circle.fill",
-                title: selectedPlan.hasTrial ? "In 5 days" : "Anytime",
-                body: selectedPlan.hasTrial
+                icon: selectedPlanHasTrial ? "bell.fill" : "xmark.circle.fill",
+                title: selectedPlanHasTrial ? "In 5 days" : "Anytime",
+                body: selectedPlanHasTrial
                     ? "Memo reminds you before billing starts."
                     : "Cancel in the App Store whenever you want.",
                 compact: compact
             )
             trialStep(
                 icon: "creditcard.fill",
-                title: selectedPlan.hasTrial ? "In 7 days" : "Every 7 days",
+                title: selectedPlanHasTrial ? "In 7 days" : "Every 7 days",
                 body: selectedPlan == .annual
                     ? "Your annual plan starts unless canceled."
                     : "Your weekly plan starts unless canceled.",
@@ -1255,7 +1371,7 @@ struct PaywallView: View {
         Button {
             Task { await purchaseSelectedPlan() }
         } label: {
-            Text(storeService.isLoading ? "Opening…" : (selectedPlan.hasTrial ? "Start for $0.00" : "Start Weekly Access"))
+            Text(storeService.isLoading ? "Opening…" : (selectedPlanHasTrial ? "Start for $0.00" : "Start Weekly Access"))
                 .font(.system(size: 18, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -1273,16 +1389,16 @@ struct PaywallView: View {
     }
 
     private var trialPaymentNotice: some View {
-        Text(selectedPlan.hasTrial ? "No payment today. Reminder before trial ends." : " ")
+        Text(selectedPlanHasTrial ? "No payment today. Reminder before trial ends." : " ")
             .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .foregroundStyle(selectedPlan.hasTrial ? PW.fgMuted : .clear)
+            .foregroundStyle(selectedPlanHasTrial ? PW.fgMuted : .clear)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, minHeight: 16)
-            .accessibilityHidden(!selectedPlan.hasTrial)
+            .accessibilityHidden(!selectedPlanHasTrial)
     }
 
     private var hardPaywallTerms: some View {
-        Text(selectedPlan.hasTrial
+        Text(selectedPlanHasTrial
              ? "7 days for $0.00. Memo reminds you before billing starts."
              : "Weekly access. Cancel anytime in the App Store.")
             .font(.system(size: 12, weight: .bold, design: .rounded))
@@ -1296,7 +1412,7 @@ struct PaywallView: View {
     // MARK: - Footer
 
     private var footer: some View {
-        Text(selectedPlan.hasTrial
+        Text(selectedPlanHasTrial
              ? "Paid by members. Not by surveillance. 7 days for $0.00, then \(regularAnnualPriceText)/year."
              : "Paid by members. Not by surveillance. Cancel anytime in the App Store.")
             .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -1307,44 +1423,24 @@ struct PaywallView: View {
             .frame(maxWidth: .infinity)
     }
 
-    private func scheduleHardFounderCueIfNeeded() {
-        guard isHardPaywall else { return }
-        guard isHighIntent else { return }
-        guard !hardFounderCueQueued else { return }
-        guard !hasSeenExitOffer, exitOfferShownCount < maxExitOffers else { return }
-
-        hardFounderCueQueued = true
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 10_500_000_000)
-            guard isHardPaywall, !storeService.isProUser, !showExitOffer, !hasSeenExitOffer else { return }
-            withAnimation(.easeOut(duration: 0.26)) {
-                showHardFounderCue = true
-            }
-        }
-    }
-
-    private func presentFounderOffer(trigger: String, force: Bool = false) {
-        // The once-ever cap applies to automatic triggers only. An explicit
-        // X tap on the hard paywall must always work — it's the only thing
-        // that button does.
-        guard force || (!hasSeenExitOffer && exitOfferShownCount < maxExitOffers) else { return }
+    private func presentFounderOffer(trigger: String) {
+        // The offer is shown only after an explicit X tap.
         guard canShowExitOffer else {
             Task { @MainActor in
                 await storeService.loadProducts()
                 if canShowExitOffer {
-                    showFounderOffer(trigger: trigger, force: force)
+                    showFounderOffer(trigger: trigger)
                 } else {
-                    storeService.purchaseError = "Founder offer is still loading."
+                    storeService.purchaseError = "Limited-time offer is still loading."
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)
                 }
             }
             return
         }
-        showFounderOffer(trigger: trigger, force: force)
+        showFounderOffer(trigger: trigger)
     }
 
-    private func showFounderOffer(trigger: String, force: Bool = false) {
-        guard force || (!hasSeenExitOffer && exitOfferShownCount < maxExitOffers) else { return }
+    private func showFounderOffer(trigger: String) {
         Analytics.paywallExitOfferShown(
             trigger: trigger,
             selectedPlan: selectedPlan.analyticsName,
@@ -1368,8 +1464,6 @@ struct PaywallView: View {
             )
         )
         showExitOffer = true
-        hasSeenExitOffer = true
-        exitOfferShownCount += 1
     }
 
     #if DEBUG
@@ -1403,51 +1497,25 @@ struct PaywallView: View {
         let cappedTapRegionHeight = min(max(74, safeTop + 62), 124)
 
         return Button {
-            if isHardPaywall {
-                presentFounderOffer(trigger: "onboarding_hard_paywall_x", force: true)
-                return
-            }
-            if hasSeenExitOffer || !isHighIntent || exitOfferShownCount >= maxExitOffers || !canShowExitOffer {
-                Analytics.paywallDismissed(
-                    trigger: triggerSource,
-                    selectedPlan: selectedPlan.analyticsName,
-                    isHighIntent: isHighIntent
-                )
-                dismiss()
-            } else {
-                presentFounderOffer(trigger: triggerSource)
-            }
+            presentFounderOffer(
+                trigger: isHardPaywall ? "onboarding_hard_paywall_x" : triggerSource
+            )
         } label: {
-            VStack(alignment: .trailing, spacing: 2) {
-                ZStack {
-                    Circle()
-                        .fill(PW.closeFill)
-                        .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
-                        .frame(width: 34, height: 34)
+            ZStack {
+                Circle()
+                    .fill(PW.closeFill)
+                    .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                    .frame(width: 34, height: 34)
 
-                    Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(PW.fg)
-                }
-                .frame(width: 50, height: 50)
-
-                if isHardPaywall && showHardFounderCue {
-                    Text("\(founderPriceText)/yr founder")
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .foregroundStyle(PW.amber)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.76)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(PW.amber.opacity(0.12)))
-                        .overlay(Capsule().stroke(PW.amber.opacity(0.22), lineWidth: 1))
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(PW.fg)
             }
+            .frame(width: 50, height: 50)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isHardPaywall ? "View founder price" : "Close")
+        .accessibilityLabel("View limited-time offer")
         .padding(.top, cappedTopPadding)
         .padding(.trailing, 22)
         .frame(width: width, height: cappedTapRegionHeight, alignment: .topTrailing)
@@ -1523,6 +1591,8 @@ struct PaywallView: View {
             isHighIntent: isHighIntent,
             isExitOffer: isExitOffer
         )
+        // Snapshot before buying: the purchase itself consumes eligibility.
+        let trialDaysAtPurchase = storeService.annualFreeTrialDays
         let outcome = await storeService.purchase(product)
         let price = NSDecimalNumber(decimal: product.price).doubleValue
         switch outcome {
@@ -1547,7 +1617,11 @@ struct PaywallView: View {
                 isHighIntent: isHighIntent,
                 isExitOffer: isExitOffer
             )
-            let hasTrial = productID == StoreService.annualUltraProductID && !isExitOffer
+            // Was: any annual purchase counted as a trial start. That logged
+            // trial_started for full-price buys by trial-ineligible users.
+            let hasTrial = productID == StoreService.annualUltraProductID
+                && !isExitOffer
+                && trialDaysAtPurchase != nil
             Analytics.subscriptionStarted(
                 plan: plan,
                 productID: productID,
@@ -1558,8 +1632,10 @@ struct PaywallView: View {
                 hasTrial: hasTrial,
                 price: price
             )
-            if productID == StoreService.annualUltraProductID {
-                NotificationService.shared.recordTrialStarted(days: 7)
+            // Only schedule the pre-billing reminder when a trial actually
+            // started, and for its real length rather than a hardcoded 7.
+            if productID == StoreService.annualUltraProductID, let trialDaysAtPurchase {
+                NotificationService.shared.recordTrialStarted(days: trialDaysAtPurchase)
             }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             SoundService.shared.playComplete()
@@ -1621,121 +1697,140 @@ struct ExitOfferSheet: View {
     @State private var appeared = false
 
     var body: some View {
-        ZStack {
-            PW.bg.ignoresSafeArea()
+        // This fires when someone tries to leave, so it should read like Memo
+        // catching your sleeve — not a generic sale modal. Mascot first, one
+        // clear price line, no giant strikethrough lockup.
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .bottom, spacing: 14) {
+                // mascot-presenting and mascot-thinking-working still have
+                // un-keyed green screens in the asset catalog — avoid both.
+                Image("mascot-crown")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 84, height: 84)
+                    .shadow(color: PW.amber.opacity(0.30), radius: 18, y: 8)
+                    .accessibilityHidden(true)
 
-            LinearGradient(
-                colors: [PW.amber.opacity(0.14), PW.bg.opacity(0.0)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
-            .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("FOUNDER PRICE")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ONE TIME · RIGHT NOW")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .tracking(1.8)
+                        .tracking(1.6)
                         .foregroundStyle(PW.amber)
-                        .padding(.bottom, 8)
 
-                    Text("This is the only time you'll see this founder price.")
-                        .font(.system(size: 13, weight: .heavy, design: .rounded))
-                        .foregroundStyle(PW.fgMuted)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 12)
-
-                    Text("Founder price\nunlocked.")
-                        .font(.system(size: 31, weight: .black, design: .rounded))
+                    Text("Wait — a year for \(founderPriceText).")
+                        .font(.brand(size: 27, weight: .heavy))
                         .foregroundStyle(PW.fg)
-                        .lineSpacing(-2)
+                        .lineSpacing(1)
+                        .minimumScaleFactor(0.8)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 12)
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 12)
-
-                    Text("No trial here: pay today, keep Memo at the founder price for as long as this subscription stays active.")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(PW.fgMuted)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 18)
-                        .opacity(appeared ? 1 : 0)
-
-                    priceLockup
-                        .padding(.bottom, 10)
-                        .opacity(appeared ? 1 : 0)
-
-                    Text("\(founderWeeklyText) · same full access")
-                        .font(.system(size: 13, weight: .black, design: .rounded))
-                        .foregroundStyle(PW.mint)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                        .padding(.bottom, 18)
-
-                    Button(action: onSubscribe) {
-                        Text("Start at founder price")
-                            .font(.system(size: 17, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 17)
-                            .background(AppColors.premiumGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                            )
-                            .shadow(color: PW.accent.opacity(0.28), radius: 18, y: 12)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, 8)
-
-                    Button(action: onDismiss) {
-                        Text(secondaryActionTitle)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(PW.fg3)
-                            .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 18)
-                .padding(.bottom, 18)
+                .padding(.bottom, 4)
             }
+            .padding(.bottom, 20)
+
+            priceComparison
+                .padding(.bottom, 20)
+
+            Button(action: onSubscribe) {
+                Text("Take the deal")
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(PW.accent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 17)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: PW.bg.opacity(0.28), radius: 16, y: 9)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 4)
+
+            Button(action: onDismiss) {
+                Text(secondaryActionTitle)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(PW.fg3)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 22)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(PW.bg)
+        .background(
+            GeometryReader { geo in
+                Color.clear.preference(key: ExitSheetHeightKey.self, value: geo.size.height)
+            }
+        )
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) { appeared = true }
         }
         .preferredColorScheme(.dark)
-        .onAppear {
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.84)) {
-                appeared = true
-            }
-        }
     }
 
-    private var priceLockup: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(regularPriceText)
-                .font(.system(size: 18, weight: .black, design: .rounded))
-                .strikethrough(true, color: PW.fg3)
-                .foregroundStyle(PW.fg3)
-                .lineLimit(1)
-                .minimumScaleFactor(0.80)
+    /// Two ruled lines instead of a strikethrough-plus-huge-number lockup. The
+    /// saving reads from the comparison itself rather than being announced.
+    private var priceComparison: some View {
+        VStack(spacing: 0) {
+            comparisonRow(
+                label: "Regular",
+                value: "\(regularPriceText)/yr",
+                struck: true,
+                tint: PW.fg3
+            )
 
-            Text(founderPriceText)
-                .font(.system(size: 44, weight: .black, design: .rounded))
-                .foregroundStyle(PW.amber)
-                .lineLimit(1)
-                .minimumScaleFactor(0.70)
+            Rectangle()
+                .fill(PW.hairline)
+                .frame(height: 1)
+                .padding(.vertical, 11)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text("per")
-                Text("year")
-            }
-            .font(.system(size: 13, weight: .bold, design: .rounded))
-            .foregroundStyle(PW.fg3)
-            .lineLimit(1)
+            comparisonRow(
+                label: "Today",
+                value: "\(founderPriceText)/yr",
+                struck: false,
+                tint: PW.mint
+            )
+
+            Text("\(founderWeeklyText) · full access, no trial")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(PW.fgMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 12)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(PW.hairline, lineWidth: 1)
+        )
+    }
+
+    private func comparisonRow(label: String, value: String, struck: Bool, tint: Color) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.system(size: 12, weight: .black, design: .monospaced))
+                .tracking(1.1)
+                .textCase(.uppercase)
+                .foregroundStyle(PW.fg3)
+
+            Spacer(minLength: 10)
+
+            Text(value)
+                .font(.brand(size: struck ? 19 : 27, weight: .heavy))
+                .strikethrough(struck, color: PW.fg3)
+                .foregroundStyle(tint)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
     }
 }
 
@@ -1744,6 +1839,18 @@ struct ExitOfferSheet: View {
 #Preview("Paywall") {
     PaywallView(isHighIntent: true, triggerSource: "preview")
         .environment(StoreService(loadProductsOnInit: false))
+}
+
+#Preview("Limited-Time Exit Offer") {
+    ExitOfferSheet(
+        regularPriceText: "$29.99",
+        founderPriceText: "$19.99",
+        founderWeeklyText: "$0.38/week",
+        secondaryActionTitle: "Not today",
+        onSubscribe: {},
+        onDismiss: {}
+    )
+    .frame(height: 560)
 }
 
 #Preview("Onboarding Hard Paywall") {
@@ -1906,11 +2013,11 @@ struct MemoCutePaywallPreviewView: View {
 
     private func planHero(compact: Bool) -> some View {
         ZStack {
-            miniPlanCard(angle: -11, x: compact ? -90 : -106, y: compact ? 12 : 16, scale: 0.82, compact: compact) {
+            miniPlanCard(angle: 0, x: compact ? -90 : -106, y: compact ? 13 : 17, scale: 0.82, compact: compact) {
                 miniCardContent(title: "Screen Time", value: "4h 43m/day", icon: "chart.bar.fill", color: PW.coral, compact: compact)
             }
 
-            miniPlanCard(angle: 11, x: compact ? 90 : 106, y: compact ? 13 : 17, scale: 0.82, compact: compact) {
+            miniPlanCard(angle: 0, x: compact ? 90 : 106, y: compact ? 13 : 17, scale: 0.82, compact: compact) {
                 miniCardContent(title: "Focus Guard", value: "Whole feed", icon: "lock.fill", color: PW.accent, compact: compact)
             }
 

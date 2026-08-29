@@ -425,40 +425,41 @@ struct ProgressDashboardView: View {
 
         return HStack(spacing: 7) {
             ForEach(Array(days.enumerated()), id: \.element.id) { index, day in
-                let isToday = index == days.count - 1
-                let state = focusMascotState(for: day.hours, average: average)
-
-                VStack(spacing: 5) {
-                    Text(day.dayLabel)
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .tracking(0.7)
-                        .foregroundStyle(isToday ? .primary : AppColors.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.65)
-
-                    Image(state.assetName)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: isToday ? 42 : 38)
-
-                    Text(day.dateLabel)
-                        .font(.system(size: 13, weight: .black, design: .rounded))
-                        .foregroundStyle(state.color)
-                        .monospacedDigit()
-                }
-                .padding(.vertical, 9)
-                .frame(maxWidth: .infinity)
-                .background {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(isToday ? state.color.opacity(0.10) : AppColors.cardSurface.opacity(0.42))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(isToday ? state.color.opacity(0.62) : AppColors.cardBorder.opacity(0.36), lineWidth: 1)
-                }
-                .accessibilityLabel("\(day.dayLabel) \(day.dateLabel), \(formatHours(day.hours))")
+                focusMascotDay(
+                    day,
+                    isToday: index == days.count - 1,
+                    average: average
+                )
             }
         }
+    }
+
+    private func focusMascotDay(_ day: FocusReportDay, isToday: Bool, average: Double) -> some View {
+        let state = focusMascotState(for: day.hours, average: average)
+        let background = isToday ? state.color.opacity(0.10) : AppColors.cardSurface.opacity(0.42)
+        let border = isToday ? state.color.opacity(0.62) : AppColors.cardBorder.opacity(0.36)
+
+        return VStack(spacing: 5) {
+            Text(day.dayLabel)
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .tracking(0.7)
+                .foregroundStyle(isToday ? Color.primary : AppColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+            Image(state.assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(height: isToday ? 42 : 38)
+            Text(day.dateLabel)
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(state.color)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(background))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(border, lineWidth: 1))
+        .accessibilityLabel("\(day.dayLabel) \(day.dateLabel), \(formatHours(day.hours))")
     }
 
     private var focusStatsCard: some View {
@@ -617,29 +618,7 @@ struct ProgressDashboardView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(focusOffenders.prefix(4).enumerated()), id: \.element.id) { index, offender in
-                    HStack(spacing: 12) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 13, weight: .black, design: .rounded))
-                            .foregroundStyle(AppColors.textSecondary)
-                            .frame(width: 18)
-
-                        focusOffenderIcon(index: index)
-
-                        Text(offender.name)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.78)
-
-                        Spacer(minLength: 0)
-
-                        Text(formatDuration(offender.seconds))
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundStyle(.primary)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                    }
-                    .padding(.vertical, 12)
+                    focusOffenderRow(offender, index: index)
 
                     if index < min(focusOffenders.count, 4) - 1 {
                         thinDivider
@@ -653,6 +632,28 @@ struct ProgressDashboardView: View {
                     .stroke(AppColors.cardBorder.opacity(0.46), lineWidth: 1)
             )
         }
+    }
+
+    private func focusOffenderRow(_ offender: FocusOffender, index: Int) -> some View {
+        HStack(spacing: 12) {
+            Text("\(index + 1)")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(AppColors.textSecondary)
+                .frame(width: 18)
+            focusOffenderIcon(index: index)
+            Text(offender.name)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+            Spacer(minLength: 0)
+            Text(formatDuration(offender.seconds))
+                .font(.system(size: 16, weight: .black, design: .rounded))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .padding(.vertical, 12)
     }
 
     @ViewBuilder

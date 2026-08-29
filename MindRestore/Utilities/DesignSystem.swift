@@ -2,36 +2,6 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-// MARK: - App Theme
-
-enum AppTheme: String, CaseIterable {
-    case light, dark, system
-
-    var displayName: String {
-        switch self {
-        case .light: return "Light"
-        case .dark: return "Dark"
-        case .system: return "System"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .light: return "sun.max.fill"
-        case .dark: return "moon.fill"
-        case .system: return "circle.lefthalf.filled"
-        }
-    }
-
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .light: return .light
-        case .dark: return .dark
-        case .system: return nil
-        }
-    }
-}
-
 // MARK: - App Colors
 // Premium Game Board — warm light bg, clean cards, muted game colors
 // Inspired by: NYT Games cleanliness + Apple friendliness + competitive energy
@@ -516,29 +486,29 @@ struct StreakWeekView: View {
 struct StaggeredEntrance: ViewModifier {
     let index: Int
     let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
-    init(index: Int, delay: Double = 0.15) {
+    init(index: Int, delay: Double = 0.025) {
         self.index = index
         self.delay = delay
     }
 
     func body(content: Content) -> some View {
         content
-            .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : 20)
-            .animation(
-                .spring(response: 0.5, dampingFraction: 0.75)
-                .delay(Double(index) * delay),
-                value: appeared
-            )
+            .opacity(appeared || reduceMotion ? 1 : 0.92)
+            .offset(y: appeared || reduceMotion ? 0 : 4)
             .onAppear {
-                appeared = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                guard !appeared else { return }
+                guard !reduceMotion else {
+                    appeared = true
+                    return
+                }
+                let boundedDelay = min(Double(index) * delay, 0.06)
+                withAnimation(.easeOut(duration: 0.18).delay(boundedDelay)) {
                     appeared = true
                 }
             }
-            .onDisappear { appeared = false }
     }
 }
 

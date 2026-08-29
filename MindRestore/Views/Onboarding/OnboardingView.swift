@@ -720,9 +720,9 @@ struct OnboardingView: View {
 
             LinearGradient(
                 colors: [
-                    OB.bg.opacity(0.18),
-                    OB.bg.opacity(0.48),
-                    OB.bg.opacity(0.88)
+                    OB.bg.opacity(0.10),
+                    OB.bg.opacity(0.28),
+                    OB.bg.opacity(0.70)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -821,9 +821,19 @@ struct OnboardingView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: currentPage)
     }
 
+    /// Pages 14–15 (focusMode, notificationPriming) are post-conversion setup,
+    /// so counting them left the bar at 75% on the last screen before the
+    /// paywall — telling the user a quarter remained at the exact moment they
+    /// should feel finished. Post-conversion pages run their own 0→100 pass.
     private var onboardingProgress: CGFloat {
-        guard totalPages > 1 else { return 1 }
-        return CGFloat(currentPage + 1) / CGFloat(totalPages)
+        let preConversionCount = OnboardingPage.focusMode.rawValue // 14
+        if currentPage >= preConversionCount {
+            let postCount = totalPages - preConversionCount
+            guard postCount > 1 else { return 1 }
+            return CGFloat(currentPage - preConversionCount + 1) / CGFloat(postCount)
+        }
+        guard preConversionCount > 1 else { return 1 }
+        return CGFloat(currentPage + 1) / CGFloat(preConversionCount)
     }
 
     private var onboardingGoalOrder: [UserFocusGoal] {
@@ -1352,28 +1362,33 @@ struct OnboardingView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, isCompact ? 5 : 14)
 
-                    VStack(spacing: 0) {
-                        Divider()
-                            .overlay(AppColors.cardBorder)
+                    // Scrolls so the sixth goal isn't buried under the pinned
+                    // CTA on short screens — SE users could only reach five.
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            Divider()
+                                .overlay(AppColors.cardBorder)
 
-                        ForEach(Array(onboardingGoalOrder.enumerated()), id: \.element.id) { index, goal in
-                            GoalCard(goal: goal, index: index, isSelected: selectedGoals.contains(goal), isCompact: isCompact) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
-                                    if selectedGoals.contains(goal) {
-                                        selectedGoals.remove(goal)
-                                        selectedGoalOrder.removeAll { $0 == goal }
-                                    } else if selectedGoals.count < 3 {
-                                        selectedGoals.insert(goal)
-                                        selectedGoalOrder.append(goal)
+                            ForEach(Array(onboardingGoalOrder.enumerated()), id: \.element.id) { index, goal in
+                                GoalCard(goal: goal, index: index, isSelected: selectedGoals.contains(goal), isCompact: isCompact) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                                        if selectedGoals.contains(goal) {
+                                            selectedGoals.remove(goal)
+                                            selectedGoalOrder.removeAll { $0 == goal }
+                                        } else if selectedGoals.count < 3 {
+                                            selectedGoals.insert(goal)
+                                            selectedGoalOrder.append(goal)
+                                        }
                                     }
                                 }
-                            }
 
-                            Divider()
-                                .overlay(AppColors.cardBorder.opacity(selectedGoals.contains(goal) ? 0.9 : 0.7))
+                                Divider()
+                                    .overlay(AppColors.cardBorder.opacity(selectedGoals.contains(goal) ? 0.9 : 0.7))
+                            }
                         }
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.horizontal, 24)
+                    .scrollBounceBehavior(.basedOnSize)
 
                     Spacer(minLength: isCompact ? 2 : 12)
                 }
@@ -1576,11 +1591,7 @@ struct OnboardingView: View {
         OnboardingTrialPrimerView(
             headline: "We want you to try Memo for $0.00.",
             subhead: "Start with 7 days on us.",
-            proofTitle: "No payment due now",
-            proofDetail: "Decide after you try it.",
-            secondProofTitle: "We'll remind you before billing",
-            secondProofDetail: "Turn on notifications and Memo nudges you before the trial ends.",
-            footnote: "Cancel anytime in Settings.",
+            footnote: "No payment today · Cancel anytime in Settings",
             mascotName: "mascot-unlocked",
             tint: OB.success,
             ctaTitle: "Claim my free week",
@@ -1595,7 +1606,7 @@ struct OnboardingView: View {
 
     // MARK: - Screen Time Access Page
 
-    private var screenTimeAccessPage: some View {
+    private var screenTimeAccessContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: screenTimeAuthorized ? 18 : 24)
 
@@ -1643,51 +1654,62 @@ struct OnboardingView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
-            Spacer(minLength: screenTimeAuthorized ? 6 : 18)
-
-            VStack(spacing: 14) {
-                if screenTimeAuthorized {
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .bold))
-                        Text("Stays on your phone")
-                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                            .tracking(0.9)
-                            .textCase(.uppercase)
-                    }
-                    .foregroundStyle(OB.fg3)
-                    .opacity(screenTimeReceiptVisible ? 1 : 0)
-                    .animation(.easeOut(duration: 0.3).delay(0.26), value: screenTimeReceiptVisible)
-                }
-
-                continueButton(screenTimeAccessButtonTitle) {
-                    if screenTimeAuthorized {
-                        useScreenTimeEstimate = false
-                        trackOnboardingStepCompleted("screenTimeAccess", extraProperties: [
-                            "screen_time_permission": "approved_existing",
-                            "reported_weekly_screen_time_hours": reportedWeeklyScreenTimeHours
-                        ])
-                        goToPage(OnboardingFlowOrder.page(afterScreenTimeAccess: true).rawValue)
-                    } else {
-                        requestScreenTimeForOnboarding()
-                    }
-                }
-                .disabled(screenTimeAccessButtonDisabled)
-                .opacity(screenTimeAccessButtonDisabled ? 0.6 : 1)
-
-                if !screenTimeAuthorized {
-                    Text("Required. The math doesn't work without it.")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColors.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 34)
-                        .padding(.top, 2)
-                }
-            }
-            .padding(.bottom, screenTimeAuthorized ? 6 : 18)
+            Spacer(minLength: 8)
         }
         .responsiveContent(maxWidth: 500)
         .frame(maxWidth: .infinity)
+    }
+
+    private var screenTimeAccessPage: some View {
+        ScrollView(showsIndicators: false) {
+            screenTimeAccessContent
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        // Pinned outside the scroll region: on iPhone SE the button was sliced
+        // by the bottom edge and the reassurance line was off-screen entirely.
+        // Everything downstream depends on this grant.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            onboardingBottomBar {
+                VStack(spacing: 12) {
+                    if screenTimeAuthorized {
+                        HStack(spacing: 8) {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Stays on your phone")
+                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                                .tracking(0.9)
+                                .textCase(.uppercase)
+                        }
+                        .foregroundStyle(OB.fg3)
+                        .opacity(screenTimeReceiptVisible ? 1 : 0)
+                        .animation(.easeOut(duration: 0.3).delay(0.26), value: screenTimeReceiptVisible)
+                    }
+
+                    continueButton(screenTimeAccessButtonTitle) {
+                        if screenTimeAuthorized {
+                            useScreenTimeEstimate = false
+                            trackOnboardingStepCompleted("screenTimeAccess", extraProperties: [
+                                "screen_time_permission": "approved_existing",
+                                "reported_weekly_screen_time_hours": reportedWeeklyScreenTimeHours
+                            ])
+                            goToPage(OnboardingFlowOrder.page(afterScreenTimeAccess: true).rawValue)
+                        } else {
+                            requestScreenTimeForOnboarding()
+                        }
+                    }
+                    .disabled(screenTimeAccessButtonDisabled)
+                    .opacity(screenTimeAccessButtonDisabled ? 0.6 : 1)
+
+                    if !screenTimeAuthorized {
+                        Text("Required. The math doesn't work without it.")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppColors.textTertiary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 34)
+                    }
+                }
+            }
+        }
         .onAppear {
             #if DEBUG
             if isScreenTimeEstimateScreenshot {
@@ -3112,7 +3134,6 @@ struct OnboardingView: View {
             secondsSinceStart: onboardingElapsed
         )
 
-        UserDefaults.standard.set(AppTheme.dark.rawValue, forKey: "appTheme")
         try? modelContext.save()
         onComplete()
     }
@@ -4303,10 +4324,6 @@ private struct LoopingVideoPlayer: UIViewRepresentable {
 struct OnboardingTrialPrimerView: View {
     let headline: String
     let subhead: String
-    let proofTitle: String
-    let proofDetail: String
-    var secondProofTitle: String? = nil
-    var secondProofDetail: String? = nil
     let footnote: String
     let mascotName: String
     let tint: Color
@@ -4317,19 +4334,24 @@ struct OnboardingTrialPrimerView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(alignment: .leading, spacing: 0) {
-                Spacer().frame(height: 20)
+            let compact = proxy.size.height < 700
 
-                VStack(alignment: .leading, spacing: 12) {
+            // Headline, mascot, CTA. The terms card is gone — the headline
+            // already says "$0.00" and "7 days on us", so restating it in a
+            // ledger was redundant weight on the last screen before the paywall.
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: compact ? 14 : 26)
+
+                VStack(alignment: .leading, spacing: compact ? 10 : 14) {
                     Text(headline)
-                        .font(.system(size: 40, weight: .black, design: .rounded))
+                        .font(.brand(size: compact ? 34 : 44, weight: .heavy))
                         .foregroundStyle(OB.fg)
                         .lineSpacing(-2)
                         .minimumScaleFactor(0.74)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(subhead)
-                        .font(.system(size: 21, weight: .black, design: .rounded))
+                        .font(.brand(size: compact ? 18 : 22, weight: .semibold))
                         .foregroundStyle(OB.fg2)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -4338,114 +4360,45 @@ struct OnboardingTrialPrimerView: View {
                 .offset(y: appeared ? 0 : 10)
                 .animation(.easeOut(duration: 0.32), value: appeared)
 
-                Spacer(minLength: 14)
-
-                trustProof
-                    .opacity(appeared ? 1 : 0)
-                    .scaleEffect(appeared ? 1 : 0.96)
-                    .offset(y: appeared ? 0 : 18)
-                    .animation(.spring(response: 0.54, dampingFraction: 0.84).delay(0.10), value: appeared)
-
-                Spacer(minLength: 18)
-
-                OBContinueButton(title: ctaTitle, action: onContinue)
-                    .opacity(appeared ? 1 : 0)
-                    .offset(y: appeared ? 0 : 10)
-                    .animation(.easeOut(duration: 0.28).delay(0.24), value: appeared)
-                    .padding(.bottom, 12)
-            }
-            .frame(width: min(max(proxy.size.width - 64, 0), 500), height: proxy.size.height, alignment: .leading)
-            .padding(.horizontal, 32)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .onAppear { appeared = true }
-        .accessibilityElement(children: .contain)
-    }
-
-    private var trustProof: some View {
-        VStack(spacing: 18) {
-            ZStack {
-                Ellipse()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                tint.opacity(0.34),
-                                OB.accent.opacity(0.12),
-                                tint.opacity(0)
-                            ],
-                            center: .center,
-                            startRadius: 8,
-                            endRadius: 180
-                        )
-                    )
-                    .frame(width: 320, height: 250)
-                    .blur(radius: 10)
+                Spacer(minLength: 12)
 
                 Image(mascotName)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: 206, maxHeight: 206)
-                    .shadow(color: tint.opacity(0.32), radius: 30, x: 0, y: 18)
+                    .frame(maxWidth: compact ? 210 : 280, maxHeight: compact ? 210 : 280)
+                    .shadow(color: tint.opacity(0.34), radius: 34, x: 0, y: 20)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .opacity(appeared ? 1 : 0)
+                    .scaleEffect(appeared ? 1 : 0.94)
+                    .animation(.spring(response: 0.58, dampingFraction: 0.80).delay(0.10), value: appeared)
+
+                Spacer(minLength: 12)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 208)
-
+            .frame(maxWidth: 500, alignment: .leading)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+            .padding(.horizontal, 32)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            // No opaque bar: nothing scrolls under the CTA any more, so a solid
+            // ground here just cut a black band across the illustration.
             VStack(spacing: 10) {
-                VStack(spacing: 5) {
-                    Text(proofTitle)
-                        .font(.system(size: 25, weight: .black, design: .rounded))
-                        .foregroundStyle(tint)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
-
-                    Text(proofDetail)
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(OB.fg2)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
-                }
-
-                if let secondProofTitle, let secondProofDetail {
-                    Divider().overlay(OB.border)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 2)
-
-                    VStack(spacing: 5) {
-                        Text(secondProofTitle)
-                            .font(.system(size: 19, weight: .black, design: .rounded))
-                            .foregroundStyle(OB.amber)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.center)
-
-                        Text(secondProofDetail)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(OB.fg2)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.center)
-                    }
-                }
+                OBContinueButton(title: ctaTitle, action: onContinue)
 
                 Text(footnote)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(OB.fg3)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
-                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 10)
+            .animation(.easeOut(duration: 0.28).delay(0.24), value: appeared)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 14)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 18)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(OB.bg.opacity(0.68))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(OB.border, lineWidth: 1)
-            )
         }
+        .onAppear { appeared = true }
+        .accessibilityElement(children: .contain)
     }
 }
 

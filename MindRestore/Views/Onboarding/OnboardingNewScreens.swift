@@ -5674,86 +5674,111 @@ struct OnboardingPersonalizationQuestionView<Option: Identifiable & Equatable>: 
     let onContinue: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Spacer(minLength: 42)
+        GeometryReader { proxy in
+            // Measured against the inset-reduced content area, not the screen.
+            let compact = proxy.size.height < 600
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text(title)
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-                    .foregroundStyle(OB.fg)
-                    .fixedSize(horizontal: false, vertical: true)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: compact ? 12 : 18) {
+                    Spacer().frame(height: compact ? 14 : 42)
 
-                Text(subtitle)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OB.fg2)
-                    .lineSpacing(3)
-            }
+                    VStack(alignment: .leading, spacing: compact ? 7 : 10) {
+                        Text(title)
+                            .font(.system(size: compact ? 28 : 34, weight: .black, design: .rounded))
+                            .foregroundStyle(OB.fg)
+                            .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: 10) {
-                ForEach(options) { option in
-                    Button {
-                        onSelect(option)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Text(emoji(option))
-                                .font(.system(size: 24))
-                                .frame(width: 34, height: 34)
-
-                            Text(label(option))
-                                .font(.system(size: 15, weight: .heavy, design: .rounded))
-                                .foregroundStyle(OB.fg)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.82)
-
-                            Spacer(minLength: 8)
-
-                            ZStack {
-                                Circle()
-                                    .stroke(isSelected(option) ? OB.accent : OB.border, lineWidth: 1.5)
-                                    .frame(width: 20, height: 20)
-                                if isSelected(option) {
-                                    Circle()
-                                        .fill(OB.accent)
-                                        .frame(width: 10, height: 10)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 14)
-                        .frame(height: 56)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(isSelected(option) ? OB.accent.opacity(0.16) : OB.surface.opacity(0.72))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(isSelected(option) ? OB.accent.opacity(0.82) : OB.border, lineWidth: isSelected(option) ? 1.5 : 1)
-                        )
+                        Text(subtitle)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(OB.fg2)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .buttonStyle(.plain)
+
+                    VStack(spacing: compact ? 8 : 10) {
+                        ForEach(options) { option in
+                            Button {
+                                onSelect(option)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(emoji(option))
+                                        .font(.system(size: compact ? 21 : 24))
+                                        .frame(width: 34, height: 34)
+
+                                    Text(label(option))
+                                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                                        .foregroundStyle(OB.fg)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.82)
+
+                                    Spacer(minLength: 8)
+
+                                    ZStack {
+                                        Circle()
+                                            .stroke(isSelected(option) ? OB.accent : OB.border, lineWidth: 1.5)
+                                            .frame(width: 20, height: 20)
+                                        if isSelected(option) {
+                                            Circle()
+                                                .fill(OB.accent)
+                                                .frame(width: 10, height: 10)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 14)
+                                .frame(height: compact ? 50 : 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(isSelected(option) ? OB.accent.opacity(0.16) : OB.surface.opacity(0.72))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(isSelected(option) ? OB.accent.opacity(0.82) : OB.border, lineWidth: isSelected(option) ? 1.5 : 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.top, compact ? 2 : 10)
+
+                    Spacer().frame(height: 8)
                 }
+                .padding(.horizontal, 28)
+                .frame(maxWidth: 500, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.top, 10)
-
-            Spacer(minLength: 20)
-
-            Button(action: onContinue) {
-                Text(selectedOption == nil ? "Pick one" : "Continue")
-                    .font(.system(size: 17, weight: .black, design: .rounded))
-                    .foregroundStyle(OB.fg)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 58)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(selectedOption == nil ? OB.accent.opacity(0.34) : OB.accent)
-                    )
-            }
-            .buttonStyle(.plain)
-            .disabled(selectedOption == nil)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .padding(.horizontal, 28)
-        .padding(.bottom, 18)
-        .frame(maxWidth: 500)
-        .frame(maxWidth: .infinity)
+        // Pinned so six options can never push the CTA off a short screen.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [OB.bg.opacity(0), OB.bg],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 18)
+                .allowsHitTesting(false)
+
+                Button(action: onContinue) {
+                    Text(selectedOption == nil ? "Pick one" : "Continue")
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .foregroundStyle(OB.fg)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 58)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(selectedOption == nil ? OB.accent.opacity(0.34) : OB.accent)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(selectedOption == nil)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 16)
+            }
+            .frame(maxWidth: .infinity)
+            .background(OB.bg)
+        }
     }
 
     private func isSelected(_ option: Option) -> Bool {

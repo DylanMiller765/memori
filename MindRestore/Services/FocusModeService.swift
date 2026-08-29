@@ -131,6 +131,7 @@ final class FocusModeService {
     private let store = ManagedSettingsStore()
     private let activityCenter = DeviceActivityCenter()
     private var relockTask: Task<Void, Never>?
+    private var hasStarted = false
     private let cooldownMinutes: Int = 10
     static let focusLeagueDailyCapacityMinutes = 1_440
     static let focusLeagueWeeklyCapacityMinutes = 10_080
@@ -146,18 +147,12 @@ final class FocusModeService {
         if sharedDefaults.bool(forKey: FocusKey.authorizationApproved) {
             authorizationStatus = .approved
         }
-        // Auth check must complete before reconcileShieldState — otherwise the
-        // ManagedSettingsStore can be mutated while permission is still .notDetermined,
-        // which silently no-ops and leaves the user with no feedback that shields aren't applied.
-        Task {
-            await checkAuthorizationStatus()
-            reconcileShieldState()
-        }
     }
 
     // MARK: - Authorization
 
     func requestAuthorization() async {
+        hasStarted = true
         do {
             try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
             updateAuthorizationStatus(AuthorizationCenter.shared.authorizationStatus)
@@ -171,9 +166,22 @@ final class FocusModeService {
         updateAuthorizationStatus(AuthorizationCenter.shared.authorizationStatus)
     }
 
-    func refreshForAppForeground() async {
+    func startIfNeeded() async {
+        guard !hasStarted else { return }
+        hasStarted = true
         await checkAuthorizationStatus()
         reconcileShieldState()
+        reconcileBlockedMinutes()
+    }
+
+    func refreshForAppForeground() async {
+        guard hasStarted else {
+            await startIfNeeded()
+            return
+        }
+        await checkAuthorizationStatus()
+        reconcileShieldState()
+        reconcileBlockedMinutes()
     }
 
     private func updateAuthorizationStatus(_ status: AuthorizationStatus) {

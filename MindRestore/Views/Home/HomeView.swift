@@ -8,23 +8,26 @@ struct HomeView: View {
     @Environment(PaywallTriggerService.self) private var paywallTrigger
     @Query private var users: [User]
     @Query(sort: \DailySession.date, order: .reverse) private var sessions: [DailySession]
-    @Query(sort: \BrainScoreResult.date, order: .reverse) private var brainScores: [BrainScoreResult]
     @Query private var achievements: [Achievement]
-    @Query(sort: \Exercise.completedAt, order: .reverse) private var allExercises: [Exercise]
-    private var exercises: [Exercise] { Array(allExercises.prefix(50)) }
+    @Query private var exercises: [Exercise]
 
     @Binding var selectedTab: Int
     @State private var viewModel = HomeViewModel()
     @State private var showingPaywall = false
     @State private var showingAssessment = false
-    @State private var brainScoreShareImage: UIImage?
     @State private var showingFreezeInfo = false
-    @State private var streakAnimating = false
-    @State private var streakBounce = false
     @State private var cachedTodayExerciseCount: Int = 0
 
+    init(selectedTab: Binding<Int>) {
+        _selectedTab = selectedTab
+        var recentExercises = FetchDescriptor<Exercise>(
+            sortBy: [SortDescriptor(\.completedAt, order: .reverse)]
+        )
+        recentExercises.fetchLimit = 50
+        _exercises = Query(recentExercises)
+    }
+
     private var user: User? { users.first }
-    private var latestBrainScore: BrainScoreResult? { brainScores.first }
     private var isNewUser: Bool { sessions.count <= 1 && (user?.totalXP ?? 0) < 100 }
 
     private func lastPlayedText(for type: ExerciseType) -> String? {
@@ -104,9 +107,6 @@ struct HomeView: View {
                         }
                 }
             }
-            .task {
-                renderBrainScoreShareImage()
-            }
             .onAppear {
                 viewModel.refresh(user: user, sessions: sessions)
                 refreshTodayExerciseCount()
@@ -161,21 +161,6 @@ struct HomeView: View {
             }
         }
         .glowingCard(color: AppColors.accent, intensity: 0.15)
-    }
-
-    @MainActor
-    private func renderBrainScoreShareImage() {
-        guard let score = latestBrainScore else { return }
-        let card = ShareCardView(
-            brainScore: score.brainScore,
-            brainAge: score.brainAge,
-            brainType: score.brainType,
-            percentile: score.percentile,
-            digitScore: score.digitSpanScore,
-            reactionScore: score.reactionTimeScore,
-            visualScore: score.visualMemoryScore
-        )
-        brainScoreShareImage = card.renderImage()
     }
 
     // MARK: - Mascot Hero Section
@@ -247,7 +232,7 @@ struct HomeView: View {
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .symbolEffect(.variableColor.iterative, options: .repeating, value: streakAnimating)
+                    .symbolEffect(.bounce, value: viewModel.currentStreak)
                     .foregroundStyle(viewModel.currentStreak > 0 ? streakGradient : AnyShapeStyle(.secondary))
                 Text("\(viewModel.currentStreak)")
                     .font(.system(size: 15, weight: .black, design: .rounded))
@@ -256,7 +241,6 @@ struct HomeView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(.ultraThinMaterial, in: Capsule())
-            .onAppear { streakAnimating = true }
         }
     }
 
@@ -297,125 +281,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Brain Stat Pills
-
-    private var brainStatPills: some View {
-        Group {
-            if let score = latestBrainScore {
-                HStack(spacing: 12) {
-                    // Brain Score pill
-                    VStack(spacing: 4) {
-                        Text("\(score.brainScore)")
-                            .font(.system(size: 28, weight: .black, design: .rounded))
-                            .foregroundStyle(AppColors.accent)
-                            .contentTransition(.numericText(value: Double(score.brainScore)))
-                        Text("Brain Score")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-
-                        // Share button
-                        if let shareImage = brainScoreShareImage {
-                            ShareLink(item: Image(uiImage: shareImage), preview: SharePreview("Brain Score", image: Image(uiImage: shareImage))) {
-                                Text("Share")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(AppColors.accent)
-        }
-    }
-}
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
-                    )
-
-                    // Brain Age pill
-                    VStack(spacing: 4) {
-                        Text("\(score.brainAge)")
-                            .font(.system(size: 28, weight: .black, design: .rounded))
-                            .foregroundStyle(score.brainAge <= (user?.userAge ?? 25) ? AppColors.teal : AppColors.coral)
-                            .contentTransition(.numericText(value: Double(score.brainAge)))
-                        Text("Brain Age")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-
-                        // Retake button
-                        Button {
-                            if storeService.isProUser {
-                                showingAssessment = true
-                            } else {
-                                showingPaywall = true
-                            }
-                        } label: {
-                            HStack(spacing: 3) {
-                                if !storeService.isProUser {
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 8))
-                                }
-                                Text("Retake")
-                                    .font(.system(size: 11, weight: .bold))
-                            }
-                            .foregroundStyle(storeService.isProUser ? AppColors.accent : AppColors.amber)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(AppColors.cardBorder, lineWidth: 1)
-                    )
-                }
-            } else {
-                // No brain score yet — CTA
-                VStack(spacing: 16) {
-                    Image("mascot-no-score")
-                        .renderingMode(.original)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 80)
-
-                    VStack(spacing: 4) {
-                        Text("Discover Your Brain Score")
-                            .font(.headline)
-                        Text("2-minute assessment")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button {
-                        showingAssessment = true
-                    } label: {
-                        Text("Start Assessment")
-                            .accentButton()
-                    }
-                    .padding(.horizontal, 20)
-                }
-                .padding(.vertical, 20)
-                .frame(maxWidth: .infinity)
-                .appCard()
-            }
-        }
-    }
-
-    private func domainPill(label: String, score: Int, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-            Text(label)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.secondary)
-            Text("\(score)")
-                .font(.system(size: 13, weight: .black, design: .rounded))
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-    }
-
     // MARK: - Streak Week Calendar Card
 
     private var streakGradient: AnyShapeStyle {
@@ -436,25 +301,11 @@ struct HomeView: View {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "flame.fill")
-                        .symbolEffect(.variableColor.iterative, options: .repeating, value: streakAnimating)
+                        .symbolEffect(.bounce, value: viewModel.currentStreak)
                         .foregroundStyle(viewModel.currentStreak > 0 ? streakGradient : AnyShapeStyle(.secondary))
                     Text("\(viewModel.currentStreak) day streak")
                         .font(.headline.weight(.bold))
                         .contentTransition(.numericText())
-                        .scaleEffect(streakBounce ? 1.15 : 1.0)
-                        .animation(.spring(response: 0.35, dampingFraction: 0.5), value: streakBounce)
-                }
-                .onAppear {
-                    streakAnimating = true
-                    // Bounce if streak is active (user trained today)
-                    if user?.isStreakActive == true {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            streakBounce = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                streakBounce = false
-                            }
-                        }
-                    }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(viewModel.currentStreak) day streak")

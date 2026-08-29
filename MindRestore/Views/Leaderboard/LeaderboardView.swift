@@ -666,37 +666,13 @@ struct LeaderboardView: View {
     // MARK: - Your Rank Card
 
     private func yourRankCard(_ entry: LeaderboardEntryData) -> some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.accent.opacity(0.12))
-                    .frame(width: 56, height: 56)
-                Text("#\(entry.rank)")
-                    .font(.system(size: 24, weight: .black, design: .rounded).monospacedDigit())
-                    .foregroundStyle(AppColors.accent)
-            }
+        let scoreText = formatScoreCompact(entry.score)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("YOUR RANK")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .tracking(1)
-                Text(entry.username)
-                    .font(.subheadline.weight(.semibold))
-            }
-
+        return HStack(spacing: 14) {
+            yourRankBadge(rank: entry.rank)
+            yourRankIdentity(username: entry.username)
             Spacer()
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(formatScoreCompact(entry.score))
-                    .font(.headline.weight(.bold).monospacedDigit())
-                if totalPlayerCount > 0, entry.rank > 0 {
-                    let percentile = min(100, max(1, Int(ceil(Double(entry.rank) / Double(totalPlayerCount) * 100))))
-                    Text("Top \(percentile)%")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(AppColors.accent)
-                }
-            }
+            yourRankScore(scoreText: scoreText, rank: entry.rank)
         }
         .padding(16)
         .background {
@@ -709,7 +685,49 @@ struct LeaderboardView: View {
                 .stroke(AppColors.accent.opacity(0.15), lineWidth: 1.5)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your rank: number \(entry.rank), score \(formatScoreCompact(entry.score))")
+        .accessibilityLabel("Your rank: number \(entry.rank), score \(scoreText)")
+    }
+
+    private func yourRankBadge(rank: Int) -> some View {
+        ZStack {
+            Circle()
+                .fill(AppColors.accent.opacity(0.12))
+                .frame(width: 56, height: 56)
+            Text("#\(rank)")
+                .font(.system(size: 24, weight: .black, design: .rounded).monospacedDigit())
+                .foregroundStyle(AppColors.accent)
+        }
+    }
+
+    private func yourRankIdentity(username: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("YOUR RANK")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+                .tracking(1)
+            Text(username)
+                .font(.subheadline.weight(.semibold))
+        }
+    }
+
+    @ViewBuilder
+    private func yourRankScore(scoreText: String, rank: Int) -> some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(scoreText)
+                .font(.headline.weight(.bold).monospacedDigit())
+            if let percentileText = percentileText(rank: rank) {
+                Text(percentileText)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.accent)
+            }
+        }
+    }
+
+    private func percentileText(rank: Int) -> String? {
+        guard totalPlayerCount > 0, rank > 0 else { return nil }
+        let ratio = Double(rank) / Double(totalPlayerCount)
+        let percentile = min(100, max(1, Int(ceil(ratio * 100))))
+        return "Top \(percentile)%"
     }
 
     // MARK: - Row

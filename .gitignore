@@ -44,3 +44,4 @@ MindRestore.xcodeproj/xcuserdata/
 xcuserdata/
 *.xcuserdatad/
 *.xcscmblueprint
+.gstack/

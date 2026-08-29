@@ -3,6 +3,22 @@ import SwiftUI
 import RevenueCat
 
 @MainActor
+private enum RevenueCatBootstrap {
+    private static var isConfigured = false
+
+    static func configureIfNeeded() {
+        guard !isConfigured else { return }
+        Purchases.logLevel = .info
+        Purchases.configure(
+            with: Configuration.Builder(withAPIKey: "appl_NUUkNGthSiwlZSAtrDjAfxUGOPC")
+                .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
+                .build()
+        )
+        isConfigured = true
+    }
+}
+
+@MainActor
 @Observable
 final class StoreService {
     var isProUser = false
@@ -16,6 +32,45 @@ final class StoreService {
     var products: [Product] = []
     var purchaseError: String?
     var isLoading = false
+
+    /// Intro offer on the canonical annual SKU, and whether *this* account can
+    /// still use it. Resolved from StoreKit rather than assumed — a returning
+    /// subscriber who already burned the trial is not eligible, and the paywall
+    /// must not promise them "$0.00" and then present a full-price sheet.
+    var annualIntroOffer: Product.SubscriptionOffer?
+    var isEligibleForAnnualIntroOffer = false
+
+    /// e.g. "7 days". Nil whenever no usable free trial exists — the single
+    /// switch every "free trial" claim on the paywall should read.
+    var annualFreeTrialLabel: String? {
+        guard isEligibleForAnnualIntroOffer,
+              let offer = annualIntroOffer,
+              offer.paymentMode == .freeTrial else { return nil }
+        return offer.period.trialLengthLabel
+    }
+
+    /// Real trial length in days, for scheduling the pre-billing reminder.
+    /// Nil when there's no usable trial, so no reminder gets scheduled for a
+    /// full-price purchase.
+    var annualFreeTrialDays: Int? {
+        guard isEligibleForAnnualIntroOffer,
+              let offer = annualIntroOffer,
+              offer.paymentMode == .freeTrial else { return nil }
+        return offer.period.approximateDays
+    }
+
+    func refreshAnnualIntroOffer() async {
+        guard let annual = products.first(where: { $0.id == Self.annualUltraProductID }),
+              let subscription = annual.subscription else {
+            annualIntroOffer = nil
+            isEligibleForAnnualIntroOffer = false
+            return
+        }
+        let offer = subscription.introductoryOffer
+        let eligible = await subscription.isEligibleForIntroOffer
+        annualIntroOffer = offer
+        isEligibleForAnnualIntroOffer = eligible && offer != nil
+    }
 
     // MARK: Product IDs
     //
@@ -43,21 +98,57 @@ final class StoreService {
     nonisolated static let annualUltraExitOfferProductID = "com.memori.ultra.annual.firstyear"
 
     private var updateListenerTask: Task<Void, Error>?
-    private var revenueCatCustomerInfoTask: Task<Void, Never>?
+    private var productLoadTask: Task<Void, Never>?
+    private var delayedPrefetchTask: Task<Void, Never>?
+    private var hasStarted = false
 
-    init(loadProductsOnInit: Bool = true) {
-        // Ensure install date is persisted on first launch
+    /// Kept for preview/test call-site compatibility. Initialization is deliberately
+    /// side-effect free; `startIfNeeded()` owns listeners and entitlement syncing.
+    init(loadProductsOnInit _: Bool = false) {}
+
+    func startIfNeeded() async {
+        guard !hasStarted else { return }
+        hasStarted = true
+
         if UserDefaults.standard.object(forKey: "installDate") == nil {
             UserDefaults.standard.set(Date.now, forKey: "installDate")
         }
-        guard loadProductsOnInit else { return }
+
+        RevenueCatBootstrap.configureIfNeeded()
         updateListenerTask = listenForTransactions()
-        revenueCatCustomerInfoTask = listenForRevenueCatCustomerInfo()
-        Task { await loadProducts() }
-        Task { await updateSubscriptionStatus() }
+        await updateSubscriptionStatus(source: "storekit_initial_sync")
+    }
+
+    /// Starts a single delayed product request after startup. A paywall can call
+    /// `loadProducts()` at any time and will reuse or supersede this work.
+    func scheduleProductPrefetch() {
+        guard delayedPrefetchTask == nil, products.isEmpty else { return }
+        delayedPrefetchTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled, let self else { return }
+            await self.loadProducts()
+        }
     }
 
     func loadProducts() async {
+        if !products.isEmpty { return }
+        if let productLoadTask {
+            await productLoadTask.value
+            return
+        }
+
+        delayedPrefetchTask?.cancel()
+        delayedPrefetchTask = nil
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performProductLoad()
+        }
+        productLoadTask = task
+        await task.value
+        productLoadTask = nil
+    }
+
+    private func performProductLoad() async {
         isLoading = true
         defer { isLoading = false }
 
@@ -82,6 +173,7 @@ final class StoreService {
                 let loaded = try await Product.products(for: requestIDs)
                 if !loaded.isEmpty {
                     products = loaded.sorted { $0.price < $1.price }
+                    await refreshAnnualIntroOffer()
                     return
                 }
             } catch {
@@ -98,6 +190,7 @@ final class StoreService {
 
     @discardableResult
     func purchase(_ product: Product) async -> StorePurchaseOutcome {
+        await startIfNeeded()
         isLoading = true
         purchaseError = nil
         defer { isLoading = false }
@@ -128,6 +221,7 @@ final class StoreService {
 
     @discardableResult
     func restorePurchases() async -> Bool {
+        await startIfNeeded()
         isLoading = true
         defer { isLoading = false }
         do {
@@ -184,26 +278,8 @@ final class StoreService {
         }
     }
 
-    private func listenForRevenueCatCustomerInfo() -> Task<Void, Never> {
-        Task { [weak self] in
-            for await customerInfo in Purchases.shared.customerInfoStream {
-                guard let self else { return }
-                let activeSubscriptions = Array(customerInfo.activeSubscriptions).sorted()
-                let previousStatus = isProUser
-                if !activeSubscriptions.isEmpty {
-                    isProUser = true
-                }
-                Analytics.subscriptionStatusSynced(
-                    source: "revenuecat_customer_info_stream",
-                    isMember: isProUser,
-                    activeProductIDs: activeSubscriptions,
-                    didChange: previousStatus != isProUser
-                )
-            }
-        }
-    }
-
     private func recordRevenueCatPurchase(_ result: Product.PurchaseResult, productID: String) async {
+        RevenueCatBootstrap.configureIfNeeded()
         do {
             _ = try await Purchases.shared.recordPurchase(result)
             Analytics.revenueCatPurchaseRecorded(productID: productID)
@@ -236,6 +312,30 @@ final class StoreService {
     var weeklyUltraProduct: Product? { products.first { $0.id == Self.weeklyUltraProductID } }
     var monthlyUltraProduct: Product? { products.first { $0.id == Self.monthlyUltraProductID } }
     var annualUltraProduct: Product? { products.first { $0.id == Self.annualUltraProductID } }
+}
+
+extension Product.SubscriptionPeriod {
+    /// Human trial length. A one-week period reads as "7 days" because that's
+    /// how the rest of the funnel says it.
+    var trialLengthLabel: String {
+        switch unit {
+        case .day: return value == 1 ? "1 day" : "\(value) days"
+        case .week: return value == 1 ? "7 days" : "\(value) weeks"
+        case .month: return value == 1 ? "1 month" : "\(value) months"
+        case .year: return value == 1 ? "1 year" : "\(value) years"
+        @unknown default: return "\(value)"
+        }
+    }
+
+    var approximateDays: Int {
+        switch unit {
+        case .day: return value
+        case .week: return value * 7
+        case .month: return value * 30
+        case .year: return value * 365
+        @unknown default: return value
+        }
+    }
 }
 
 enum StoreServiceError: Error {

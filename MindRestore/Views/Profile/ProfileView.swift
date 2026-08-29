@@ -154,10 +154,10 @@ struct ProfileView: View {
 
     private var xpProgress: some View {
         HStack(spacing: 12) {
-            RiveMascotView(
-                mood: profileMascotMood,
-                size: 36
-            )
+            Image("mascot-cool")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
             .frame(width: 36, height: 36)
             .clipped()
 

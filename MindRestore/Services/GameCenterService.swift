@@ -8,6 +8,7 @@ final class GameCenterService {
     // MARK: - State
 
     var isAuthenticated = false
+    private var hasInstalledAuthenticationHandler = false
 
     // MARK: - Leaderboard IDs
 
@@ -120,7 +121,9 @@ final class GameCenterService {
 
     // MARK: - Authentication
 
-    func authenticate() {
+    func authenticateIfNeeded() {
+        guard !hasInstalledAuthenticationHandler else { return }
+        hasInstalledAuthenticationHandler = true
         GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
             Task { @MainActor in
                 if let viewController {
@@ -138,6 +141,12 @@ final class GameCenterService {
                 self?.isAuthenticated = GKLocalPlayer.local.isAuthenticated
             }
         }
+    }
+
+    /// Compatibility alias for existing game-completion call sites. Installing
+    /// the Game Center handler remains idempotent.
+    func authenticate() {
+        authenticateIfNeeded()
     }
 
     // MARK: - Load Leaderboard Entries
