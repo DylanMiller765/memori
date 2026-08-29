@@ -118,8 +118,8 @@ enum FocusUnlockCompletionGate {
 enum FocusUnlockSlotCopy {
     static let eyebrow = "MEMO'S BOOTH"
     static let headline = "NO FEED TIL YOU TRAIN"
-    static let subhead = "finish the rep. earn the window."
-    static let idleStatus = "tap when you're ready"
+    static let subhead = "Play a brain game. Get your time back."
+    static let idleStatus = "spin when you're ready"
     static let spinningStatus = "MEMO'S PICKING"
 
     /// Rotating landed lines per payout tier — fresh screenshots every spin.
@@ -294,12 +294,21 @@ struct FocusUnlockSlotMachine: View {
             machineBody
                 .zIndex(1)
 
-            statusLine
+            if let selectedGame, phase == .landed {
+                FocusUnlockRewardTicket(
+                    minutes: FocusUnlockPayout.minutes(for: selectedGame.type),
+                    color: windowTint
+                )
                 .padding(.top, 14)
+                .transition(.scale.combined(with: .opacity))
+            } else {
+                statusLine
+                    .padding(.top, 14)
+            }
 
             // In the onboarding demo the page's own CTA takes over once the
             // reel lands — a dimmed dead SPIN next to it would just confuse.
-            if !(mode == .demo && phase == .landed) {
+            if phase != .landed {
                 spinButton
                     .padding(.top, 14)
                     .transition(.opacity)
@@ -618,41 +627,49 @@ struct FocusUnlockSlotMachine: View {
     }
 }
 
-// MARK: - Atmosphere — drifting glow, shared by the live screen and the
-// onboarding demo. Vibrant enough to read on camera, never a flat void.
+// MARK: - Atmosphere — a quiet midnight arcade wall behind Memo's Booth.
 
 struct FocusSlotAtmosphere: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var drift = false
-
     var body: some View {
         ZStack {
             OB.bg
 
-            LinearGradient(
-                colors: [OB.memoPurple.opacity(0.22), OB.accent.opacity(0.10), OB.bg],
-                startPoint: .topLeading,
-                endPoint: .bottom
-            )
+            FocusSlotBackdropTexture()
 
-            Circle()
-                .fill(OB.accent.opacity(0.24))
-                .frame(width: 300, height: 300)
-                .blur(radius: 72)
-                .offset(x: drift ? -80 : -130, y: drift ? -180 : -120)
-
-            Circle()
-                .fill(OB.memoPurple.opacity(0.22))
-                .frame(width: 320, height: 320)
-                .blur(radius: 84)
-                .offset(x: drift ? 130 : 90, y: drift ? 160 : 240)
+            RoundedRectangle(cornerRadius: 58, style: .continuous)
+                .fill(OB.accent.opacity(0.035))
+                .frame(width: 430, height: 560)
+                .blur(radius: 34)
+                .offset(y: 170)
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 5.5).repeatForever(autoreverses: true)) {
-                drift = true
+    }
+}
+
+private struct FocusSlotBackdropTexture: View {
+    private let flecks: [(x: CGFloat, y: CGFloat, size: CGFloat, color: Color)] = [
+        (0.08, 0.18, 4, OB.accent.opacity(0.55)),
+        (0.14, 0.43, 2, OB.memoPurple.opacity(0.42)),
+        (0.88, 0.24, 5, OB.accent.opacity(0.46)),
+        (0.82, 0.55, 2, OB.memoPurple.opacity(0.36)),
+        (0.11, 0.74, 3, OB.accent.opacity(0.34)),
+        (0.91, 0.82, 4, OB.memoPurple.opacity(0.30)),
+        (0.73, 0.12, 2, OB.accent.opacity(0.28)),
+        (0.29, 0.89, 2, OB.memoPurple.opacity(0.24))
+    ]
+
+    var body: some View {
+        Canvas { context, size in
+            for fleck in flecks {
+                let point = CGPoint(x: size.width * fleck.x, y: size.height * fleck.y)
+                let rect = CGRect(
+                    x: point.x - fleck.size / 2,
+                    y: point.y - fleck.size / 2,
+                    width: fleck.size,
+                    height: fleck.size
+                )
+                context.fill(Path(ellipseIn: rect), with: .color(fleck.color))
             }
         }
     }
@@ -672,10 +689,7 @@ struct FocusUnlockSlotView: View {
                 Spacer(minLength: 30)
 
                 VStack(spacing: 8) {
-                    Text(FocusUnlockSlotCopy.eyebrow)
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                        .tracking(1.6)
-                        .foregroundStyle(OB.accent)
+                    FocusSlotMarquee(title: FocusUnlockSlotCopy.eyebrow)
 
                     Text(FocusUnlockSlotCopy.headline)
                         .font(.system(size: 34, weight: .black, design: .rounded))
@@ -685,12 +699,12 @@ struct FocusUnlockSlotView: View {
                         .minimumScaleFactor(0.78)
                         .accessibilityAddTraits(.isHeader)
 
-                    Image("booth-handwritten-subhead")
-                        .resizable()
-                        .scaledToFit()
-                        .blendMode(.screen)
-                        .frame(maxWidth: 306, maxHeight: 31)
-                        .accessibilityLabel(FocusUnlockSlotCopy.subhead)
+                    Text(FocusUnlockSlotCopy.subhead)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(OB.fg2)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
                 }
 
                 Spacer(minLength: 16)
@@ -708,6 +722,69 @@ struct FocusUnlockSlotView: View {
         }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(true)
+    }
+}
+
+private struct FocusSlotMarquee: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+            .tracking(1.5)
+            .foregroundStyle(OB.accent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(OB.surface.opacity(0.86), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(OB.accent.opacity(0.30), lineWidth: 1)
+            )
+            .overlay(alignment: .leading) {
+                Circle()
+                    .fill(OB.amber.opacity(0.82))
+                    .frame(width: 4, height: 4)
+                    .padding(.leading, 6)
+            }
+            .overlay(alignment: .trailing) {
+                Circle()
+                    .fill(OB.amber.opacity(0.82))
+                    .frame(width: 4, height: 4)
+                    .padding(.trailing, 6)
+            }
+    }
+}
+
+private struct FocusUnlockRewardTicket: View {
+    let minutes: Int
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "ticket.fill")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(color)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("TIME BACK")
+                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(OB.fg2)
+                Text("\(minutes) MINUTES")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .foregroundStyle(OB.fg)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.16), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .strokeBorder(color.opacity(0.7), style: StrokeStyle(lineWidth: 1.2, dash: [5, 3]))
+        )
+        .shadow(color: color.opacity(0.20), radius: 12, y: 5)
+        .accessibilityLabel("\(minutes) minutes back")
     }
 }
 
