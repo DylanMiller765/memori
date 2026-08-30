@@ -107,6 +107,7 @@
 		DD000001000000000000DD05 /* TrainingLimitBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD05 /* TrainingLimitBanner.swift */; };
 		DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD06 /* MemoryPalaceView.swift */; };
 		DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD07 /* ChunkingTrainingView.swift */; };
+		A7253857E75455299C4C7034 /* ExerciseInstructions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B81AE6330D53D394743B15 /* ExerciseInstructions.swift */; };
 		DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD08 /* ProspectiveMemoryView.swift */; };
 		DD000001000000000000DD09 /* SoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD09 /* SoundService.swift */; };
 		DD000001000000000000DD10 /* AchievementDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD10 /* AchievementDetailView.swift */; };
@@ -344,6 +345,7 @@
 		DD000002000000000000DD05 /* TrainingLimitBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingLimitBanner.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD06 /* MemoryPalaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPalaceView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD07 /* ChunkingTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkingTrainingView.swift; sourceTree = "<group>"; };
+		71B81AE6330D53D394743B15 /* ExerciseInstructions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstructions.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD08 /* ProspectiveMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectiveMemoryView.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD09 /* SoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundService.swift; sourceTree = "<group>"; };
 		DD000002000000000000DD10 /* AchievementDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementDetailView.swift; sourceTree = "<group>"; };
@@ -758,6 +760,7 @@
 				88C98AA0B97EDAAFE2D1ED6C /* ActiveRecallView.swift */,
 				8EB3B88316FAD4493693973A /* DualNBackView.swift */,
 				DD000002000000000000DD07 /* ChunkingTrainingView.swift */,
+				71B81AE6330D53D394743B15 /* ExerciseInstructions.swift */,
 				DD000002000000000000DD06 /* MemoryPalaceView.swift */,
 				DD000002000000000000DD03 /* MixedTrainingView.swift */,
 				DD000002000000000000DD08 /* ProspectiveMemoryView.swift */,
@@ -1269,6 +1272,7 @@
 				BSM00001000000000000BSM1 /* BrainScoreMilestoneView.swift in Sources */,
 				DD000001000000000000DD06 /* MemoryPalaceView.swift in Sources */,
 				DD000001000000000000DD07 /* ChunkingTrainingView.swift in Sources */,
+				A7253857E75455299C4C7034 /* ExerciseInstructions.swift in Sources */,
 				DD000001000000000000DD08 /* ProspectiveMemoryView.swift in Sources */,
 				7DE785D3415253CC04F5E46A /* HeatmapCalendar.swift in Sources */,
 				4C4E83054CA821CADE43D878 /* HomeView.swift in Sources */,

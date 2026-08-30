@@ -304,41 +304,55 @@ struct TrainingView: View {
         }
     }
 
+    /// Games already carry their own intro screens — they just showed them on
+    /// every play. `autoStart` skips straight to the challenge, so replayers
+    /// get the game and first-timers get the explanation. Every launch path
+    /// resolves through here, so this covers the Train tab and focus unlock.
+    private func skipIntro(for type: ExerciseType) -> Bool {
+        pendingAutoStart || ExerciseFirstRun.hasPlayed(type)
+    }
+
     @ViewBuilder
     private func exerciseDestination(for type: ExerciseType) -> some View {
+        exerciseGame(for: type)
+            .onAppear { ExerciseFirstRun.markPlayed(type) }
+    }
+
+    @ViewBuilder
+    private func exerciseGame(for type: ExerciseType) -> some View {
         switch type {
         case .spacedRepetition:
             SpacedRepetitionView(category: .numbers)
         case .dualNBack:
-            DualNBackView(autoStart: pendingAutoStart)
+            DualNBackView(autoStart: skipIntro(for: type))
         case .activeRecall:
             ActiveRecallView()
         case .chunkingTraining:
-            ChunkingTrainingView(autoStart: pendingAutoStart)
+            ChunkingTrainingView(autoStart: skipIntro(for: type))
         case .prospectiveMemory:
             ProspectiveMemoryView()
         case .memoryPalace:
             MemoryPalaceView()
         case .reactionTime:
-            ReactionTimeView(autoStart: pendingAutoStart)
+            ReactionTimeView(autoStart: skipIntro(for: type))
         case .sequentialMemory:
-            SequentialMemoryView(autoStart: pendingAutoStart)
+            SequentialMemoryView(autoStart: skipIntro(for: type))
         case .mathSpeed:
-            MathSpeedView(autoStart: pendingAutoStart)
+            MathSpeedView(autoStart: skipIntro(for: type))
         case .colorMatch:
-            ColorMatchView(autoStart: pendingAutoStart)
+            ColorMatchView(autoStart: skipIntro(for: type))
         case .speedMatch:
-            SpeedMatchView(autoStart: pendingAutoStart)
+            SpeedMatchView(autoStart: skipIntro(for: type))
         case .visualMemory:
-            VisualMemoryView(autoStart: pendingAutoStart)
+            VisualMemoryView(autoStart: skipIntro(for: type))
         case .wordScramble:
             WordScrambleView()
         case .memoryChain:
             MemoryChainView()
         case .chimpTest:
-            ChimpTestView(autoStart: pendingAutoStart)
+            ChimpTestView(autoStart: skipIntro(for: type))
         case .verbalMemory:
-            VerbalMemoryView(autoStart: pendingAutoStart)
+            VerbalMemoryView(autoStart: skipIntro(for: type))
         }
     }
 

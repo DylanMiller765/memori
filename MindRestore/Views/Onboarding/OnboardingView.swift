@@ -107,16 +107,28 @@ struct OnboardingScreenTimeProjectionState: Equatable {
 struct OnboardingScreenTimeAccessButtonState: Equatable {
     let isRequestingAccess: Bool
     let isAuthorized: Bool
+    /// Once the user taps "Don't Allow", iOS never prompts again — asking a
+    /// second time silently no-ops. The button has to switch to the only route
+    /// that still works, otherwise the page is a dead end.
+    var wasDenied: Bool = false
 
     var title: String {
         if isRequestingAccess {
             return "Checking Screen Time..."
         }
-        return isAuthorized ? "Show my lifetime cost" : "Allow Screen Time"
+        if isAuthorized {
+            return "Show my lifetime cost"
+        }
+        return wasDenied ? "Open Settings" : "Allow Screen Time"
     }
 
     var isDisabled: Bool {
         isRequestingAccess
+    }
+
+    /// True when tapping should deep-link to Settings rather than re-request.
+    var opensSettings: Bool {
+        !isAuthorized && wasDenied && !isRequestingAccess
     }
 }
 
@@ -873,7 +885,8 @@ struct OnboardingView: View {
     private var screenTimeAccessButtonState: OnboardingScreenTimeAccessButtonState {
         OnboardingScreenTimeAccessButtonState(
             isRequestingAccess: isRequestingScreenTimeAccess,
-            isAuthorized: screenTimeAuthorized
+            isAuthorized: screenTimeAuthorized,
+            wasDenied: screenTimeAccessDenied
         )
     }
 
@@ -885,7 +898,9 @@ struct OnboardingView: View {
 
     private var screenTimeAccessSubtitle: String {
         if screenTimeAccessDenied {
-            return "Memo can't do the math without Screen Time. It never leaves your phone."
+            // Says what to actually do — iOS won't ask twice, so "can't do the
+            // math without it" left people staring at a button that no-ops.
+            return "iOS only asks once. Turn Screen Time on in Settings → Screen Time, or enter your hours by hand."
         }
         return "Memo needs Screen Time to do the scary math. It never leaves your phone."
     }
@@ -1693,6 +1708,8 @@ struct OnboardingView: View {
                                 "reported_weekly_screen_time_hours": reportedWeeklyScreenTimeHours
                             ])
                             goToPage(OnboardingFlowOrder.page(afterScreenTimeAccess: true).rawValue)
+                        } else if screenTimeAccessButtonState.opensSettings {
+                            openSystemSettings()
                         } else {
                             requestScreenTimeForOnboarding()
                         }
@@ -1700,7 +1717,24 @@ struct OnboardingView: View {
                     .disabled(screenTimeAccessButtonDisabled)
                     .opacity(screenTimeAccessButtonDisabled ? 0.6 : 1)
 
-                    if !screenTimeAuthorized {
+                    if screenTimeAccessDenied {
+                        // The only way off this page before this existed was to
+                        // delete the app. The estimate still drives the receipt;
+                        // real authorization is negotiated again at focus setup.
+                        Button {
+                            trackOnboardingStepCompleted("screenTimeEstimateOpened", extraProperties: [
+                                "screen_time_permission": "denied"
+                            ])
+                            showingScreenTimeEstimateSheet = true
+                        } label: {
+                            Text("Enter my hours by hand")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColors.accent)
+                                .underline()
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
+                    } else if !screenTimeAuthorized {
                         Text("Required. The math doesn't work without it.")
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundStyle(AppColors.textTertiary)
@@ -1722,6 +1756,14 @@ struct OnboardingView: View {
                 return
             }
             #endif
+            syncScreenTimeAccessOnAppear()
+        }
+        // Returning from Settings doesn't re-fire onAppear, so without this the
+        // page would still show the denied state after they'd just granted it.
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.willEnterForegroundNotification
+        )) { _ in
+            guard currentPage == OnboardingPage.screenTimeAccess.rawValue else { return }
             syncScreenTimeAccessOnAppear()
         }
         .onDisappear {
@@ -2115,6 +2157,17 @@ struct OnboardingView: View {
                 useScreenTimeEstimate = false
             }
         }
+    }
+
+    /// Deep-links to the app's Settings page. FamilyControls has no direct
+    /// Settings URL, so this is the closest route back for a denied user;
+    /// `refreshForAppForeground()` re-checks authorization when they return.
+    private func openSystemSettings() {
+        trackOnboardingStepCompleted("screenTimeSettingsOpened", extraProperties: [
+            "screen_time_permission": "denied"
+        ])
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func requestScreenTimeForOnboarding() {

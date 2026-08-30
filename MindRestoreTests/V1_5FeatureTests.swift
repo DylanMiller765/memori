@@ -292,8 +292,8 @@ final class FocusUnlockSlotTests: XCTestCase {
         XCTAssertEqual(FocusUnlockSlotCopy.eyebrow, "MEMO'S BOOTH")
         XCTAssertEqual(FocusUnlockSlotCopy.headline, "NO FEED TIL YOU TRAIN")
         // "win" is banned for the core loop (AGENTS.md) — play / finish / complete.
-        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "finish the rep. earn the window.")
-        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "tap when you're ready")
+        XCTAssertEqual(FocusUnlockSlotCopy.subhead, "Play a brain game. Get your time back.")
+        XCTAssertEqual(FocusUnlockSlotCopy.idleStatus, "spin when you're ready")
         XCTAssertEqual(FocusUnlockSlotCopy.spinningStatus, "MEMO'S PICKING")
         XCTAssertEqual(FocusUnlockSlotCopy.landedStatus(for: nil), "LOCKED IN")
 

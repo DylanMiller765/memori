@@ -254,6 +254,21 @@ struct PaywallView: View {
         true
     }
 
+    /// Keyed off the SELECTED PLAN, not off trial presence. There are three
+    /// states, not two — annual-with-trial, annual-without, and weekly — and
+    /// the old copy collapsed the middle one into weekly wording.
+    private var ctaTitle: String {
+        if selectedPlanHasTrial { return "Start for $0.00" }
+        return selectedPlan == .annual ? "Get Memo Pro" : "Start Weekly Access"
+    }
+
+    private var planSubtitle: String {
+        if selectedPlanHasTrial { return "Seven days on us. Then it renews." }
+        return selectedPlan == .annual
+            ? "Full access to Memo Pro, billed yearly."
+            : "Full access to Memo Pro, billed weekly."
+    }
+
     /// e.g. "7 days", or nil when no usable trial exists. Resolved from
     /// StoreKit, so a returning subscriber who already consumed the trial is
     /// never promised "$0.00" and then handed a full-price sheet.
@@ -558,33 +573,50 @@ struct PaywallView: View {
                 .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(selectedPlanHasTrial ? "Get unlimited access to Memo Pro." : "Start weekly access to Memo Pro.")
-                .font(.system(size: compact ? 13 : 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.72))
+            Text(heroLine)
+                .font(.brand(size: compact ? 26 : 30, weight: .heavy))
+                .foregroundStyle(selectedPlanHasTrial ? PW.mint : .white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.top, 2)
+
+            Text(heroSubline)
+                .font(.system(size: compact ? 13 : 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.74))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.86)
+                .minimumScaleFactor(0.84)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
     }
 
+    /// Mascot only. The offer lives in the headline block now — the middle of
+    /// this illustration is bright green and nothing legible sits on it.
     private func cutePlanHero(compact: Bool) -> some View {
-        // Was three fanned cards. At 375pt there wasn't room, so the two
-        // flanking cards were sliced mid-word ("Scree…", "4h/0…") — and the
-        // right one duplicated a row already inside the main card.
-        ZStack(alignment: .top) {
-            mainPlanCard(compact: compact)
+        Image("mascot-unlocked")
+            .renderingMode(.original)
+            .resizable()
+            .scaledToFit()
+            .frame(width: compact ? 130 : 160, height: compact ? 130 : 160)
+            .shadow(color: PW.accent.opacity(0.26), radius: 22, y: 10)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
+    }
 
-            Image("mascot-unlocked")
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(width: compact ? 84 : 100, height: compact ? 84 : 100)
-                .offset(y: compact ? -40 : -48)
-                .shadow(color: PW.accent.opacity(0.20), radius: 18, y: 8)
-                .accessibilityHidden(true)
+    /// The one number that matters today.
+    private var heroLine: String {
+        if selectedPlanHasTrial { return "Free for 7 days" }
+        return selectedPlan == .annual ? "\(regularAnnualPriceText) a year" : "\(weeklyDisplayPriceText) a week"
+    }
+
+    private var heroSubline: String {
+        if selectedPlanHasTrial {
+            return "Then \(regularAnnualPriceText)/year. Cancel before day 7 and pay nothing."
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        return selectedPlan == .annual
+            ? "Billed yearly. Cancel anytime in Settings."
+            : "Billed weekly. Cancel anytime in Settings."
     }
 
     private func miniPlanCard<Content: View>(
@@ -840,7 +872,7 @@ struct PaywallView: View {
             Task { await purchaseSelectedPlan() }
         } label: {
             HStack(spacing: 10) {
-                Text(storeService.isLoading ? "Opening…" : (selectedPlanHasTrial ? "Start for $0.00" : "Start Weekly Access"))
+                Text(storeService.isLoading ? "Opening…" : ctaTitle)
                     .font(.system(size: 18, weight: .black, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)

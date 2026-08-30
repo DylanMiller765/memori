@@ -166,15 +166,31 @@ struct MonoKeypadSlots: View {
     let input: String
     let length: Int
 
+    /// Horizontal padding the row is laid out inside.
+    private let outerInset: CGFloat = 24
+
     var body: some View {
-        HStack(spacing: 14) {
-            ForEach(0..<length, id: \.self) { index in
-                slot(at: index)
+        // Fixed 38pt slots and 14pt gaps overflowed as soon as the round went
+        // past ~7 digits: 9 digits needed 454pt on a 390pt screen, so the row
+        // was clipped at both ends and the first digits were unreadable.
+        GeometryReader { proxy in
+            let available = max(0, proxy.size.width - (outerInset * 2))
+            let count = max(1, length)
+            let spacing = count > 7 ? 6.0 : 14.0
+            let ideal = (available - (spacing * Double(count - 1))) / Double(count)
+            let width = max(22, min(38, ideal))
+
+            HStack(spacing: spacing) {
+                ForEach(0..<length, id: \.self) { index in
+                    slot(at: index, width: width)
+                }
             }
+            .frame(width: proxy.size.width, height: 50)
         }
+        .frame(height: 50)
     }
 
-    private func slot(at index: Int) -> some View {
+    private func slot(at index: Int, width: CGFloat) -> some View {
         let typed = index < input.count
         let char: String
         if typed {
@@ -191,10 +207,11 @@ struct MonoKeypadSlots: View {
                         .stroke(typed ? AppColors.accent.opacity(0.6) : AppColors.cardBorder, lineWidth: 1.2)
                 )
             Text(char)
-                .font(.system(size: 28, weight: .heavy, design: .monospaced))
+                .font(.system(size: min(28, width * 0.72), weight: .heavy, design: .monospaced))
                 .foregroundStyle(AppColors.accent)
+                .minimumScaleFactor(0.6)
         }
-        .frame(width: 38, height: 50)
+        .frame(width: width, height: 50)
     }
 }
 
