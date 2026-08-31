@@ -240,10 +240,10 @@ struct PaywallView: View {
     @State private var selectedPlan: PaywallPlan = .annual
     @State private var showExitOffer = false
     @State private var exitSheetHeight: CGFloat = 420
-    private let exitOfferDisplayedPriceFallback = 19.99
-    private let exitOfferRegularPriceFallback = 29.99
-    private let exitOfferDisplayedPriceTextFallback = "$19.99"
-    private let exitOfferRegularPriceTextFallback = "$29.99"
+    private let exitOfferDisplayedPriceFallback = 29.99
+    private let exitOfferRegularPriceFallback = 59.99
+    private let exitOfferDisplayedPriceTextFallback = "$29.99"
+    private let exitOfferRegularPriceTextFallback = "$59.99"
     private let exitOfferDiscountLabel = "founder_forever_offer"
     private var canShowExitOffer: Bool {
         storeService.products.contains { $0.id == StoreService.annualUltraExitOfferProductID }
@@ -547,7 +547,7 @@ struct PaywallView: View {
     }
 
     private var weeklyDisplayPriceText: String {
-        productDisplayPrice(for: StoreService.weeklyUltraProductID, fallback: "$1.99")
+        productDisplayPrice(for: StoreService.weeklyUltraProductID, fallback: "$4.99")
     }
 
     private func selectPlan(_ plan: PaywallPlan) {
@@ -819,7 +819,7 @@ struct PaywallView: View {
             HStack(spacing: layout.spacing) {
                 // The trial has to live on the card the user actually taps.
                 // It used to appear only on the hero card above, so the
-                // selected plan read as a flat "$29.99/year".
+                // selected plan read as a flat yearly price.
                 purchasePlanCard(
                     plan: .annual,
                     badge: trialLabel.map { "\($0.uppercased()) FREE" } ?? "BEST VALUE",
@@ -1875,9 +1875,9 @@ struct ExitOfferSheet: View {
 
 #Preview("Limited-Time Exit Offer") {
     ExitOfferSheet(
-        regularPriceText: "$29.99",
-        founderPriceText: "$19.99",
-        founderWeeklyText: "$0.38/week",
+        regularPriceText: "$59.99",
+        founderPriceText: "$29.99",
+        founderWeeklyText: "$0.58/week",
         secondaryActionTitle: "Not today",
         onSubscribe: {},
         onDismiss: {}
@@ -2204,8 +2204,8 @@ struct MemoCutePaywallPreviewView: View {
                     plan: .annual,
                     badge: "BEST VALUE",
                     title: "Yearly",
-                    price: "$29.99/year",
-                    detail: "$0.58/wk billed yearly",
+                    price: "$59.99/year",
+                    detail: "$1.15/wk billed yearly",
                     compact: compact
                 )
                 .frame(width: cardWidth)
@@ -2214,7 +2214,7 @@ struct MemoCutePaywallPreviewView: View {
                     plan: .weekly,
                     badge: nil,
                     title: "Weekly",
-                    price: "$1.99/wk",
+                    price: "$4.99/wk",
                     detail: "Billed weekly",
                     compact: compact
                 )
