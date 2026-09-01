@@ -133,12 +133,18 @@ struct OnboardingScreenTimeAccessButtonState: Equatable {
 }
 
 struct OnboardingView: View {
+    private enum PageNavigationDirection {
+        case forward
+        case backward
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(FocusModeService.self) private var focusModeService
     @Environment(StoreService.self) private var storeService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var users: [User]
     @State private var currentPage = 0
+    @State private var pageNavigationDirection: PageNavigationDirection = .forward
     @State private var selectedGoals: Set<UserFocusGoal> = []
     @State private var selectedGoalOrder: [UserFocusGoal] = []
     @State private var selectedTrapApps: Set<OnboardingTrapApp> = [.tiktok, .youtube, .instagram]
@@ -337,19 +343,7 @@ struct OnboardingView: View {
 
                 pageContent
                     .id(currentPage)
-                    .zIndex(Double(currentPage))
-                    .transition(reduceMotion
-                        ? AnyTransition.opacity.animation(.easeInOut(duration: 0.18))
-                        : AnyTransition.asymmetric(
-                            insertion: .opacity
-                                .combined(with: .scale(scale: 0.96, anchor: .center))
-                                .combined(with: .offset(y: 8))
-                                .animation(.easeOut(duration: 0.40)),
-                            removal: .opacity
-                                .animation(.easeIn(duration: 0.30))
-                        )
-                    )
-                    .animation(.easeInOut(duration: 0.40), value: currentPage)
+                    .transition(onboardingPageTransition)
                     .onChange(of: currentPage) { oldPage, newPage in
                         trackOnboardingStepViewed(from: oldPage, to: newPage)
                         // Animate keyboard dismiss smoothly
@@ -765,10 +759,33 @@ struct OnboardingView: View {
     }
 
     private func goToPage(_ page: Int) {
-        guard (0..<totalPages).contains(page) else { return }
-        withAnimation(.easeInOut(duration: 0.40)) {
+        guard (0..<totalPages).contains(page), page != currentPage else { return }
+        pageNavigationDirection = page > currentPage ? .forward : .backward
+        withAnimation(onboardingPageAnimation) {
             currentPage = page
         }
+    }
+
+    /// Keep the onboarding chrome fixed while the page layer moves as one
+    /// continuous deck. A short partial offset reads as a flick on these
+    /// visually dense screens; the full-width push preserves spatial context.
+    private var onboardingPageTransition: AnyTransition {
+        guard !reduceMotion else {
+            return .opacity
+        }
+
+        let insertionEdge: Edge = pageNavigationDirection == .forward ? .trailing : .leading
+        let removalEdge: Edge = pageNavigationDirection == .forward ? .leading : .trailing
+        return .asymmetric(
+            insertion: .move(edge: insertionEdge),
+            removal: .move(edge: removalEdge)
+        )
+    }
+
+    private var onboardingPageAnimation: Animation {
+        reduceMotion
+            ? .easeOut(duration: 0.20)
+            : .timingCurve(0.65, 0, 0.35, 1, duration: 0.58)
     }
 
     /// Plays a building beat overlay, then navigates to `target` once it
@@ -4427,9 +4444,8 @@ struct OnboardingTrialPrimerView: View {
 
                 Spacer(minLength: 12)
             }
-            .frame(maxWidth: 500, alignment: .leading)
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
             .padding(.horizontal, 32)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             // No opaque bar: nothing scrolls under the CTA any more, so a solid

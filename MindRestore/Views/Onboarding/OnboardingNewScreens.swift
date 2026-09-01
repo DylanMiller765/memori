@@ -4387,17 +4387,20 @@ struct OnboardingMemoPlanView: View {
         }
         .background(Color.clear)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            demoBottomBar
-                .padding(.horizontal, 24)
-                .padding(.bottom, 18)
-                .padding(.top, 14)
-                .background(
-                    LinearGradient(
-                        colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
-                        startPoint: .top,
-                        endPoint: .bottom
+            if showsDemoBottomBar {
+                demoBottomBar
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 18)
+                    .padding(.top, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [OB.bg.opacity(0), OB.bg.opacity(0.96), OB.bg],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .preferredColorScheme(.dark)
         .onAppear {
@@ -4433,6 +4436,17 @@ struct OnboardingMemoPlanView: View {
     }
 
     // MARK: Bottom bar — changes with the demo stage
+
+    private var showsDemoBottomBar: Bool {
+        switch stage {
+        case .pickApp, .blocked:
+            return false
+        case .machine:
+            return demoLanded
+        case .won:
+            return true
+        }
+    }
 
     @ViewBuilder
     private var demoBottomBar: some View {

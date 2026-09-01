@@ -258,8 +258,8 @@ struct PaywallView: View {
     /// states, not two — annual-with-trial, annual-without, and weekly — and
     /// the old copy collapsed the middle one into weekly wording.
     private var ctaTitle: String {
-        if selectedPlanHasTrial { return "Start for $0.00" }
-        return selectedPlan == .annual ? "Get Memo Pro" : "Start Weekly Access"
+        if selectedPlanHasTrial { return "Start 7-Day Free Trial" }
+        return selectedPlan == .annual ? "Continue with Yearly" : "Start Weekly Access"
     }
 
     private var planSubtitle: String {
@@ -274,10 +274,27 @@ struct PaywallView: View {
     /// never promised "$0.00" and then handed a full-price sheet.
     private var trialLabel: String? { storeService.annualFreeTrialLabel }
 
+    /// The annual SKU can have a configured trial even when this Apple account
+    /// has already used it. Keep the offer visible with an eligibility qualifier
+    /// instead of silently turning the annual card into a plain-price card.
+    private var configuredTrialLabel: String? {
+        guard let offer = storeService.annualIntroOffer,
+              offer.paymentMode == .freeTrial else { return nil }
+        return offer.period.trialLengthLabel
+    }
+
+    private var annualTrialLabel: String? {
+        trialLabel ?? configuredTrialLabel
+    }
+
     /// Replaces the hardcoded `PaywallPlan.hasTrial`, which asserted a trial on
     /// the annual plan regardless of what StoreKit would actually grant.
     private var selectedPlanHasTrial: Bool {
         selectedPlan == .annual && trialLabel != nil
+    }
+
+    private var showsAnnualTrialOffer: Bool {
+        selectedPlan == .annual && annualTrialLabel != nil
     }
 
     var body: some View {
@@ -606,13 +623,16 @@ struct PaywallView: View {
 
     /// The one number that matters today.
     private var heroLine: String {
-        if selectedPlanHasTrial { return "Free for 7 days" }
+        if selectedPlan == .annual, annualTrialLabel != nil { return "Annual includes 7 days free" }
         return selectedPlan == .annual ? "\(regularAnnualPriceText) a year" : "\(weeklyDisplayPriceText) a week"
     }
 
     private var heroSubline: String {
         if selectedPlanHasTrial {
             return "Then \(regularAnnualPriceText)/year. Cancel before day 7 and pay nothing."
+        }
+        if selectedPlan == .annual, annualTrialLabel != nil {
+            return "For eligible new subscribers. Otherwise \(regularAnnualPriceText)/year."
         }
         return selectedPlan == .annual
             ? "Billed yearly. Cancel anytime in Settings."
@@ -658,7 +678,7 @@ struct PaywallView: View {
 
                 Spacer(minLength: 8)
 
-                Text(trialLabel.map { "\($0.uppercased()) FREE" } ?? "FULL ACCESS")
+                Text(annualTrialLabel.map { "\($0.uppercased()) FREE" } ?? "FULL ACCESS")
                     .font(.system(size: 11, weight: .black, design: .monospaced))
                     .tracking(0.9)
                     .foregroundStyle(selectedPlanHasTrial ? PW.mint : PW.amber)
@@ -822,11 +842,10 @@ struct PaywallView: View {
                 // selected plan read as a flat yearly price.
                 purchasePlanCard(
                     plan: .annual,
-                    badge: trialLabel.map { "\($0.uppercased()) FREE" } ?? "BEST VALUE",
+                    badge: annualTrialLabel.map { "\($0.uppercased()) FREE" } ?? "BEST VALUE",
                     title: "Yearly",
                     price: "\(regularAnnualPriceText)/year",
-                    detail: trialLabel.map { "Free \($0), then \(annualWeeklyText)" }
-                        ?? "\(annualWeeklyText) billed yearly",
+                    detail: annualPlanDetail,
                     compact: compact
                 )
                 .frame(width: layout.cardWidth)
@@ -846,6 +865,16 @@ struct PaywallView: View {
             .offset(x: layout.groupOffsetX)
         }
         .frame(height: compact ? 116 : 138)
+    }
+
+    private var annualPlanDetail: String {
+        if let trialLabel {
+            return "Free \(trialLabel), then \(annualWeeklyText)"
+        }
+        if annualTrialLabel != nil {
+            return "Trial for eligible new subscribers"
+        }
+        return "\(annualWeeklyText) billed yearly"
     }
 
     private func purchasePlanCard(
@@ -1403,7 +1432,7 @@ struct PaywallView: View {
         Button {
             Task { await purchaseSelectedPlan() }
         } label: {
-            Text(storeService.isLoading ? "Opening…" : (selectedPlanHasTrial ? "Start for $0.00" : "Start Weekly Access"))
+            Text(storeService.isLoading ? "Opening…" : ctaTitle)
                 .font(.system(size: 18, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -1421,24 +1450,44 @@ struct PaywallView: View {
     }
 
     private var trialPaymentNotice: some View {
-        Text(selectedPlanHasTrial ? "No payment today. Reminder before trial ends." : " ")
+        Text(trialPaymentNoticeText)
             .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .foregroundStyle(selectedPlanHasTrial ? PW.fgMuted : .clear)
+            .foregroundStyle(showsAnnualTrialOffer ? PW.fgMuted : .clear)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, minHeight: 16)
-            .accessibilityHidden(!selectedPlanHasTrial)
+            .accessibilityHidden(!showsAnnualTrialOffer)
+    }
+
+    private var trialPaymentNoticeText: String {
+        if selectedPlanHasTrial {
+            return "No payment today. \(regularAnnualPriceText)/year after the trial."
+        }
+        if selectedPlan == .annual, annualTrialLabel != nil {
+            return "7-day trial for eligible new subscribers."
+        }
+        return " "
     }
 
     private var hardPaywallTerms: some View {
-        Text(selectedPlanHasTrial
-             ? "7 days for $0.00. Memo reminds you before billing starts."
-             : "Weekly access. Cancel anytime in the App Store.")
+        Text(hardPaywallTermsText)
             .font(.system(size: 12, weight: .bold, design: .rounded))
             .foregroundStyle(PW.fgMuted)
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .minimumScaleFactor(0.84)
             .frame(maxWidth: 300)
+    }
+
+    private var hardPaywallTermsText: String {
+        if selectedPlanHasTrial {
+            return "7 days for $0.00. Memo reminds you before billing starts."
+        }
+        if showsAnnualTrialOffer {
+            return "7-day free trial for eligible new subscribers; otherwise \(regularAnnualPriceText)/year."
+        }
+        return selectedPlan == .annual
+            ? "\(regularAnnualPriceText)/year. Cancel anytime in the App Store."
+            : "Weekly access. Cancel anytime in the App Store."
     }
 
     // MARK: - Footer
